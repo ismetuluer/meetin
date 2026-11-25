@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8"><title>Meetin maskotu — animasyon referansı</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0}*{box-sizing:border-box}
+@keyframes wb{0%,100%{transform:scale(1,1)}50%{transform:scale(1.015,1.035)}}
+@keyframes blink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.08)}}
+@keyframes flick{0%,86%,100%{transform:rotate(0)}89%{transform:rotate(-16deg)}93%{transform:rotate(6deg)}}
+@keyframes flickr{0%,70%,100%{transform:rotate(0)}73%{transform:rotate(16deg)}77%{transform:rotate(-6deg)}}
+@keyframes chew{from{transform:scaleY(.35)}to{transform:scaleY(1)}}
+@keyframes graze{0%,100%{transform:translateY(40px) rotate(0)}50%{transform:translateY(45px) rotate(4deg)}}
+@keyframes vib{0%,100%{transform:translateX(0)}25%{transform:translateX(-1.6px)}75%{transform:translateX(1.6px)}}
+@keyframes hop{0%,100%{transform:none}35%{transform:translateY(-34px) scale(.95,1.06)}60%{transform:translateY(0) scale(1.08,.92)}80%{transform:translateY(-6px)}}
+@keyframes shake{0%,100%{transform:none}20%{transform:translateX(-7px) rotate(-4deg)}40%{transform:translateX(6px) rotate(3deg)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+@keyframes gulp{0%,100%{transform:none}40%{transform:scale(1.07,.93)}65%{transform:scale(.96,1.05)}}
+@keyframes cardfly{0%{transform:translate(0,0) rotate(0);opacity:0}15%{opacity:1}70%{transform:translate(-66px,98px) rotate(-30deg) scale(.6);opacity:1}100%{transform:translate(-72px,108px) scale(0);opacity:0}}
+@keyframes zz{0%{transform:translate(0,6px);opacity:0}30%{opacity:1}100%{transform:translate(8px,-14px);opacity:0}}
+@keyframes popin{0%{opacity:0;transform:translateY(10px) scale(.7)}60%{opacity:1;transform:translateY(-3px) scale(1.06)}100%{opacity:1;transform:none}}
+.sheep{display:block;overflow:visible}
+.sheep .sh-all{transform-box:view-box;transform-origin:100px 184px;transition:transform .6s cubic-bezier(.28,2,.45,1)}
+.sheep .wool{transform-box:view-box;transform-origin:100px 170px;animation:wb 3.6s ease-in-out infinite;transition:transform .3s}
+.sheep .head{transform-box:view-box;transform-origin:100px 92px;transition:transform .5s cubic-bezier(.3,1.6,.5,1)}
+.sheep .ear-l{transform-box:view-box;transform-origin:72px 102px;animation:flick 7s infinite;transition:transform .4s}
+.sheep .ear-r{transform-box:view-box;transform-origin:128px 102px;animation:flickr 9s infinite;transition:transform .4s}
+.sheep .eyes{transform-box:fill-box;transform-origin:center;animation:blink 4.4s infinite}
+.sheep .eye-w{transform-box:fill-box;transform-origin:center;transition:transform .35s cubic-bezier(.3,1.8,.5,1)}
+.sheep .chew{transform-box:fill-box;transform-origin:center;animation:chew .28s ease-in-out infinite alternate}
+.sheep .legs{transform-box:view-box;transform-origin:100px 150px;transition:transform .3s}
+.sheep .grass{opacity:0;transform-box:fill-box;transform-origin:bottom center;transform:scaleY(0);transition:transform .5s cubic-bezier(.3,1.8,.5,1),opacity .3s}
+.sheep .card{opacity:0}
+.sheep .gshadow{transform-box:fill-box;transform-origin:center;transition:transform .4s}
+.zzz text{animation:zz 2.4s infinite}.zzz .z2{animation-delay:.8s}.zzz .z3{animation-delay:1.6s}
+.a-graze .head{animation:graze 1.6s ease-in-out infinite}
+.a-graze .grass{opacity:1;transform:scaleY(1)}
+.a-graze .legs{transform:translateY(1px)}
+.a-baa .head{transform:translateY(-6px) rotate(-7deg)}
+.a-baa .sh-all{animation:vib .11s linear 6}
+.a-stare .eye-w{transform:scale(1.32)}
+.a-stare .head{transform:translateY(-3px) scale(1.05)}
+.a-sleep .head{transform:rotate(9deg) translateY(7px)}
+.a-sleep .wool{animation-duration:6s}
+.a-sleep .ear-l{animation:none;transform:rotate(22deg)}.a-sleep .ear-r{animation:none;transform:rotate(-22deg)}
+.a-hop .sh-all{animation:hop .7s ease 2}
+.a-hop .legs{transform:scaleY(.72)}
+.a-sad .ear-l{animation:none;transform:rotate(42deg)}.a-sad .ear-r{animation:none;transform:rotate(-42deg)}
+.a-sad .sh-all{animation:shake .6s ease}
+.a-sad .head{transform:translateY(5px)}
+.a-squeeze .sh-all{transform:scale(1.16,.8);transition:transform .14s ease-out}
+.a-squeeze .wool{transform:scale(1.06,1.02)}
+.a-squeeze .gshadow{transform:scale(1.2)}
+.a-eat .card{animation:cardfly .9s ease-in forwards}
+.a-eat .sh-all{animation:gulp .5s .85s ease}
+@media (prefers-reduced-motion:reduce){.sheep *{animation:none!important}}
+.root{position:relative;width:1200px;height:760px;overflow:hidden;font-family:'Inter',system-ui,sans-serif}
+.stagebox{position:absolute;left:40px;top:40px;width:720px;height:680px;border-radius:28px;overflow:hidden}
+.sbtn{all:unset;position:absolute;left:170px;top:120px;width:380px;height:380px;cursor:grab;touch-action:none;border-radius:40px;-webkit-tap-highlight-color:transparent}
+.sbtn:focus-visible{outline:3px solid #7C4DFF;outline-offset:6px}
+.bubble{position:absolute;left:470px;top:120px;padding:12px 18px;border-radius:22px 22px 22px 6px;font-size:22px;font-weight:800;animation:popin .45s both;pointer-events:none}
+.panel{position:absolute;left:800px;top:40px;width:360px;height:680px;display:flex;flex-direction:column;gap:14px}
+.num{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:.08em}
+.pname{font-size:28px;font-weight:800;letter-spacing:-.01em;margin:0}
+.pline{font-size:14px;line-height:1.5;margin:0}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.abtn{all:unset;cursor:pointer;padding:10px 12px;border-radius:14px;font-size:14px;font-weight:700;transition:transform .3s cubic-bezier(.3,1.8,.5,1),background .2s;display:flex;flex-direction:column;gap:2px}
+.abtn small{font-size:12px;font-weight:500}
+.abtn:active,.tbtn:active{transform:scale(.94)}
+.abtn:focus-visible,.tbtn:focus-visible{outline:2px solid #7C4DFF;outline-offset:2px}
+.tbtn{all:unset;cursor:pointer;padding:9px 14px;border-radius:999px;font-size:13px;font-weight:600}
+.trow{display:flex;gap:8px;flex-wrap:wrap}
+.hint{font-size:13px;line-height:1.45;margin:0}
+.sizes{margin-top:auto;display:flex;align-items:flex-end;gap:18px;padding:14px 16px;border-radius:18px}
+.sz{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11px;font-family:'JetBrains Mono',ui-monospace,monospace}
+.pill{display:flex;align-items:center;justify-content:center;width:150px;height:76px;border-radius:38px;background:#050308}
+
+@keyframes cardfly2{0%{transform:translate(0,0);opacity:0}15%{opacity:1}70%{transform:translate(calc(var(--cx) * .92),calc(var(--cy) * .92)) rotate(-30deg) scale(.6);opacity:1}100%{transform:translate(var(--cx),var(--cy)) scale(0);opacity:0}}
+.sheep{--cx:-67px;--cy:104px}
+.a-eat .card{animation:cardfly2 .9s ease-in forwards}
+@keyframes wag{0%,78%,100%{transform:rotate(0)}82%{transform:rotate(-28deg)}86%{transform:rotate(22deg)}90%{transform:rotate(-16deg)}94%{transform:rotate(8deg)}}
+@keyframes grazeP{0%,100%{transform:translate(0,30px) rotate(55deg)}50%{transform:translate(0,33px) rotate(61deg)}}
+@keyframes grazeM{0%,100%{transform:translateY(20px)}50%{transform:translateY(25px)}}
+@keyframes jelly{0%,100%{transform:scale(1,1)}50%{transform:scale(1.035,.97)}}
+@keyframes drawin{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
+@keyframes sway{0%,100%{transform:rotate(0)}50%{transform:rotate(6deg)}}
+/* profil */
+.k-prof{--cx:-4px;--cy:74px}
+.k-prof .head{transform-origin:128px 98px}
+.k-prof .ear-l{transform-origin:140px 86px;animation:flick 6s infinite}
+.k-prof .tail{transform-box:view-box;transform-origin:44px 108px;animation:wag 3.2s infinite}
+.k-prof.a-hop .tail{animation-duration:.5s}
+.k-prof.a-graze .head{animation:grazeP 1.6s ease-in-out infinite}
+.k-prof.a-baa .head{transform:rotate(-22deg)}
+.k-prof.a-stare .head{transform:rotate(-8deg) scale(1.04)}
+.k-prof.a-sleep .head{transform:translate(0,10px) rotate(20deg)}
+.k-prof.a-sad .head{transform:rotate(14deg)}
+.k-prof.a-sad .ear-l,.k-prof.a-sleep .ear-l{animation:none;transform:rotate(30deg)}
+.k-prof .eye-w{transform-box:fill-box}
+/* mochi */
+.k-mochi{--cx:-67px;--cy:106px}
+.k-mochi .head{transform-origin:100px 120px}
+.k-mochi .wool{animation:jelly 2.8s ease-in-out infinite;transform-origin:100px 172px}
+.k-mochi .ear-l{transform-origin:54px 110px}.k-mochi .ear-r{transform-origin:146px 110px}
+.k-mochi.a-graze .head{animation:grazeM 1.4s ease-in-out infinite}
+.k-mochi.a-baa .head{transform:translateY(-8px) scale(1.04)}
+.k-mochi.a-sleep .head{transform:translateY(8px)}
+.k-mochi.a-sad .head{transform:translateY(6px)}
+.k-mochi.a-squeeze .sh-all{transform:scale(1.26,.72)}
+.k-mochi .sh-all{transition:transform .75s cubic-bezier(.2,2.4,.4,1)}
+/* geometrik */
+.k-geo{--cx:-67px;--cy:104px}
+.k-geo .head{transition:transform .35s cubic-bezier(.7,0,.3,1)}
+.k-geo .wool{animation-timing-function:steps(2,jump-none);animation-duration:2.4s}
+.k-geo .ear-l{transform-origin:76px 100px}.k-geo .ear-r{transform-origin:124px 100px}
+.k-geo .sh-all{transition:transform .3s cubic-bezier(.7,0,.3,1)}
+.k-geo .eyes{animation:blink 3.6s steps(1) infinite}
+/* tek cizgi */
+.k-line{--cx:-67px;--cy:106px}
+.k-line .draw{stroke-dasharray:100;animation:drawin 1.8s ease both}
+.k-line .ear-l{transform-origin:82px 108px}.k-line .ear-r{transform-origin:118px 108px}
+.k-line .head{transform-origin:100px 100px}
+.k-line.a-graze .head{animation:graze 1.6s ease-in-out infinite}
+/* cikartma */
+.k-stick{--cx:-67px;--cy:88px}
+.k-stick .head{transform-origin:100px 130px}
+.k-stick .ear-l{transform-origin:62px 98px}.k-stick .ear-r{transform-origin:138px 98px}
+.k-stick .scarf{transform-box:view-box;transform-origin:110px 136px}
+.k-stick .scarf path:nth-child(2){transform-box:view-box;transform-origin:110px 136px;animation:sway 2.6s ease-in-out infinite}
+.k-stick.a-graze .head{animation:grazeM 1.4s ease-in-out infinite}
+.k-stick.a-baa .head{transform:translateY(-6px) rotate(-6deg)}
+.k-stick.a-sleep .head{transform:rotate(10deg) translateY(4px)}
+.k-stick.a-stare .head{transform:scale(1.06)}
+
+@keyframes nod{0%,100%{transform:rotate(0)}50%{transform:rotate(3deg)}}
+@keyframes grazeL{0%,100%{transform:translate(0,22px) rotate(28deg)}50%{transform:translate(0,25px) rotate(33deg)}}
+@keyframes heartb{0%,80%,100%{transform:scale(1)}85%{transform:scale(1.25)}90%{transform:scale(1)}95%{transform:scale(1.15)}}
+@keyframes floatp{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.mf.a-graze .head{animation:grazeM 1.4s ease-in-out infinite}
+.mf.a-baa .head{transform:translateY(-6px) rotate(-5deg)}
+.mf.a-sleep .head{transform:rotate(8deg) translateY(5px)}
+.mf.a-sad .head{transform:translateY(5px)}
+.mf.a-stare .head{transform:scale(1.05)}
+.k-knit{--cx:-67px;--cy:62px}
+.k-knit .head{transform-origin:100px 104px;animation:nod 4s ease-in-out infinite}
+.k-knit .heart{transform-box:fill-box;transform-origin:center;animation:heartb 2.6s infinite}
+.k-knit .ear-l{transform-origin:76px 82px}.k-knit .ear-r{transform-origin:124px 82px}
+.k-knit.a-graze .head{animation:grazeM 1.4s ease-in-out infinite}
+.k-face{--cx:-67px;--cy:106px}
+.k-face .head{transform-origin:100px 150px}
+.k-face .wool{animation:none}
+.k-face .ear-l{transform-origin:58px 112px}.k-face .ear-r{transform-origin:142px 112px}
+.k-face .brow{transition:transform .35s cubic-bezier(.3,1.8,.5,1),opacity .2s}
+.k-face.a-stare .brow,.k-face.a-baa .brow{transform:translateY(-6px)}
+.k-face.a-sad .brow,.k-face.a-sleep .brow{opacity:0}
+.k-face.a-hop .brow{transform:translateY(-4px)}
+.k-pix{--cx:-67px;--cy:110px}
+.k-pix .head,.k-pix .sh-all,.k-pix .ear-l,.k-pix .ear-r{transition-timing-function:steps(3,end)!important}
+.k-pix .wool{animation:pixb 1.6s steps(1) infinite}
+@keyframes pixb{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+.k-pix .eyes{animation:blink 4s steps(1) infinite}
+.k-pix .chew{animation:pixchew .4s steps(1) infinite}
+@keyframes pixchew{0%,100%{opacity:1}50%{opacity:0}}
+.k-pix.a-graze .head{animation:pixgraze 1s steps(1) infinite}
+@keyframes pixgraze{0%,100%{transform:translateY(32px)}50%{transform:translateY(40px)}}
+.k-pix.a-hop .sh-all{animation:pixhop .8s steps(4) 2}
+@keyframes pixhop{0%,100%{transform:none}50%{transform:translateY(-32px)}}
+.k-pix.a-sad .sh-all{animation:pixshake .5s steps(2) 2}
+@keyframes pixshake{0%,100%{transform:translateX(-8px)}50%{transform:translateX(8px)}}
+.k-pix .ear-l{transform-origin:68px 100px}.k-pix .ear-r{transform-origin:132px 100px}
+.k-pix.a-squeeze .sh-all{transform:scale(1.25,.75)}
+.k-paper{--cx:-67px;--cy:100px}
+.k-paper .head{transform-origin:100px 110px}
+.k-paper .wool{animation:floatp 4s ease-in-out infinite}
+.k-paper .ear-l{transform-origin:78px 108px}.k-paper .ear-r{transform-origin:122px 108px}
+.k-paper.a-graze .head{animation:grazeM 1.4s ease-in-out infinite}
+.k-paper .sh-all{transition:transform .5s cubic-bezier(.4,1.4,.5,1)}
+.k-lie{--cx:-15px;--cy:96px}
+.k-lie .head{transform-origin:134px 136px}
+.k-lie .wool{transform-origin:100px 174px;animation:wb 5s ease-in-out infinite}
+.k-lie .tail{transform-box:view-box;transform-origin:36px 146px;animation:wag 5s infinite}
+.k-lie .ear-l{transform-origin:134px 112px}.k-lie .ear-r{transform-origin:166px 112px}
+.k-lie.a-graze .head{animation:grazeL 1.6s ease-in-out infinite}
+.k-lie.a-sleep .head{transform:translate(-4px,14px) rotate(-14deg)}
+.k-lie.a-baa .head{transform:rotate(-10deg) translateY(-6px)}
+.k-lie.a-hop .sh-all{animation:hop .7s ease 1}
+@keyframes bladew{0%,100%{transform:skewX(0)}50%{transform:skewX(-9deg)}}
+@keyframes tuftw{0%,100%{transform:rotate(0)}50%{transform:rotate(-5deg)}}
+.k-lie .blade{transform-box:fill-box;transform-origin:bottom left;animation:bladew 3.4s ease-in-out infinite}
+.k-lie .b1{animation-delay:-.9s;animation-duration:3s}.k-lie .b2{animation-delay:-1.7s;animation-duration:3.8s}
+.k-lie .tuft{transform-box:fill-box;transform-origin:bottom center;animation:tuftw 3.4s ease-in-out infinite}
+.k-lie .ear-r{animation:flickr 3.4s ease-in-out infinite}
+
+@keyframes dropf{0%{transform:translateY(-6px);opacity:0}30%{opacity:1}100%{transform:translateY(22px);opacity:0}}
+@keyframes pfo{0%{transform:scale(0);opacity:0}40%{transform:scale(1.2);opacity:1}100%{transform:scale(.6) translateY(-14px);opacity:0}}
+@keyframes rollr{to{transform:rotate(360deg)}}
+@keyframes sway2{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+@keyframes flyaway{0%{transform:translate(0,0) rotate(0);opacity:0}10%{opacity:1}100%{transform:translate(60px,-70px) rotate(40deg);opacity:0}}
+@keyframes caretb{50%{opacity:0}}
+@keyframes letterhop{0%,100%{transform:none}40%{transform:translateY(-16px)}}
+@keyframes drawm{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
+@keyframes typein{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+.k-cloud{--cx:-66px;--cy:96px}
+.k-cloud .head{transform-origin:100px 120px}
+.k-cloud .sh-all{animation:floatp 5s ease-in-out infinite}
+.k-cloud .wool{animation:none}
+.k-cloud .rain{opacity:0;transition:opacity .3s}
+.k-cloud.a-sad .rain{opacity:1}
+.k-cloud .drop{animation:dropf .8s linear infinite}.k-cloud .d1{animation-delay:.2s}.k-cloud .d2{animation-delay:.45s}.k-cloud .d3{animation-delay:.1s}.k-cloud .d4{animation-delay:.6s}
+.k-cloud.a-sad .wool g:last-of-type{fill:#E9E7E4}
+.k-cloud .pf{opacity:0;transform-box:fill-box;transform-origin:center}
+.k-cloud.a-hop .pf,.k-cloud.a-baa .pf{animation:pfo .9s ease-out forwards}.k-cloud .p1{animation-delay:.1s!important}.k-cloud .p2{animation-delay:.2s!important}.k-cloud .p3{animation-delay:.3s!important}
+.k-cloud.a-baa .wool{transform:scale(1.12)}.k-cloud .wool{transform-origin:100px 120px;transition:transform .5s cubic-bezier(.3,1.8,.5,1)}
+.k-cloud.a-sleep .wool{transform:scale(1.08,.86)}
+.k-cloud.a-graze .head{animation:grazeM 1.4s ease-in-out infinite}
+.k-cloud .ear-l{transform-origin:66px 100px}.k-cloud .ear-r{transform-origin:136px 100px}
+.k-yarn{--cx:-67px;--cy:92px}
+.k-yarn .roll{transform-box:view-box;transform-origin:100px 112px;transition:transform 1.2s cubic-bezier(.3,1.2,.5,1)}
+.k-yarn.a-graze .roll{animation:rollr 2.4s linear infinite}
+.k-yarn.a-eat .roll{transform:rotate(-200deg)}
+.k-yarn.a-hop .roll{transform:rotate(360deg)}
+.k-yarn .wool{animation:none}
+.k-yarn .head{transform-origin:100px 120px}
+.k-yarn.a-graze .head{transform:translateY(6px)}
+.k-yarn .mee{stroke-dasharray:100;animation:drawm 1s ease both}
+.k-yarn .ear-l{transform-origin:80px 70px}.k-yarn .ear-r{transform-origin:120px 70px}
+.k-yarn.a-sad .legs path{stroke-dasharray:3 4}
+.k-type{--cx:-66px;--cy:110px}
+.k-type .caret2{animation:caretb 1s steps(1) infinite}
+.k-type .wool{animation:none}
+.k-type .brl,.k-type .brr{transform-box:fill-box;transition:transform .45s cubic-bezier(.3,1.8,.5,1)}
+.k-type .brl{transform-origin:right center}.k-type .brr{transform-origin:left center}
+.k-type.a-eat .brl{transform:translateX(26px)}.k-type.a-eat .brr{transform:translateX(-26px)}
+.k-type.a-squeeze .brl{transform:translateX(18px)}.k-type.a-squeeze .brr{transform:translateX(-18px)}
+.k-type.a-sad .brl{transform:rotate(-12deg) translateY(6px)}.k-type.a-sad .brr{transform:rotate(12deg) translateY(6px)}
+.k-type.a-baa .brl{transform:translateX(-8px) scale(1.08)}.k-type.a-baa .brr{transform:translateX(8px) scale(1.08)}
+.k-type.a-hop .lt{animation:letterhop .5s ease 3}.k-type.a-hop .lt2{animation:letterhop .5s .12s ease 3}
+.k-type.a-hop .brl{animation:letterhop .5s .06s ease 3}.k-type.a-hop .brr{animation:letterhop .5s .18s ease 3}
+.k-type .meet{animation:typein .6s steps(5) both}
+.k-type .head{transform-origin:100px 120px}
+.k-type.a-graze .head{animation:grazeM 1.2s ease-in-out infinite}
+.k-type.a-stare .eye-w,.k-type.a-stare .eyes{transform:scale(1.2)}
+.k-curl{--cx:-63px;--cy:86px}
+.k-curl .spin{transform-box:view-box;transform-origin:104px 112px;animation:sway2 7s ease-in-out infinite;transition:transform .9s cubic-bezier(.3,1.4,.5,1)}
+.k-curl .wool{animation:none}
+.k-curl .sp{stroke-dasharray:100;stroke-dashoffset:0;transition:stroke-dashoffset .7s ease}
+.k-curl.a-sad .sp{stroke-dashoffset:26}
+.k-curl.a-sleep .spin{animation:rollr 14s linear infinite}
+.k-curl.a-hop .sh-all{animation:hop .7s ease 2}.k-curl.a-hop .spin{animation:rollr .7s linear 2}
+.k-curl.a-eat .spin{animation:rollr .6s linear reverse 2}
+.k-curl.a-baa .spin{animation:none;transform:scale(1.12)}
+.k-curl .head{transform-origin:104px 113px}
+.k-curl.a-graze .sh-all{transform:rotate(-14deg)}.k-curl.a-graze .head{animation:none;transform:translate(-4px,6px)}
+.k-curl .ear-l{transform-origin:92px 102px}.k-curl .ear-r{transform-origin:116px 102px}
+.k-puff{--cx:-66px;--cy:84px}
+.k-puff .halo{transform-box:view-box;transform-origin:100px 104px;transition:transform .7s cubic-bezier(.3,1.8,.5,1),opacity .4s;animation:sway2 6s ease-in-out infinite}
+.k-puff .wool{animation:none}
+.k-puff.a-baa .halo{transform:scale(1.16)}
+.k-puff.a-sleep .halo{transform:scale(.78);opacity:.7}
+.k-puff.a-sad .halo{transform:scale(.88) translateY(8px);opacity:.6}
+.k-puff.a-eat .halo{animation:rollr .9s cubic-bezier(.3,1.2,.5,1) 1}
+.k-puff .fly{opacity:0;animation:flyaway 5s ease-out infinite}.k-puff .f1{animation-delay:1.7s}.k-puff .f2{animation-delay:3.4s}
+.k-puff.a-baa .fly,.k-puff.a-hop .fly{animation-duration:1.2s}
+.k-puff .sh-all{transform-origin:96px 186px}
+.k-puff.a-graze .sh-all{transform:rotate(-12deg)}.k-puff.a-graze .head{animation:none;transform:translateY(4px)}
+.k-puff .head{transform-origin:100px 106px}
+.k-puff .ear-l{transform-origin:84px 102px}.k-puff .ear-r{transform-origin:116px 102px}
+
+@keyframes tiltc{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(7deg)}}
+@keyframes grazeS{0%,100%{transform:translate(0,40px) rotate(42deg)}50%{transform:translate(0,43px) rotate(47deg)}}
+.k-c1{--cx:-67px;--cy:98px}.k-c1 .head{transform-origin:100px 140px}.k-c1 .ear-l{transform-origin:78px 90px}.k-c1 .ear-r{transform-origin:122px 90px}
+.k-c1.a-graze .head{animation:grazeM 1.4s ease-in-out infinite}
+.k-c2{--cx:-84px;--cy:90px}.k-c2 .head{transform-origin:90px 130px}.k-c2 .ear-l{transform-origin:56px 96px}.k-c2 .ear-r{transform-origin:108px 86px}
+.k-c2 .brow{transition:transform .35s cubic-bezier(.3,1.8,.5,1)}
+.k-c2.a-stare .brow,.k-c2.a-baa .brow{transform:translateY(-7px)}.k-c2.a-sad .brow{transform:translateY(5px) rotate(4deg)}.k-c2.a-sleep .brow{transform:translateY(4px)}
+.k-c2.a-graze .head{animation:grazeM 1.4s ease-in-out infinite}
+.k-c2.a-baa .head{transform:rotate(-10deg) translateY(-4px)}
+.k-c2 .wool{transform-origin:118px 160px}
+.k-c3{--cx:-16px;--cy:56px}.k-c3 .head{transform-origin:130px 96px}
+.k-c3 .ear-l{transform-origin:134px 66px;animation:flick 5s infinite}.k-c3 .ear-r{transform-origin:164px 62px}
+.k-c3.a-graze .head{animation:grazeS 1.6s ease-in-out infinite}
+.k-c3.a-baa .head{transform:rotate(-16deg)}.k-c3.a-sleep .head{transform:translate(0,14px) rotate(18deg)}.k-c3.a-sad .head{transform:rotate(14deg) translateY(6px)}
+.k-c3.a-stare .head{transform:rotate(-6deg) scale(1.05)}
+.k-c3 .wool{animation:wb 4s ease-in-out infinite;transform-origin:88px 150px}
+.k-c4{--cx:-63px;--cy:86px}.k-c4 .head{transform-origin:104px 80px}
+.k-c4 .tilt{transform-box:view-box;transform-origin:104px 80px;animation:tiltc 5s ease-in-out infinite}
+.k-c4 .ear-l{transform-origin:82px 82px}.k-c4 .ear-r{transform-origin:126px 82px}
+.k-c4.a-graze .head{animation:none;transform:translateY(46px)}
+.k-c4.a-stare .tilt{animation:none;transform:rotate(-14deg)}
+.k-c4.a-hop .sh-all{animation:hop .6s ease 3}
+.k-c5{--cx:-67px;--cy:104px}.k-c5 .head{transform-origin:100px 150px}.k-c5 .ear-l{transform-origin:72px 116px}.k-c5 .ear-r{transform-origin:128px 116px}
+.k-c5.a-graze .head{animation:grazeM 1.4s ease-in-out infinite}
+.k-c5 .wool{animation:jelly 3s ease-in-out infinite;transform-origin:100px 176px}
+.k-c5 .sh-all{transition:transform .75s cubic-bezier(.2,2.4,.4,1)}
+.k-c5.a-squeeze .sh-all{transform:scale(1.22,.76)}
+
+.k-b1,.k-b2,.k-b3{--cx:-67px;--cy:104px}
+.k-b1 .head,.k-b3 .head{transform-origin:100px 150px}.k-b2 .head{transform-origin:100px 150px}
+.k-b1 .wool,.k-b2 .wool,.k-b3 .wool{animation:jelly 2.8s ease-in-out infinite;transform-origin:100px 172px}
+.k-b1 .sh-all,.k-b2 .sh-all,.k-b3 .sh-all{transition:transform .75s cubic-bezier(.2,2.4,.4,1)}
+.k-b1.a-squeeze .sh-all,.k-b2.a-squeeze .sh-all,.k-b3.a-squeeze .sh-all{transform:scale(1.26,.72)}
+.k-b1.a-graze .head,.k-b2.a-graze .head,.k-b3.a-graze .head{animation:grazeM 1.4s ease-in-out infinite}
+.k-b1.a-baa .head,.k-b2.a-baa .head,.k-b3.a-baa .head{transform:translateY(-8px) scale(1.04)}
+.k-b1.a-sleep .head,.k-b2.a-sleep .head,.k-b3.a-sleep .head{transform:translateY(6px)}
+.k-b1 .ear-l,.k-b3 .ear-l{transform-origin:58px 114px}.k-b1 .ear-r,.k-b3 .ear-r{transform-origin:142px 114px}
+.k-b2 .ear-l{transform-origin:74px 98px}.k-b2 .ear-r{transform-origin:126px 98px}
+
+html,body{margin:0;font-family:Inter,system-ui,sans-serif;background:#F3EFE7;color:#2B2620}
+main{display:flex;flex-wrap:wrap;gap:32px;padding:32px;align-items:center;justify-content:center;min-height:100vh;box-sizing:border-box}
+#box{position:relative;width:380px;height:380px;background:#EEF3EA;border-radius:28px}
+#hit{all:unset;position:absolute;inset:0;cursor:grab;touch-action:none;border-radius:28px}
+#bubble{position:absolute;right:28px;top:40px;background:#fff;padding:10px 16px;border-radius:20px 20px 20px 6px;font-weight:800;font-size:20px;box-shadow:0 10px 24px -10px rgba(60,45,30,.4);display:none;animation:popin .45s both}
+.panel{max-width:360px;display:flex;flex-direction:column;gap:10px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.grid button,.t{all:unset;cursor:pointer;background:#fff;box-shadow:inset 0 0 0 1px #E4DED2;border-radius:14px;padding:10px 12px;font-weight:700;font-size:14px}
+.grid button.on{background:#2B2620;color:#fff}
+.grid button:focus-visible,.t:focus-visible,#hit:focus-visible{outline:2px solid #7C4DFF;outline-offset:2px}
+p{margin:0;font-size:13px;line-height:1.5;color:#625849}
+</style></head><body><main>
+<div id="box"><button id="hit" aria-label="Meetin. Tıkla: meler. Basılı tut: sıkılır ve ifadeyi yer."><svg viewBox="0 0 200 200" width="100%" height="100%" aria-hidden="true" class="sheep k-b2 a-idle" id="sheep"><ellipse class="gshadow" cx="100" cy="186" rx="54" ry="6" fill="rgba(0,0,0,.12)"></ellipse><g class="grass" aria-hidden="true"><path d="M144 186 Q142 170 138 164 M148 186 Q149 168 152 160 M154 186 Q157 170 162 166 M160 186 Q162 172 168 168 M166 186 Q166 174 172 172" stroke="#6FA86A" stroke-width="3" stroke-linecap="round" fill="none"></path><circle cx="152" cy="160" r="3" fill="#F2D35B"></circle></g><g data-if="isSleep"><g class="zzz" fill="#6B5D4A" font-family="Inter,sans-serif" font-weight="800"><text x="146" y="62" font-size="16">z</text><text class="z2" x="158" y="46" font-size="20">z</text><text class="z3" x="172" y="28" font-size="25">Z</text></g></g><g class="card" aria-hidden="true"><rect x="150" y="20" width="34" height="24" rx="5" fill="#ffffff" stroke="#6B5D4A" stroke-width="1.5"></rect><path d="M156 28 H178 M156 33 H172 M156 38 H175" stroke="#7C4DFF" stroke-width="2" stroke-linecap="round"></path></g>
+<g class="sh-all"><g class="legs" fill="#2E2A28"><rect x="66" y="158" width="18" height="26" rx="9"></rect><rect x="116" y="158" width="18" height="26" rx="9"></rect><rect x="86" y="164" width="13" height="22" rx="6.5" fill="#1F1B19"></rect><rect x="101" y="164" width="13" height="22" rx="6.5" fill="#1F1B19"></rect></g>
+<g class="wool"><path d="M100.0 46.0 A15.4 15.4 0 0 1 124.6 50.2 A15.1 15.1 0 0 1 145.8 62.2 A14.6 14.6 0 0 1 160.9 80.4 A14.2 14.2 0 0 1 167.7 102.3 A14.1 14.1 0 0 1 165.4 125.0 A14.4 14.4 0 0 1 154.3 145.4 A14.9 14.9 0 0 1 135.8 160.7 A15.3 15.3 0 0 1 112.5 168.9 A15.5 15.5 0 0 1 87.5 168.9 A15.3 15.3 0 0 1 64.2 160.7 A14.9 14.9 0 0 1 45.7 145.4 A14.4 14.4 0 0 1 34.6 125.0 A14.1 14.1 0 0 1 32.3 102.3 A14.2 14.2 0 0 1 39.1 80.4 A14.6 14.6 0 0 1 54.2 62.2 A15.1 15.1 0 0 1 75.4 50.2 A15.4 15.4 0 0 1 100.0 46.0 Z" fill="#FFFFFF" stroke="#2E2A28" stroke-width="3" stroke-linejoin="round"></path></g>
+<g class="head">
+<g class="ear-l"><ellipse cx="62" cy="94" rx="17" ry="8.5" fill="#2E2A28" transform="rotate(-24 62 94)"></ellipse></g>
+<g class="ear-r"><ellipse cx="138" cy="94" rx="17" ry="8.5" fill="#2E2A28" transform="rotate(24 138 94)"></ellipse></g>
+<path d="M100 74 C124 74 134 94 132 116 C130 140 117 154 100 154 C83 154 70 140 68 116 C66 94 76 74 100 74 Z" fill="#2E2A28"></path>
+<path d="M100.0 60.0 A11.0 11.0 0 0 1 115.4 62.8 A7.6 7.6 0 0 1 123.6 69.9 A6.0 6.0 0 0 1 120.8 78.0 A9.5 9.5 0 0 1 108.2 83.3 A11.5 11.5 0 0 1 91.8 83.3 A9.5 9.5 0 0 1 79.2 78.0 A6.0 6.0 0 0 1 76.4 69.9 A7.6 7.6 0 0 1 84.6 62.8 A11.0 11.0 0 0 1 100.0 60.0 Z" fill="#FFFFFF" stroke="#2E2A28" stroke-width="3" stroke-linejoin="round"></path>
+<ellipse cx="78" cy="132" rx="6" ry="3.6" fill="#C77B86" class="cheek" opacity=".5"></ellipse><ellipse cx="122" cy="132" rx="6" ry="3.6" fill="#C77B86" class="cheek" opacity=".5"></ellipse>
+<g data-if="eyeOpen"><g class="eyes"><g class="eye-w"><ellipse cx="84" cy="108" rx="11.5" ry="13.5" fill="#fff" ></ellipse><ellipse cx="116" cy="108" rx="11.5" ry="13.5" fill="#fff" ></ellipse></g><g class="pupil"><circle cx="85" cy="110" r="7" fill="#1F1B19"></circle><circle cx="117" cy="110" r="7" fill="#1F1B19"></circle><circle cx="87.4" cy="106.5" r="2.5" fill="#fff"></circle><circle cx="119.4" cy="106.5" r="2.5" fill="#fff"></circle><circle cx="83" cy="113" r="1.1" fill="#fff"></circle><circle cx="115" cy="113" r="1.1" fill="#fff"></circle></g></g></g><g data-if="eyeClosed"><path d="M72.5 109 Q84 116 95.5 109 M104.5 109 Q116 116 127.5 109" stroke="#EDE6DF" stroke-width="3" fill="none" stroke-linecap="round"></path></g><g data-if="eyeHappy"><path d="M72.5 111 Q84 99 95.5 111 M104.5 111 Q116 99 127.5 111" stroke="#EDE6DF" stroke-width="3.2" fill="none" stroke-linecap="round"></path></g><g data-if="eyeSad"><ellipse cx="84" cy="110" rx="8.6" ry="9.4" fill="#fff"></ellipse><ellipse cx="116" cy="110" rx="8.6" ry="9.4" fill="#fff"></ellipse><circle cx="84" cy="113" r="5.2" fill="#1F1B19"></circle><circle cx="116" cy="113" r="5.2" fill="#1F1B19"></circle><path d="M71.5 92.5 L89.8 96.5 M128.5 92.5 L110.2 96.5" stroke="#EDE6DF" stroke-width="2.6" stroke-linecap="round"></path></g><g data-if="mSmile"><path d="M95.2 138 Q100 142.0 104.8 138" stroke="#A2958E" stroke-width="2.4" fill="none" stroke-linecap="round"></path></g><g data-if="mOpen"><ellipse cx="100" cy="139.6" rx="3.6" ry="4.4" fill="#140F0D" stroke="#A2958E" stroke-width="1.5"></ellipse><ellipse cx="100" cy="141.6" rx="2.08" ry="1.4400000000000002" fill="#E58C9C"></ellipse></g><g data-if="mChew"><ellipse class="chew" cx="100" cy="139" rx="3.6" ry="1.7600000000000002" fill="#140F0D" stroke="#A2958E" stroke-width="1.5"></ellipse></g><g data-if="mSad"><path d="M95.2 141.2 Q100 137.2 104.8 141.2" stroke="#A2958E" stroke-width="2.4" fill="none" stroke-linecap="round"></path></g>
+</g></g></svg></button><div id="bubble">Mee!</div></div>
+<div class="panel"><h1 style="margin:0;font-size:28px">Meetin</h1>
+<p>Maskot animasyon referansı (Harman B). Uygulamadaki maskot bu dosyadaki SVG yapısı, sınıf adları ve CSS animasyonlarıyla birebir uyuşmalıdır.</p>
+<div class="grid" id="grid"></div>
+<button class="t" id="auto">Kendi hâlinde: Açık</button>
+<p>İmleç: gözler takip eder · Tık: meler · Basılı tut (450 ms): sıkılır, bırakınca ifadeyi yer.</p></div>
+</main>
+<script>
+const ANIMS=[["graze","Otla",4200],["baa","Mele",1500],["stare","Bana bak",2800],["sleep","Uyu",5200],["eat","İfade ye",1700],["hop","Sevin",1600],["sad","Üzül",1500],["squeeze","Sık",900]];
+const svg=document.getElementById('sheep'),bubble=document.getElementById('bubble'),grid=document.getElementById('grid');
+let anim='idle',timers=[],auto=true,lastUser=0,holdT=null,held=false;
+function flags(a){return{eyeOpen:!['sleep','hop','sad'].includes(a),eyeClosed:a==='sleep',eyeHappy:a==='hop',eyeSad:a==='sad',
+ mSmile:['idle','stare','sleep','squeeze'].includes(a),mOpen:a==='baa'||a==='hop',mChew:a==='graze'||a==='eat',mSad:a==='sad',isSleep:a==='sleep',isBaa:a==='baa'};}
+function render(){svg.setAttribute('class','sheep k-b2 a-'+anim);const f=flags(anim);
+ svg.querySelectorAll('[data-if]').forEach(g=>g.style.display=f[g.dataset.if]?'':'none');
+ svg.querySelectorAll('.cheek').forEach(c=>c.setAttribute('opacity',['eat','hop','baa'].includes(anim)?.95:.5));
+ bubble.style.display=anim==='baa'?'block':'none';
+ grid.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.id===anim));}
+function set(a){anim=a;render();}
+function clear(){timers.forEach(clearTimeout);timers=[];}
+function play(id,user){if(user)lastUser=Date.now();clear();set('idle');
+ timers.push(setTimeout(()=>{set(id);const d=(ANIMS.find(x=>x[0]===id)||[0,0,1500])[2];timers.push(setTimeout(()=>set('idle'),d));},30));}
+ANIMS.forEach(([id,l])=>{const b=document.createElement('button');b.textContent=l;b.dataset.id=id;b.onclick=()=>play(id,true);grid.appendChild(b);});
+document.getElementById('auto').onclick=e=>{auto=!auto;e.target.textContent='Kendi hâlinde: '+(auto?'Açık':'Kapalı');};
+setInterval(()=>{if(!auto||anim!=='idle'||Date.now()-lastUser<5000)return;const p=['graze','graze','baa','stare','hop'];play(p[Math.floor(Math.random()*p.length)],false);},6000);
+document.addEventListener('pointermove',e=>{if(anim==='sleep')return;const r=svg.getBoundingClientRect(),cx=r.left+r.width*.5,cy=r.top+r.height*.53,dx=e.clientX-cx,dy=e.clientY-cy,d=Math.hypot(dx,dy)||1,m=Math.min(d/60,1)*4.2;
+ svg.querySelectorAll('.pupil').forEach(p=>{p.style.transform='translate('+(dx/d*m).toFixed(1)+'px,'+(dy/d*m).toFixed(1)+'px)';p.style.transition='transform .12s';});});
+const hit=document.getElementById('hit');
+hit.addEventListener('pointerdown',()=>{lastUser=Date.now();held=false;clear();set('squeeze');clearTimeout(holdT);holdT=setTimeout(()=>held=true,450);});
+hit.addEventListener('pointerup',()=>{clearTimeout(holdT);if(anim!=='squeeze')return;play(held?'eat':'baa',true);held=false;});
+hit.addEventListener('pointerleave',()=>{clearTimeout(holdT);if(anim==='squeeze')set('idle');});
+render();
+</script></body></html>

@@ -1,0 +1,14 @@
+node_modules/
+dist/
+*.log
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+# Yerel veri ve yedekler asla depoya girmez
+data/
+backups/
+*.db
+*.db-wal
+*.db-shm
+portable.flag
+*.tsbuildinfo
