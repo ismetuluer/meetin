@@ -6,6 +6,17 @@
 
 use crate::inject::clipboard;
 
+/// UI Automation metin okuma sonucu (test edilebilir saf model, §4.1 / §7.4).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SelectionSourceOutcome {
+    /// Odaklanılan denetim parola kutusuysa (`IsPassword = true`) hiçbir metin okunmaz.
+    PasswordField,
+    /// UIA `TextPattern` doğrudan metin döndürdü.
+    Text(String),
+    /// Denetim `TextPattern` desteklemiyor; pano korumalı `Ctrl+C` yedek yoluna düşülebilir.
+    Unsupported,
+}
+
 /// Boş / yalnızca boşluk olan metni eler.
 pub fn clean_selected_text(raw: Option<String>) -> Option<String> {
     raw.and_then(|s| {
@@ -17,17 +28,27 @@ pub fn clean_selected_text(raw: Option<String>) -> Option<String> {
     })
 }
 
+/// UIA okuma sonucunu parola koruması ve boşluk filtresiyle çözümler.
+/// `PasswordField` durumunda `fallback_ctrl_c` ASLA çağrılmaz (§7.4).
+pub fn resolve_selection_outcome<F>(
+    outcome: SelectionSourceOutcome,
+    fallback_ctrl_c: F,
+) -> Option<String>
+where
+    F: FnOnce() -> Option<String>,
+{
+    match outcome {
+        SelectionSourceOutcome::PasswordField => None,
+        SelectionSourceOutcome::Text(t) => clean_selected_text(Some(t)),
+        SelectionSourceOutcome::Unsupported => clean_selected_text(fallback_ctrl_c()),
+    }
+}
+
 /// Etkin penceredeki seçili metni okur.
 pub fn read_selected_text() -> Option<String> {
     #[cfg(windows)]
     {
-        match win_sel::try_read_via_uia() {
-            win_sel::UiaReadOutcome::PasswordField => None,
-            win_sel::UiaReadOutcome::Text(t) => clean_selected_text(Some(t)),
-            win_sel::UiaReadOutcome::Unsupported => {
-                clean_selected_text(clipboard::read_selection_via_ctrl_c())
-            }
-        }
+        resolve_selection_outcome(win_sel::try_read_via_uia(), clipboard::read_selection_via_ctrl_c)
     }
     #[cfg(not(windows))]
     {
@@ -42,6 +63,7 @@ pub fn read_clipboard_text() -> Option<String> {
 
 #[cfg(windows)]
 mod win_sel {
+    use super::SelectionSourceOutcome;
     use windows::core::Interface;
     use windows::Win32::System::Com::{
         CoCreateInstance, CoInitializeEx, CLSCTX_INPROC_SERVER, COINIT_MULTITHREADED,
@@ -51,45 +73,39 @@ mod win_sel {
         UIA_TextPatternId,
     };
 
-    pub enum UiaReadOutcome {
-        PasswordField,
-        Text(String),
-        Unsupported,
-    }
-
-    pub fn try_read_via_uia() -> UiaReadOutcome {
+    pub fn try_read_via_uia() -> SelectionSourceOutcome {
         unsafe {
             let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
             let Ok(uia): Result<IUIAutomation, _> =
                 CoCreateInstance(&CUIAutomation, None, CLSCTX_INPROC_SERVER)
             else {
-                return UiaReadOutcome::Unsupported;
+                return SelectionSourceOutcome::Unsupported;
             };
             let Ok(elem) = uia.GetFocusedElement() else {
-                return UiaReadOutcome::Unsupported;
+                return SelectionSourceOutcome::Unsupported;
             };
 
             // Parola kutusundan ASLA metin okuma (§7.4)
             if let Ok(val) = elem.GetCurrentPropertyValue(UIA_IsPasswordPropertyId) {
                 if let Ok(true) = bool::try_from(&val) {
-                    return UiaReadOutcome::PasswordField;
+                    return SelectionSourceOutcome::PasswordField;
                 }
             }
 
             let Ok(pattern_unk) = elem.GetCurrentPattern(UIA_TextPatternId) else {
-                return UiaReadOutcome::Unsupported;
+                return SelectionSourceOutcome::Unsupported;
             };
             let Ok(text_pattern): Result<IUIAutomationTextPattern, _> = pattern_unk.cast() else {
-                return UiaReadOutcome::Unsupported;
+                return SelectionSourceOutcome::Unsupported;
             };
             let Ok(ranges) = text_pattern.GetSelection() else {
-                return UiaReadOutcome::Unsupported;
+                return SelectionSourceOutcome::Unsupported;
             };
             let Ok(len) = ranges.Length() else {
-                return UiaReadOutcome::Unsupported;
+                return SelectionSourceOutcome::Unsupported;
             };
             if len <= 0 {
-                return UiaReadOutcome::Unsupported;
+                return SelectionSourceOutcome::Unsupported;
             }
 
             let mut combined = String::new();
@@ -108,9 +124,9 @@ mod win_sel {
             }
 
             if combined.trim().is_empty() {
-                UiaReadOutcome::Unsupported
+                SelectionSourceOutcome::Unsupported
             } else {
-                UiaReadOutcome::Text(combined)
+                SelectionSourceOutcome::Text(combined)
             }
         }
     }

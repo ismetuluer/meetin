@@ -3,14 +3,14 @@
 Kaynak: `docs/MEETIN-SARTNAME.md` (§13 aşamaları). Her adım tek commit (gerekirse birkaç küçük commit) ile biter.
 **Sürüm:** Aşama içi adımlar yama numarasını artırır (`0.0.x`, `0.1.x` …); aşama kabul testi geçince küçük sürüm çıkar (`0.1.0` = M1).
 **Durum işaretleri:** `[ ]` başlanmadı · `[~]` yarım · `[x]` tamamlandı (yalnızca dosya + test ile doğrulanınca).
-**Test:** _Oto_ = `cargo test` / `npm test` ile çalışan · _Elle_ = Saul'un yapacağı kontrol.
-**Ajan:** Opus = ana oturum · Sonnet / Haiku = alt ajan (aynı anda tek). Opus, alt ajan çıktısını her zaman dosyada ve testle doğrular.
+**Test:** _Oto_ = `cargo test` / `npm test` ile çalışan · _Elle_ = Kullanıcı / Geliştirici kontrolü.
+**Ajan:** Geliştirici = ana oturum · Alt görev = yardımcı ajan (aynı anda tek). Alt görev çıktısı her zaman dosya ve testle doğrulanır.
 
 ---
 
 ## M1 · Motor → v0.1.0
 
-Bitti ölçütü (§13): `CİPY␣` Notepad, Word, Chrome, Outlook'ta doğru çalışıyor.
+Bitti ölçütü (§13): `MİPY␣` Notepad, Word, Chrome, Outlook'ta doğru çalışıyor.
 
 ### [~] M1.0 · Proje iskeleti — v0.0.1
 
@@ -33,7 +33,7 @@ Bitti ölçütü (§13): `CİPY␣` Notepad, Word, Chrome, Outlook'ta doğru ça
 - **Hedef:** Bellekte kısaltma indeksi; "kelime başında başlar" kuralı; tetik kümesi (boşluk, Enter, Tab, `. , ; : ! ? ) "`); aynı kısaltmanın program kuralına göre seçimi için arayüz (kural verisi M4.5'te dolacak).
 - **Modüller:** `matcher/`
 - **Bitti:** Tuş arabelleği + tetik → eşleşen ifade / yok kararı saf fonksiyonla veriliyor; 10.000 ifadede arama < 1 ms.
-- **Test:** Oto: kelime başı (`xCİPY` açılmaz), her tetik tuşu, mod etkileşimi, benchmark testi.
+- **Test:** Oto: kelime başı (`xMİPY` açılmaz), her tetik tuşu, mod etkileşimi, benchmark testi.
 - **Ajan:** Opus.
 
 ### [ ] M1.3 · SQLite katmanı — v0.0.4
@@ -64,7 +64,7 @@ Bitti ölçütü (§13): `CİPY␣` Notepad, Word, Chrome, Outlook'ta doğru ça
 
 - **Hedef:** Tetik tuşu yutulur → kısaltma Backspace ile silinir → metin `KEYEVENTF_UNICODE` ile yazılır → tetik tuşu sona eklenir. Enjeksiyon sırasında kullanıcının bastığı tuşlar sıraya alınıp sonra iletilir (sıra bozulmaz). Duraklat (`Ctrl+Alt+P` geçici; kısayol kararı M2'de).
 - **Modüller:** `inject/`, `hook/`, `matcher/`
-- **Bitti:** `CİPY␣` Notepad'de doğru; tetik < 50 ms.
+- **Bitti:** `MİPY␣` Notepad'de doğru; tetik < 50 ms.
 - **Test:** Oto: olay dizisi üretimi (saf fonksiyon) · Elle: Notepad, Word, Chrome, Outlook; 100+ kelime/dk hızlı yazma; Enter ile tetik (WhatsApp Web'de mesaj kısaltmayla gitmiyor), Excel hücresi.
 - **Ajan:** Opus.
 
@@ -94,9 +94,9 @@ Bitti ölçütü (§13): `CİPY␣` Notepad, Word, Chrome, Outlook'ta doğru ça
 
 ### [ ] M1.10 · M1 kabul — v0.1.0
 
-- **Hedef:** §13 M1 ölçütü + §14 ilgili elle testler; CHANGELOG; `v0.1.0` etiketi. Kurum içi yazılımda SendInput/pano denemesi [A] (§3.4).
-- **Test:** Elle: Notepad, Word, Chrome, Outlook, kurum yazılımı; uyku/uyanma; boşta işlemci ~%0.
-- **Ajan:** Saul (elle) · Opus (sonuçlara göre düzeltme).
+- **Hedef:** §13 M1 ölçütü + §14 ilgili elle testler; CHANGELOG; `v0.1.0` etiketi. Farklı masaüstü yazılımlarda SendInput/pano denemesi [A] (§3.4).
+- **Test:** Elle: Notepad, Word, Chrome, Outlook, masaüstü yazılımlar; uyku/uyanma; boşta işlemci ~%0.
+- **Ajan:** Kullanıcı (elle) · Geliştirici (sonuçlara göre düzeltme).
 
 ---
 
@@ -153,19 +153,19 @@ Bitti ölçütü: Maskotla arayıp yapıştırma çalışıyor.
 
 ### [ ] M2.7 · M2 kabul — v0.2.0
 
-- **Test:** Elle: §13 M2 ölçütü, bellek < 120 MB, boşta işlemci. **Ajan:** Saul · Opus.
+- **Test:** Elle: §13 M2 ölçütü, bellek < 120 MB, boşta işlemci. **Ajan:** Kullanıcı · Geliştirici.
 
 ---
 
 ## M3 · Ekleme → v0.3.0
 
-Bitti ölçütü: Üç ekleme yolu Word, Chrome ve kurum yazılımında çalışıyor.
+Bitti ölçütü: Üç ekleme yolu Word, Chrome ve diğer masaüstü yazılımlarda çalışıyor.
 
 ### [ ] M3.1 · Seçili metni okuma — v0.2.1
 
 - **Hedef:** UI Automation `TextPattern`; desteklenmiyorsa pano yedekle → `Ctrl+C` → oku → geri yükle.
 - **Modüller:** `selection/`
-- **Test:** Elle: Word, Chrome, Notepad, kurum yazılımı; pano içeriği korunuyor.
+- **Test:** Elle: Word, Chrome, Notepad, masaüstü yazılımlar; pano içeriği korunuyor.
 - **Ajan:** Opus.
 
 ### [ ] M3.2 · Seçim algılama + balon — v0.2.2
@@ -179,7 +179,7 @@ Bitti ölçütü: Üç ekleme yolu Word, Chrome ve kurum yazılımında çalış
 
 - **Hedef:** Önizleme, baş harf kısaltma önerisi (tr-TR), anında çakışma uyarısı, açıklama, klasör, etiket; Enter kaydet → `eat`; "Ayrıntılı düzenle".
 - **Modüller:** `src/island/`, `db/`
-- **Test:** Oto: kısaltma önerisi ("Claude ile Proje Yapmak" → `CİPY`) · Elle: ekle → hemen genişlet.
+- **Test:** Oto: kısaltma önerisi ("Metin ile Pratik Yazım" → `MİPY`) · Elle: ekle → hemen genişlet.
 - **Ajan:** Sonnet · Opus denetim.
 
 ### [ ] M3.4 · Kısayol, panodan ekleme, sıkma — v0.2.4
@@ -189,7 +189,7 @@ Bitti ölçütü: Üç ekleme yolu Word, Chrome ve kurum yazılımında çalış
 - **Test:** Elle: üç yol.
 - **Ajan:** Sonnet (sıkma, düğme) · Opus (kısayol kaydı).
 
-### [ ] M3.5 · M3 kabul — v0.3.0 · **Ajan:** Saul · Opus.
+### [ ] M3.5 · M3 kabul — v0.3.0 · **Ajan:** Kullanıcı · Geliştirici.
 
 ---
 
@@ -232,7 +232,7 @@ Bitti ölçütü: Biçimli ifade Word/Outlook'a biçimiyle gidiyor.
 - **Test:** Oto: kural seçimi · Elle: Windows Terminal, tarayıcıda "WhatsApp" başlığı.
 - **Ajan:** Opus.
 
-### [ ] M4.6 · M4 kabul — v0.4.0 · **Ajan:** Saul · Opus.
+### [ ] M4.6 · M4 kabul — v0.4.0 · **Ajan:** Kullanıcı · Geliştirici.
 
 ---
 
@@ -275,7 +275,7 @@ Bitti ölçütü: PhraseExpress'teki temel işler yapılabiliyor.
 - **Hedef:** `.meetin` (ZIP + JSON), CSV, AHK; `.meetin` → içe aktarma gidiş-dönüş.
 - **Ajan:** Sonnet. **Test:** Oto: gidiş-dönüş eşitliği.
 
-### [ ] M5.8 · M5 kabul — v0.5.0 · **Ajan:** Saul · Opus.
+### [ ] M5.8 · M5 kabul — v0.5.0 · **Ajan:** Kullanıcı · Geliştirici.
 
 ---
 
@@ -330,7 +330,7 @@ Bitti ölçütü: Temiz bir Windows'ta kurulum → güncelleme → kaldırma sor
 
 ### [ ] M6.10 · M6 kabul — v1.0.0
 
-- **Test:** Elle: temiz Windows 10 ve 11 (VM) kurulum → güncelleme → kaldırma; 24 saat açık kalma, bellek; salt okunur USB'de portable. **Ajan:** Saul · Opus.
+- **Test:** Elle: temiz Windows 10 ve 11 (VM) kurulum → güncelleme → kaldırma; 24 saat açık kalma, bellek; salt okunur USB'de portable. **Ajan:** Kullanıcı · Geliştirici.
 
 ---
 

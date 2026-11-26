@@ -65,6 +65,7 @@ pub fn get_mascot_monitor_bounds(app: &AppHandle) -> MonitorBoundsDto {
 }
 
 use crate::db::Storage;
+use crate::windows::{backdrop, theme};
 use crate::AppState;
 
 pub const MASCOT_LABEL: &str = "mascot";
@@ -78,6 +79,7 @@ pub struct MascotWindowState {
     pub fullscreen_hidden: AtomicBool,
     pub anchor_pos: Mutex<Option<(i32, i32)>>,
     pub moved_while_expanded: AtomicBool,
+    pub island_backdrop_active: AtomicBool,
 }
 
 impl MascotWindowState {
@@ -194,6 +196,17 @@ pub fn resize_mascot_window(
 
     #[cfg(windows)]
     apply_no_activate(&win, !focusable);
+
+    let target_role = backdrop::role_for_mascot_size(width, height, focusable);
+    let is_island = target_role == backdrop::WindowRole::MascotIsland;
+    let was_island = state.island_backdrop_active.swap(is_island, Ordering::Relaxed);
+    if is_island {
+        let island_dark =
+            backdrop::resolve_current_island_dark(app, theme::read_system_theme().dark);
+        backdrop::apply_mascot_backdrop(&win, backdrop::WindowRole::MascotIsland, island_dark);
+    } else if was_island {
+        backdrop::apply_mascot_backdrop(&win, backdrop::WindowRole::MascotCompact, false);
+    }
 
     let _ = win.set_size(LogicalSize::new(width, height));
 

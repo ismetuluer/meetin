@@ -128,7 +128,7 @@ pub fn preview_csv(raw: &[u8]) -> Result<CsvTablePreview, CsvImportError> {
     })
 }
 
-/// Çakışma durumunda yeni kısaltma önerir (`CİPY` → `CİPY2`, `CİPY3` …).
+/// Çakışma durumunda yeni kısaltma önerir (`MİPY` → `MİPY2`, `MİPY3` …).
 fn suggest_unique_abbr(base: &str, used_norms: &HashSet<String>, fold_dotted_i: bool) -> String {
     let mut n = 2usize;
     loop {
@@ -301,15 +301,15 @@ mod tests {
 
     #[test]
     fn detects_utf8_and_windows_1254_turkish_characters() {
-        let utf8_csv = "Kısaltma,Metin,Açıklama\nCİPY,\"Claude ile Proje Yapmak, Türkçe şğüöçı\",Örnek\n\n";
+        let utf8_csv = "Kısaltma,Metin,Açıklama\nMİPY,\"Metin ile Pratik Yazım, Türkçe şğüöçı\",Örnek\n\n";
         let prev = preview_csv(utf8_csv.as_bytes()).unwrap();
         assert_eq!(prev.detected_encoding, "UTF-8");
         assert_eq!(prev.detected_delimiter, ",");
         assert_eq!(prev.total_rows, 1);
-        assert_eq!(prev.sample_rows[0][0], "CİPY");
+        assert_eq!(prev.sample_rows[0][0], "MİPY");
         assert_eq!(
             prev.sample_rows[0][1],
-            "Claude ile Proje Yapmak, Türkçe şğüöçı"
+            "Metin ile Pratik Yazım, Türkçe şğüöçı"
         );
 
         // Windows-1254 kodlu ve noktalı virgüllü CSV
@@ -327,7 +327,7 @@ mod tests {
         let dir = TempDir::new().unwrap();
         let storage = Storage::open(&dir.path().join("test.db")).unwrap();
 
-        let csv_data = b"Kisaltma,Metin,Aciklama,Klasor,Etiketler\nC\xC4\xB0PY,Ilk Metin,Acik1,Haber,\"tag1, tag2\"\n";
+        let csv_data = b"Kisaltma,Metin,Aciklama,Klasor,Etiketler\nM\xC4\xB0PY,Ilk Metin,Acik1,Genel,\"tag1, tag2\"\n";
         let mapping = CsvColumnMapping {
             abbr_col: 0,
             content_col: 1,
@@ -348,7 +348,7 @@ mod tests {
         assert_eq!(r_skip.skipped, 1);
         assert_eq!(r_skip.conflicts.len(), 1);
 
-        // SuggestNew -> CİPY2 oluşturulur
+        // SuggestNew -> MİPY2 oluşturulur
         let r_new = import_csv(
             &storage,
             csv_data,
@@ -361,6 +361,6 @@ mod tests {
         assert_eq!(r_new.renamed, 1);
         let all = storage.list_phrases(false).unwrap();
         assert_eq!(all.len(), 2);
-        assert!(all.iter().any(|p| p.abbr == "CİPY2"));
+        assert!(all.iter().any(|p| p.abbr == "MİPY2"));
     }
 }

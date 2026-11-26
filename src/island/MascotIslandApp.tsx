@@ -11,7 +11,7 @@ import {
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
-import { t } from "../i18n";
+import { t, useLanguage } from "../i18n";
 import { MeetinSheep } from "../mascot/MeetinSheep";
 import {
   ANIM_DURATIONS,
@@ -63,6 +63,7 @@ interface PillNotice {
 }
 
 export function MascotIslandApp() {
+  useLanguage();
   const [mode, setMode] = useState<IslandMode>("mascot");
   const [anim, setAnim] = useState<MascotAnim>("idle");
   const [paused, setPaused] = useState(false);

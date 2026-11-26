@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { t } from "../i18n";
+import { t, useLanguage } from "../i18n";
 import "./hoop.css";
 
 interface BasketScorePayload {
@@ -13,6 +13,7 @@ interface BasketScorePayload {
  * Şeffaf masaüstü basketbol potası penceresi (§Mini Oyunlar, v0.3.0).
  */
 export function BasketballHoopApp() {
+  useLanguage();
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
   const [swishKey, setSwishKey] = useState(0);

@@ -6,6 +6,8 @@ use std::time::Duration;
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter};
 
+use crate::windows::backdrop;
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SystemThemeInfo {
     pub dark: bool,
@@ -95,6 +97,7 @@ pub fn start_theme_watcher(app: AppHandle) {
                 let current = read_system_theme();
                 if current != last {
                     last = current.clone();
+                    backdrop::sync_app_windows(&app, current.dark);
                     let _ = app.emit("system-theme-changed", current);
                 }
             }

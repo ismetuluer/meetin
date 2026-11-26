@@ -1,0 +1,109 @@
+name: Meetin Stability & UAT
+
+on:
+  workflow_dispatch:
+    inputs:
+      duration_seconds:
+        description: "Canlı kararlılık (soak) örnekleme süresi (saniye)"
+        required: false
+        default: "30"
+        type: string
+      sample_interval_seconds:
+        description: "Örnekleme aralığı (saniye)"
+        required: false
+        default: "5"
+        type: string
+      max_memory_growth_mb:
+        description: "İzin verilen azami bellek artışı (MB)"
+        required: false
+        default: "15"
+        type: string
+      max_idle_cpu_percent:
+        description: "İzin verilen azami ortalama boşta CPU (%)"
+        required: false
+        default: "1.0"
+        type: string
+  schedule:
+    # Her Pazar UTC 03:00 haftalık kararlılık ve UAT doğrulaması
+    - cron: "0 3 * * 0"
+
+permissions:
+  contents: read
+
+jobs:
+  stability-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Depoyu al
+        uses: actions/checkout@v4
+
+      - name: Node.js kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Rust kur
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Ön yüz test ve derleme
+        shell: pwsh
+        run: |
+          npm ci
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm test
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm run build
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Rust birim, UAT kabul ve bellek soak testleri
+        shell: pwsh
+        run: |
+          cargo test --manifest-path src-tauri/Cargo.toml
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Rust Clippy (-D warnings)
+        shell: pwsh
+        env:
+          CARGO_INCREMENTAL: "0"
+        run: |
+          cargo clippy --all-targets --manifest-path src-tauri/Cargo.toml -- -D warnings
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Kısa canlı kararlılık (soak) ölçümü ve rapor üretimi
+        shell: pwsh
+        env:
+          SOAK_DURATION: ${{ inputs.duration_seconds || '30' }}
+          SOAK_INTERVAL: ${{ inputs.sample_interval_seconds || '5' }}
+          SOAK_MAX_MEM: ${{ inputs.max_memory_growth_mb || '15' }}
+          SOAK_MAX_CPU: ${{ inputs.max_idle_cpu_percent || '1.0' }}
+        run: |
+          $dur = [int]$env:SOAK_DURATION
+          $interval = [int]$env:SOAK_INTERVAL
+          $maxMem = [double]$env:SOAK_MAX_MEM
+          $maxCpu = [double]$env:SOAK_MAX_CPU
+
+          New-Item -ItemType Directory -Path "soak-reports" -Force | Out-Null
+          ./scripts/run-stability-soak.ps1 `
+            -DurationSeconds $dur `
+            -SampleIntervalSeconds $interval `
+            -MaxMemoryGrowthMb $maxMem `
+            -MaxIdleCpuPercent $maxCpu `
+            -DryRun `
+            -OutputReportPath "soak-reports/stability-report.md"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          if ($env:GITHUB_STEP_SUMMARY -and (Test-Path -LiteralPath "soak-reports/stability-report.md")) {
+            Get-Content -LiteralPath "soak-reports/stability-report.md" -Raw | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+          }
+
+      - name: Kararlılık raporlarını artifact olarak yükle
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: meetin-stability-reports
+          path: |
+            soak-reports/stability-report.md
+            soak-reports/stability-report.json
+          if-no-files-found: warn

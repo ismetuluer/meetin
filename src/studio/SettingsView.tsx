@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { t, type TranslationKey } from "../i18n";
+import {
+  setLanguage,
+  t,
+  useLanguage,
+  type Language,
+  type TranslationKey,
+} from "../i18n";
 import {
   playBaaSound,
   playThrowSound,
@@ -17,6 +23,7 @@ import type {
   ShortcutConfigDto,
   StartupStatus,
   UpdateCheckResult,
+  UpdateInstallResult,
 } from "./types";
 import "./settings.css";
 
@@ -68,6 +75,7 @@ export function SettingsView({
   onExport,
   onReplayOnboarding,
 }: SettingsViewProps) {
+  const activeLanguage = useLanguage();
   const [section, setSection] = useState<SettingsSection>("appearance");
   const [settings, setSettings] = useState<AppSettingsDto | null>(null);
   const [userNameDraft, setUserNameDraft] = useState("");
@@ -78,6 +86,8 @@ export function SettingsView({
   const [backups, setBackups] = useState<BackupFileInfo[]>([]);
   const [startup, setStartup] = useState<StartupStatus | null>(null);
   const [updateInfo, setUpdateInfo] = useState<UpdateCheckResult | null>(null);
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [installingUpdate, setInstallingUpdate] = useState(false);
   const [confirmRestore, setConfirmRestore] = useState<string | null>(null);
   const [busyMsg, setBusyMsg] = useState<string | null>(null);
   const [errMsg, setErrMsg] = useState<string | null>(null);
@@ -1002,7 +1012,7 @@ export function SettingsView({
               <div className="settings-row">
                 <div>
                   <div className="card-title">
-                    {t("settings.currentVersionTitle")} v{updateInfo?.current_version ?? "1.2.0"}
+                    {t("settings.currentVersionTitle")} v{updateInfo?.current_version ?? "1.3.0"}
                   </div>
                   <div className="muted small">
                     {updateInfo?.is_portable
@@ -1025,9 +1035,11 @@ export function SettingsView({
                 <button
                   type="button"
                   className="btn btn-primary btn-sm"
+                  disabled={checkingUpdate || installingUpdate}
                   onClick={async () => {
                     setErrMsg(null);
                     setBusyMsg(null);
+                    setCheckingUpdate(true);
                     try {
                       const res = await invoke<UpdateCheckResult>(
                         "check_for_updates",
@@ -1043,49 +1055,206 @@ export function SettingsView({
                       );
                     } catch (err) {
                       setErrMsg(String(err));
+                    } finally {
+                      setCheckingUpdate(false);
                     }
                   }}
                 >
-                  {t("settings.checkUpdateBtn")}
+                  {checkingUpdate
+                    ? t("settings.checkingUpdate")
+                    : t("settings.checkUpdateBtn")}
                 </button>
               </div>
 
               {updateInfo?.update_available && (
                 <div className="case-examples-grid">
-                  <strong>
-                    {t("settings.updateFound", {
-                      ver: updateInfo.latest_version ?? "",
-                    })}
-                  </strong>
-                  <pre className="muted small" style={{ whiteSpace: "pre-wrap", margin: 0 }}>
-                    {updateInfo.notes}
-                  </pre>
-                  {updateInfo.download_url && (
-                    <div className="row-actions" style={{ marginTop: 8 }}>
-                      <a
-                        className="btn btn-primary btn-sm"
-                        href={updateInfo.download_url}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        {t("settings.installNowBtn")}
-                      </a>
-                      <button
-                        type="button"
-                        className="btn btn-sm"
-                        onClick={() =>
-                          setUpdateInfo({
-                            ...updateInfo,
-                            update_available: false,
-                          })
-                        }
-                      >
-                        {t("settings.laterBtn")}
-                      </button>
+                  <div className="update-header-row">
+                    <strong>
+                      {t("settings.updateFound", {
+                        ver: updateInfo.latest_version ?? "",
+                      })}
+                    </strong>
+                    <span
+                      className={`update-sig-badge is-${updateInfo.signature_status}`}
+                    >
+                      {t(
+                        `settings.sigStatus.${updateInfo.signature_status}` as TranslationKey,
+                      )}
+                    </span>
+                  </div>
+
+                  {updateInfo.notes && (
+                    <pre
+                      className="muted small"
+                      style={{ whiteSpace: "pre-wrap", margin: 0 }}
+                    >
+                      {updateInfo.notes}
+                    </pre>
+                  )}
+
+                  {updateInfo.signature_status === "invalid" && (
+                    <div className="error-banner" style={{ marginTop: 4 }}>
+                      {t("settings.updateInvalidSigWarning")}
                     </div>
                   )}
+
+                  {updateInfo.signature_status === "unsigned" && (
+                    <div className="muted small">
+                      {t("settings.updateUnsignedHint")}
+                    </div>
+                  )}
+
+                  {updateInfo.signature_status !== "invalid" &&
+                    !updateInfo.can_auto_install && (
+                      <div className="muted small">
+                        {t("settings.updateNoAutoInstallHint")}
+                      </div>
+                    )}
+
+                  <div className="row-actions" style={{ marginTop: 8 }}>
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-sm"
+                      disabled={
+                        installingUpdate ||
+                        !updateInfo.can_auto_install ||
+                        updateInfo.signature_status === "invalid"
+                      }
+                      onClick={async () => {
+                        setErrMsg(null);
+                        setBusyMsg(t("settings.updatingProgress"));
+                        setInstallingUpdate(true);
+                        try {
+                          const res = await invoke<UpdateInstallResult>(
+                            "install_verified_update",
+                            { manifestSource: null },
+                          );
+                          setBusyMsg(
+                            t("settings.updateRestarting", {
+                              ver: res.version,
+                            }),
+                          );
+                        } catch (err) {
+                          setBusyMsg(null);
+                          setErrMsg(String(err));
+                          setInstallingUpdate(false);
+                        }
+                      }}
+                    >
+                      {installingUpdate
+                        ? t("settings.updatingProgress")
+                        : t("settings.downloadAndUpdateBtn")}
+                    </button>
+
+                    {updateInfo.signature_status !== "invalid" &&
+                      !updateInfo.can_auto_install &&
+                      updateInfo.download_url && (
+                        <a
+                          className="btn btn-sm"
+                          href={updateInfo.download_url}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {t("settings.manualDownloadBtn")}
+                        </a>
+                      )}
+
+                    <button
+                      type="button"
+                      className="btn btn-sm"
+                      disabled={installingUpdate}
+                      onClick={() =>
+                        setUpdateInfo({
+                          ...updateInfo,
+                          update_available: false,
+                        })
+                      }
+                    >
+                      {t("settings.laterBtn")}
+                    </button>
+                  </div>
                 </div>
               )}
+            </div>
+          </div>
+        ) : section === "language" ? (
+          <div className="settings-page">
+            <h2>{t("settings.nav.language")}</h2>
+            <div className="settings-card">
+              <div className="settings-row">
+                <div>
+                  <div className="card-title">{t("settings.languageTitle")}</div>
+                  <div className="muted small">{t("settings.languageDesc")}</div>
+                </div>
+                <div className="segmented-control" role="radiogroup" aria-label={t("settings.languageTitle")}>
+                  {(["tr", "en"] as const).map((langOpt: Language) => (
+                    <button
+                      key={langOpt}
+                      type="button"
+                      role="radio"
+                      aria-checked={activeLanguage === langOpt}
+                      className={`seg-btn ${activeLanguage === langOpt ? "is-active" : ""}`}
+                      onClick={async () => {
+                        setErrMsg(null);
+                        setLanguage(langOpt);
+                        setSettings((prev) =>
+                          prev ? { ...prev, language: langOpt } : prev,
+                        );
+                        try {
+                          await invoke<string>("set_language", {
+                            language: langOpt,
+                          });
+                          setBusyMsg(t("settings.saved"));
+                        } catch (err) {
+                          setErrMsg(String(err));
+                        }
+                      }}
+                    >
+                      {t(`settings.lang.${langOpt}` as TranslationKey)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="source-cards" style={{ marginTop: 14 }}>
+                {(["tr", "en"] as const).map((langOpt: Language) => {
+                  const isActive = activeLanguage === langOpt;
+                  return (
+                    <button
+                      key={langOpt}
+                      type="button"
+                      className={`source-card ${isActive ? "is-active" : ""}`}
+                      onClick={async () => {
+                        setErrMsg(null);
+                        setLanguage(langOpt);
+                        setSettings((prev) =>
+                          prev ? { ...prev, language: langOpt } : prev,
+                        );
+                        try {
+                          await invoke<string>("set_language", {
+                            language: langOpt,
+                          });
+                          setBusyMsg(t("settings.saved"));
+                        } catch (err) {
+                          setErrMsg(String(err));
+                        }
+                      }}
+                    >
+                      <div className="source-radio">
+                        <span className={`radio-dot ${isActive ? "is-checked" : ""}`} />
+                        <strong>{t(`settings.lang.${langOpt}` as TranslationKey)}</strong>
+                      </div>
+                      <span className="muted small">
+                        {t(`settings.lang.${langOpt}Desc` as TranslationKey)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <p className="muted small" style={{ margin: "12px 0 0" }}>
+                {t("settings.languageLiveHint")}
+              </p>
             </div>
           </div>
         ) : (

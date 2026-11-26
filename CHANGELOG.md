@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü (CHANGELOG)
 
+## [1.3.0] - 2026-11-26 (Mica/Acrylic · .mee ZIP Medya · WYSIWYG & İngilizce · İmzalı Güncelleme · Yardım Merkezi · UAT/Kararlılık)
+
+### Eklenenler ve İyileştirmeler
+- **Faz A · Windows 11 Mica / Acrylic saydamlığı:** `Win32_Graphics_Dwm` ile Windows 11 ana penceresinde gerçek **Mica**, arama/ekleme/form adalarında **Acrylic** arka plan, kompakt maskot ve Windows 10'da güvenli Fluent geri düşümü + `DWMWA_USE_IMMERSIVE_DARK_MODE` canlı senkronu eklendi.
+- **Faz B · `.mee` Zengin Medya ZIP arşivi:** Standart ZIP (`manifest.json`, `library.json`, SHA-256 tekilleştirilmiş `assets/<hash>.<ext>`) dışa/içe aktarma desteği getirildi; eski düz JSON `.mee`/`.meetin` dosyalarıyla geriye dönük tam uyumluluk, bozuk arşiv/CRC-32/path-traversal doğrulaması ve düzenleyiciye görsel ekleme/önizleme eklendi.
+- **Faz C · Tam WYSIWYG düzenleyici ve İngilizce (`en.json`):** Canlı `RichEditor` (Kalın, İtalik, Altı çizili, Madde/Numaralı liste, URL doğrulamalı Bağlantı, Biçimi temizle, Görsel ekle, Değişken ekle + XSS beyaz liste temizleyici, CF_HTML/RTF `ol`/`a` desteği) ve **Ayarlar › Dil** altından yeniden başlatmadan tüm pencerelerde anında geçiş yapan **Türkçe / English** desteği eklendi.
+- **Faz D · Kriptografik İmzalı Sessiz Güncelleme:** Windows CNG ECDSA P-256 + akış SHA-256 doğrulamalı `install_verified_update` komutu (`Meetin` NSIS `/S` sessiz kurulum/yeniden başlatma ve Portable `Meetin.old.exe` yükseltme), **Ayarlar › Güncelleme** içinde imza rozeti + tek tık **"İndir ve Güncelle"**, isteğe bağlı CI imzalama adımları ve imzalama betikleri (`scripts/generate-signing-keys.ps1`, `scripts/sign-manifest.ps1`, `docs/GUNCELLEME_IMZALAMA.md`) eklendi.
+- **Faz E · UAT & Kararlılık Altyapısı:** 6 hedef uygulama (`WINWORD.EXE`, `EXCEL.EXE`, `chrome.exe`, `slack.exe`, `notepad.exe`, `WindowsTerminal.exe`) için otomatik kabul test paketi (`uat_acceptance.rs`), 120k+ tuş / SQLite / `K32GetProcessMemoryInfo` bellek sızıntısı soak testleri (`stability_soak.rs`), `scripts/run-stability-soak.ps1` canlı 24 saat izleyici ve haftalık CI iş akışı (`.github/workflows/stability.yml`) eklendi; UAT sırasında yakalanan ASCII işlem adı Türkçe-`I` eşleşme farkı düzeltildi.
+- **Uygulama içi Yardım Merkezi (`F1`) ve Gizlilik Temizliği:** Aranabilir **Yardım Merkezi** (`HelpView`) ve [docs/YARDIM.md](docs/YARDIM.md) eklendi; tüm arayüz, test, doküman ve gerçek uygulama ekran görüntüleri genel kullanıma uygun olarak temizlendi.
+
 ## [1.2.0] - 2026-11-26 (Ses Ayarları · Shift+F3 Döngüsü · Toplu Seçim · Sola Kaydır Sil · Klasör Renkleri)
 
 ### Eklenenler ve İyileştirmeler
@@ -114,7 +124,7 @@
 - **Seçim algılama ve `+ Ekle` balonu (M3.2):** Fare sürükleme / çift-üç tık seçimi sonrası ~300 ms bekleyip imlecin yanında odak çalmayan şeffaf `+ Ekle` balonu açılır; 3 sn içinde ya da yazma/tıklama devam edince sessizce gizlenir. `photoshop.exe` ve dışlanan programlarda gizlenir.
 - **Ekleme adası ve üç ekleme yolu (M3.3 & M3.4):**
   - Seçim balonu, `Ctrl+Alt+E` kısayolu ve maskotu ≥ 450 ms basılı tutup sıkma (`open_add_from_squeeze`) ile Ekleme Adası açılır.
-  - tr-TR baş harf kısaltma önerisi (`"Claude ile Proje Yapmak"` → `"CİPY"`), anlık çakışma uyarısı, klasör ve etiket alanları, `"Panodakini ifade yap"`, `"Ayrıntılı düzenle"` ve `Enter` ile kaydedince `eat` animasyonu + onay hapı.
+  - tr-TR baş harf kısaltma önerisi (`"Metin ile Pratik Yazım"` → `"MİPY"`), anlık çakışma uyarısı, klasör ve etiket alanları, `"Panodakini ifade yap"`, `"Ayrıntılı düzenle"` ve `Enter` ile kaydedince `eat` animasyonu + onay hapı.
 
 ## [0.1.8] - 2026-11-26
 
@@ -151,7 +161,7 @@
 ### Eklenenler
 - **Proje iskeleti (M1.0):** Tauri 2 + React 19 + TypeScript (Vite) yapısı, §10 modül yerleşimi, Vitest ve `cargo test` kurulumu.
 - **tr-TR harf kuralları (M1.1):** `tr_upper`, `tr_lower`, `tr_title`, `normalize_abbr`, `apply_case` (Yazışa uy / Aynen getir / Birebir eşleşme) ve isteğe bağlı noktasız/noktalı i eşitleme ayarı; çekirdekte standart `to_uppercase()` kullanılmadı.
-- **Eşleme motoru (M1.2):** Bellek içi kısaltma indeksi, kelime başı kontrolü (`xCİPY` genişlemez), çok kelimeli kısaltma desteği (`ABD BAŞKAN`), §3.1 tetik tuşları, program kuralları arayüzü ve 10.000 ifadede < 1 ms arama testi.
+- **Eşleme motoru (M1.2):** Bellek içi kısaltma indeksi, kelime başı kontrolü (`xMİPY` genişlemez), çok kelimeli kısaltma desteği (`İYİ GÜNLER`), §3.1 tetik tuşları, program kuralları arayüzü ve 10.000 ifadede < 1 ms arama testi.
 - **SQLite katmanı (M1.3):** `rusqlite` (bundled), WAL modu, otomatik şema geçişi (`schema_migrations` v1 — §7.1 tüm tabloları), transaction içi CRUD, `deleted_at` çöp kutusu ve `%APPDATA%\Meetin\` / `portable.flag → .\data\` veri yolu seçimi.
 - **Otomatik yedekleme (M1.4):** İlk açılışta ve kapanışta `VACUUM INTO backups\meetin-YYYY-MM-DD.db`, son 30 kopya rotasyonu.
 - **Klavye ve fare kancası (M1.5):** Ayrı iş parçacığında `WH_KEYBOARD_LL` + `WH_MOUSE_LL`, `ToUnicodeEx` (`uFlags=0x4` ile ölü tuş koruması), 64 karakterlik yalnız-bellek arabelleği, `dwExtraInfo` imza koruması, dışlanan programlar ve UI Automation `IsPassword` koruması.

@@ -202,8 +202,8 @@ mod tests {
         let storage = Storage::open(&db_path).unwrap();
         storage
             .create_phrase(&NewPhrase {
-                abbr: "CİPY".to_string(),
-                content: "Claude ile Proje Yapmak".to_string(),
+                abbr: "MİPY".to_string(),
+                content: "Metin ile Pratik Yazım".to_string(),
                 content_html: None,
                 description: "Test".to_string(),
                 folder_id: None,
@@ -239,8 +239,8 @@ mod tests {
         let restored = Storage::open(&latest).unwrap();
         let phrases = restored.list_phrases(false).unwrap();
         assert_eq!(phrases.len(), 1);
-        assert_eq!(phrases[0].abbr, "CİPY");
-        assert_eq!(phrases[0].content, "Claude ile Proje Yapmak");
+        assert_eq!(phrases[0].abbr, "MİPY");
+        assert_eq!(phrases[0].content, "Metin ile Pratik Yazım");
     }
 
     #[test]

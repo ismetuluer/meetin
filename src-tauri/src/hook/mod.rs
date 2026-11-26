@@ -206,7 +206,9 @@ pub fn is_process_excluded(process_name: Option<&str>, excluded: &[String]) -> b
         return false;
     };
     let lower = tr_lower(name);
-    excluded.iter().any(|e| e == &lower)
+    excluded
+        .iter()
+        .any(|e| e.eq_ignore_ascii_case(name) || e == &lower)
 }
 
 /// Seçim balonunun bu programda gizlenip gizlenmeyeceğini denetler (§4.1).
@@ -215,12 +217,15 @@ pub fn is_bubble_hidden_process(process_name: Option<&str>, excluded: &[String])
         return false;
     };
     let lower = tr_lower(name);
-    if excluded.iter().any(|e| e == &lower) {
+    if excluded
+        .iter()
+        .any(|e| e.eq_ignore_ascii_case(name) || e == &lower)
+    {
         return true;
     }
     DEFAULT_BUBBLE_HIDDEN_PROCESSES
         .iter()
-        .any(|&p| p == lower)
+        .any(|&p| p.eq_ignore_ascii_case(name) || p == lower)
 }
 
 #[derive(Debug, Clone)]

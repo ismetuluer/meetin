@@ -1,7 +1,11 @@
 {
-  "version": "0.5.10",
+  "version": "1.3.0",
   "pub_date": "2026-11-28T10:00:00Z",
-  "notes": "- Öneri adası hızlandırıldı\n- Türkçe harf uyumu iyileştirildi",
-  "download_url": "https://github.com/OWNER/meetin/releases/download/v0.5.10/Meetin_0.5.10_x64-setup.exe",
-  "sha256": ""
+  "notes": "- İmzalı tek tıkla sessiz güncelleme eklendi\n- SHA-256 ve ECDSA P-256 bütünlük doğrulaması etkinleştirildi",
+  "download_url": "https://github.com/OWNER/meetin/releases/download/v1.3.0/Meetin_1.3.0_x64-setup.exe",
+  "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+  "portable_url": "https://github.com/OWNER/meetin/releases/download/v1.3.0/Meetin_1.3.0_portable.zip",
+  "portable_sha256": "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
+  "signature": "",
+  "key_id": "meetin-release-1"
 }

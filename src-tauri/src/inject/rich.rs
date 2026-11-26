@@ -37,6 +37,7 @@ pub fn build_cf_html(fragment: &str) -> Vec<u8> {
 pub fn html_to_plain_text(html: &str) -> String {
     let mut out = String::with_capacity(html.len());
     let mut chars = html.chars().peekable();
+    let mut list_stack: Vec<Option<usize>> = Vec::new();
 
     while let Some(c) = chars.next() {
         if c == '<' {
@@ -48,12 +49,38 @@ pub fn html_to_plain_text(html: &str) -> String {
                 tag.push(tc);
             }
             let lower = tag.trim().to_ascii_lowercase();
-            if lower.starts_with("br") || lower == "/p" || lower == "/div" || lower == "/li" {
-                if !out.ends_with('\n') && !out.is_empty() {
-                    out.push('\n');
+            let name = lower
+                .split_whitespace()
+                .next()
+                .unwrap_or("")
+                .trim_end_matches('/');
+            match name {
+                "ul" => list_stack.push(None),
+                "ol" => list_stack.push(Some(0)),
+                "/ul" | "/ol" => {
+                    list_stack.pop();
+                    if !out.ends_with('\n') && !out.is_empty() {
+                        out.push('\n');
+                    }
                 }
-            } else if lower.starts_with("li") {
-                out.push_str("• ");
+                "br" | "/p" | "/div" | "/li" => {
+                    if !out.ends_with('\n') && !out.is_empty() {
+                        out.push('\n');
+                    }
+                }
+                "li" => {
+                    if !out.is_empty() && !out.ends_with('\n') {
+                        out.push('\n');
+                    }
+                    match list_stack.last_mut() {
+                        Some(Some(idx)) => {
+                            *idx += 1;
+                            out.push_str(&format!("{idx}. "));
+                        }
+                        _ => out.push_str("• "),
+                    }
+                }
+                _ => {}
             }
         } else if c == '&' {
             let mut ent = String::new();
@@ -72,6 +99,7 @@ pub fn html_to_plain_text(html: &str) -> String {
                 "lt" => out.push('<'),
                 "gt" => out.push('>'),
                 "quot" => out.push('"'),
+                "#39" | "apos" => out.push('\''),
                 "nbsp" => out.push(' '),
                 _ => {
                     out.push('&');
@@ -114,6 +142,7 @@ pub fn html_to_rtf(html: &str) -> Vec<u8> {
     let mut rtf = String::from(
         "{\\rtf1\\ansi\\ansicpg1254\\deff0{\\fonttbl{\\f0 Segoe UI;}}\\uc1\\f0\\fs22 ",
     );
+    let mut list_stack: Vec<Option<usize>> = Vec::new();
 
     let mut rest = html;
     while !rest.is_empty() {
@@ -140,13 +169,24 @@ pub fn html_to_rtf(html: &str) -> Vec<u8> {
                 "/b" | "/strong" => rtf.push('}'),
                 "i" | "em" => rtf.push_str("{\\i "),
                 "/i" | "/em" => rtf.push('}'),
-                "u" => rtf.push_str("{\\ul "),
-                "/u" => rtf.push('}'),
+                "u" | "a" => rtf.push_str("{\\ul "),
+                "/u" | "/a" => rtf.push('}'),
                 "h1" | "h2" | "h3" => rtf.push_str("{\\b\\fs28 "),
                 "/h1" | "/h2" | "/h3" => rtf.push_str("}\\par "),
                 "br" => rtf.push_str("\\line "),
                 "/p" | "/div" => rtf.push_str("\\par "),
-                "li" => rtf.push_str("\\bullet  "),
+                "ul" => list_stack.push(None),
+                "ol" => list_stack.push(Some(0)),
+                "/ul" | "/ol" => {
+                    list_stack.pop();
+                }
+                "li" => match list_stack.last_mut() {
+                    Some(Some(idx)) => {
+                        *idx += 1;
+                        rtf.push_str(&format!("{idx}. "));
+                    }
+                    _ => rtf.push_str("\\bullet  "),
+                },
                 "/li" => rtf.push_str("\\par "),
                 _ => {}
             }
@@ -171,6 +211,8 @@ fn decode_entities(s: &str) -> String {
         .replace("&lt;", "<")
         .replace("&gt;", ">")
         .replace("&quot;", "\"")
+        .replace("&#39;", "'")
+        .replace("&apos;", "'")
 }
 
 #[cfg(test)]
@@ -226,5 +268,18 @@ mod tests {
     fn extracts_plain_text_from_html() {
         let plain = html_to_plain_text("<p><b>Selam</b><br/>Dünya &amp; Ay</p>");
         assert_eq!(plain, "Selam\nDünya & Ay");
+    }
+
+    #[test]
+    fn converts_ordered_and_unordered_lists_and_links() {
+        let html = "<ul><li>Bir</li><li>İki</li></ul><ol><li>İlk</li><li>Son</li></ol><a href=\"https://example.com\">Bağlantı</a>";
+        let plain = html_to_plain_text(html);
+        assert_eq!(plain, "• Bir\n• İki\n1. İlk\n2. Son\nBağlantı");
+
+        let rtf = String::from_utf8_lossy(&html_to_rtf(html)).into_owned();
+        assert!(rtf.contains("\\bullet  Bir\\par "));
+        assert!(rtf.contains("1. \\u304?lk\\par "));
+        assert!(rtf.contains("2. Son\\par "));
+        assert!(rtf.contains("{\\ul Ba\\u287?lant\\u305?}"));
     }
 }

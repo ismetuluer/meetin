@@ -6,6 +6,14 @@
   background: var(--zemin);
 }
 
+html.has-mica-backdrop .settings-shell {
+  background: var(--mica-zemin);
+}
+
+html.has-mica-backdrop .settings-content {
+  background: var(--mica-yuzey);
+}
+
 .settings-sidebar {
   border-right: 1px solid var(--cizgi);
   padding: 12px 10px;
@@ -569,4 +577,39 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+.update-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.update-sig-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px;
+  border-radius: var(--r-pill);
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid var(--cizgi);
+  background: var(--yuzey-2);
+}
+
+.update-sig-badge.is-verified {
+  color: var(--basari);
+  border-color: var(--basari);
+}
+
+.update-sig-badge.is-unsigned {
+  color: var(--uyari);
+  border-color: var(--uyari);
+}
+
+.update-sig-badge.is-invalid {
+  color: var(--hata);
+  border-color: var(--hata);
 }

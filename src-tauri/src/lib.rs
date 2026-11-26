@@ -34,9 +34,11 @@ use crate::io::csv::{
 use crate::io::formats::{
     export_ahk, export_csv, export_meetin_json, import_items, parse_import_file, ImportedPhraseItem,
 };
+use crate::io::mee_archive::export_mee_archive as build_mee_archive;
 use crate::matcher::case::{tr_lower, tr_title, tr_upper};
 use crate::matcher::AppRule;
 use crate::vars::{extract_form_fields, FormField};
+use crate::windows::backdrop::{self, WindowBackdropInfo};
 use crate::windows::bubble::{self, BubbleState, BUBBLE_LABEL};
 use crate::windows::hoop::{
     get_current_hoop_rim, place_hoop_on_screen, toggle_hoop, HoopRimRect, HoopState, HOOP_LABEL,
@@ -50,7 +52,7 @@ use crate::windows::mascot::{
 use crate::windows::startup::{self, StartupStatus};
 use crate::windows::theme::{self, SystemThemeInfo};
 use crate::windows::tray;
-use crate::updater::UpdateCheckResult;
+use crate::updater::{UpdateCheckResult, UpdateInstallResult};
 
 pub const DEFAULT_UPDATE_MANIFEST_URL: &str =
     "https://github.com/ismetuluer/meetin/releases/latest/download/latest.json";
@@ -102,6 +104,21 @@ fn format_shortcut_display(raw: &str) -> String {
     raw.trim()
         .replace("CommandOrControl+", "Ctrl+")
         .replace("commandorcontrol+", "Ctrl+")
+}
+
+/// Desteklenen arayüz dili kodunu normalleştirir (`"tr"` veya `"en"`).
+pub fn normalize_language_code(raw: &str) -> &'static str {
+    let trimmed = raw.trim();
+    let bytes = trimmed.as_bytes();
+    if bytes.eq_ignore_ascii_case(b"en")
+        || (bytes.len() >= 3
+            && bytes[..2].eq_ignore_ascii_case(b"en")
+            && matches!(bytes[2], b'-' | b'_'))
+    {
+        "en"
+    } else {
+        "tr"
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -271,6 +288,11 @@ fn get_system_theme() -> SystemThemeInfo {
 }
 
 #[tauri::command]
+fn get_window_backdrop_info() -> WindowBackdropInfo {
+    backdrop::current_backdrop_info()
+}
+
+#[tauri::command]
 fn get_theme_config(state: State<'_, AppState>) -> Result<Option<String>, String> {
     state
         .storage
@@ -288,6 +310,11 @@ fn save_theme_config(
         .storage
         .set_setting("theme_config", &config_json)
         .map_err(|e| e.to_string())?;
+    backdrop::sync_app_windows_with_config(
+        &app,
+        Some(&config_json),
+        theme::read_system_theme().dark,
+    );
     let _ = app.emit("theme-config-changed", config_json);
     Ok(())
 }
@@ -357,7 +384,8 @@ fn get_app_settings(state: State<'_, AppState>) -> Result<AppSettingsDto, String
         .get_setting("language")
         .ok()
         .flatten()
-        .unwrap_or_else(|| "tr-TR".to_string());
+        .map(|v| normalize_language_code(&v).to_string())
+        .unwrap_or_else(|| "tr".to_string());
     let update_manifest_url = state
         .storage
         .get_setting("update_manifest_url")
@@ -615,16 +643,10 @@ fn get_update_env_info() -> UpdateCheckResult {
     updater::current_env_info()
 }
 
-#[tauri::command]
-fn check_for_updates(
-    app: AppHandle,
-    state: State<'_, AppState>,
-    manifest_source: Option<String>,
-) -> Result<UpdateCheckResult, String> {
+fn resolve_manifest_source(storage: &Storage, manifest_source: Option<String>) -> String {
     let raw = manifest_source.unwrap_or_default();
-    let effective = if raw.trim().is_empty() {
-        state
-            .storage
+    if raw.trim().is_empty() {
+        storage
             .get_setting("update_manifest_url")
             .ok()
             .flatten()
@@ -632,12 +654,48 @@ fn check_for_updates(
             .unwrap_or_else(|| DEFAULT_UPDATE_MANIFEST_URL.to_string())
     } else {
         raw.trim().to_string()
-    };
+    }
+}
+
+#[tauri::command]
+fn check_for_updates(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    manifest_source: Option<String>,
+) -> Result<UpdateCheckResult, String> {
+    let effective = resolve_manifest_source(&state.storage, manifest_source);
     let cur = env!("CARGO_PKG_VERSION");
     let portable = startup::is_portable_mode();
     let res = updater::check_manifest_source(&effective, cur, portable)?;
-    if res.update_available {
+    if res.update_available && res.signature_status != updater::SIG_STATUS_INVALID {
         let _ = app.emit("update-available", res.latest_version.clone().unwrap_or_default());
+    }
+    Ok(res)
+}
+
+#[tauri::command]
+fn install_verified_update(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    manifest_source: Option<String>,
+) -> Result<UpdateInstallResult, String> {
+    let effective = resolve_manifest_source(&state.storage, manifest_source);
+    let cur = env!("CARGO_PKG_VERSION");
+    let portable = startup::is_portable_mode();
+
+    // Güncellemeden önce veritabanının güvenlik yedeğini al
+    let _ = state.storage.create_backup_now();
+
+    let res = updater::install_verified_update_from_source(&effective, cur, portable)?;
+    if res.will_restart {
+        let app_exit = app.clone();
+        thread::Builder::new()
+            .name("meetin-upd-exit".to_string())
+            .spawn(move || {
+                thread::sleep(Duration::from_millis(250));
+                app_exit.exit(0);
+            })
+            .ok();
     }
     Ok(res)
 }
@@ -780,6 +838,21 @@ fn set_user_profile(state: State<'_, AppState>, user_name: String) -> Result<(),
         .storage
         .set_setting("user_name", user_name.trim())
         .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn set_language(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    language: String,
+) -> Result<String, String> {
+    let norm = normalize_language_code(&language);
+    state
+        .storage
+        .set_setting("language", norm)
+        .map_err(|e| e.to_string())?;
+    let _ = app.emit("language-changed", norm);
+    Ok(norm.to_string())
 }
 
 #[tauri::command]
@@ -1296,6 +1369,27 @@ fn export_phrases_subset(
 }
 
 #[tauri::command]
+fn export_phrases_subset_mee(
+    state: State<'_, AppState>,
+    phrase_ids: Vec<i64>,
+) -> Result<Vec<u8>, String> {
+    let phrases = state
+        .storage
+        .list_phrases_by_ids(&phrase_ids)
+        .map_err(|e| e.to_string())?;
+    let all_folders = state.storage.list_folders().map_err(|e| e.to_string())?;
+    let used_folder_ids: HashSet<i64> = phrases
+        .iter()
+        .flat_map(|p| p.folder_id.into_iter().chain(p.folder_ids.iter().copied()))
+        .collect();
+    let folders: Vec<FolderRecord> = all_folders
+        .into_iter()
+        .filter(|f| used_folder_ids.contains(&f.id))
+        .collect();
+    build_mee_archive(&phrases, &folders, env!("CARGO_PKG_VERSION")).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 fn list_phrase_versions(
     state: State<'_, AppState>,
     phrase_id: i64,
@@ -1400,6 +1494,13 @@ fn export_library(state: State<'_, AppState>, format: String) -> Result<String, 
     } else {
         export_meetin_json(&phrases, &folders).map_err(|e| e.to_string())
     }
+}
+
+#[tauri::command]
+fn export_mee_archive(state: State<'_, AppState>) -> Result<Vec<u8>, String> {
+    let phrases = state.storage.list_phrases(false).map_err(|e| e.to_string())?;
+    let folders = state.storage.list_folders().map_err(|e| e.to_string())?;
+    build_mee_archive(&phrases, &folders, env!("CARGO_PKG_VERSION")).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -1686,6 +1787,7 @@ pub fn run() {
                 mascot::apply_no_activate(&hoop_win, true);
             }
             mascot::restore_saved_position(app.handle(), &storage);
+            backdrop::sync_app_windows(app.handle(), theme::read_system_theme().dark);
             mascot::start_environment_watcher(app.handle().clone());
             theme::start_theme_watcher(app.handle().clone());
             let _ = storage.purge_expired_trash(30);
@@ -1709,7 +1811,9 @@ pub fn run() {
                             env!("CARGO_PKG_VERSION"),
                             portable,
                         ) {
-                            if res.update_available {
+                            if res.update_available
+                                && res.signature_status != updater::SIG_STATUS_INVALID
+                            {
                                 let _ = app_upd.emit(
                                     "update-available",
                                     res.latest_version.unwrap_or_default(),
@@ -1737,6 +1841,7 @@ pub fn run() {
             toggle_pause,
             set_fold_dotted_i,
             get_system_theme,
+            get_window_backdrop_info,
             get_theme_config,
             save_theme_config,
             get_app_settings,
@@ -1753,10 +1858,12 @@ pub fn run() {
             set_admin_autostart,
             get_update_env_info,
             check_for_updates,
+            install_verified_update,
             set_excluded_processes,
             set_mascot_prefs,
             set_shortcuts_config,
             set_user_profile,
+            set_language,
             open_data_dir,
             complete_onboarding,
             list_backups,
@@ -1795,6 +1902,7 @@ pub fn run() {
             delete_folder,
             update_folder,
             export_phrases_subset,
+            export_phrases_subset_mee,
             list_phrase_versions,
             restore_phrase_version,
             hard_delete_phrase,
@@ -1805,6 +1913,7 @@ pub fn run() {
             parse_import_file_cmd,
             bulk_create_phrases,
             export_library,
+            export_mee_archive,
             quit_app,
             paste_phrase_from_island,
         ])
@@ -1817,4 +1926,24 @@ pub fn run() {
             let _ = storage_for_exit.create_backup_now();
         }
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn normalizes_language_codes_safely() {
+        assert_eq!(normalize_language_code("tr"), "tr");
+        assert_eq!(normalize_language_code("tr-TR"), "tr");
+        assert_eq!(normalize_language_code("Türkçe"), "tr");
+        assert_eq!(normalize_language_code("İngilizce"), "tr");
+        assert_eq!(normalize_language_code("en"), "en");
+        assert_eq!(normalize_language_code("en-US"), "en");
+        assert_eq!(normalize_language_code("en_GB"), "en");
+        assert_eq!(normalize_language_code(" EN "), "en");
+        assert_eq!(normalize_language_code("english"), "tr");
+        assert_eq!(normalize_language_code(""), "tr");
+        assert_eq!(normalize_language_code("de-DE"), "tr");
+    }
 }

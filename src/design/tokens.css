@@ -32,6 +32,11 @@
   --ada-zemin: rgba(255, 255, 255, 0.92);
   --ada-metin: #1b1a20;
 
+  /* Windows 11 Mica / Acrylic yarı saydam yüzey tokenları (Faz A) */
+  --mica-zemin: color-mix(in srgb, var(--zemin) 78%, transparent);
+  --mica-yuzey: color-mix(in srgb, var(--yuzey) 88%, transparent);
+  --ada-acrylic-zemin: color-mix(in srgb, var(--ada-zemin) 86%, transparent);
+
   /* Maskot renkleri (kullanıcı değiştiremez, §5.1 & §11.4) */
   --koyun-yun: #ffffff;
   --koyun-komur: #2e2a28;
@@ -102,6 +107,12 @@ body,
   transition: background-color 200ms ease, color 200ms ease;
 }
 
+html.has-mica-backdrop,
+html.has-mica-backdrop body,
+html.has-mica-backdrop #root {
+  background: transparent;
+}
+
 *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -127,6 +138,9 @@ body,
     --vurgu: Highlight;
     --vurgu-ustu: HighlightText;
     --vurgu-zayif: Canvas;
+    --mica-zemin: Canvas;
+    --mica-yuzey: Canvas;
+    --ada-acrylic-zemin: Canvas;
   }
 }
 

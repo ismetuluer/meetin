@@ -13,6 +13,7 @@ use thiserror::Error;
 
 use crate::db::{DbError, FolderRecord, NewPhrase, PhraseRecord, Storage, UpdatePhrase};
 use crate::io::csv::{decode_bytes, ConflictStrategy, CsvImportSummary};
+use crate::io::mee_archive::{import_mee_archive, looks_like_zip, MeeArchiveError};
 use crate::matcher::case::{normalize_abbr, tr_upper, CaseMode};
 
 #[derive(Debug, Error)]
@@ -23,6 +24,8 @@ pub enum FormatIoError {
     Csv(#[from] csv::Error),
     #[error("Veritabanı hatası: {0}")]
     Db(#[from] DbError),
+    #[error("{0}")]
+    Archive(#[from] MeeArchiveError),
     #[error("Desteklenmeyen dosya biçimi: {0}")]
     UnsupportedFormat(String),
 }
@@ -446,7 +449,11 @@ pub fn parse_import_file(
         || ext.eq_ignore_ascii_case("meetin")
         || ext.eq_ignore_ascii_case("mee")
     {
-        parse_beeftext_or_meetin_json(raw)
+        if looks_like_zip(raw) {
+            Ok(import_mee_archive(raw)?)
+        } else {
+            parse_beeftext_or_meetin_json(raw)
+        }
     } else {
         Err(FormatIoError::UnsupportedFormat(ext.to_string()))
     }
@@ -579,7 +586,7 @@ mod tests {
 :C:İmza::
 (
 Saygılarımla,
-İsmet
+Kullanıcı
 )
 "#
         .as_bytes();
@@ -589,12 +596,12 @@ Saygılarımla,
         assert_eq!(items[0].content, "Merhaba{!}");
         assert_eq!(items[1].abbr, "İmza");
         assert_eq!(items[1].case_mode, CaseMode::KeepOriginal);
-        assert!(items[1].content.contains("Saygılarımla,\nİsmet"));
+        assert!(items[1].content.contains("Saygılarımla,\nKullanıcı"));
     }
 
     #[test]
     fn parses_txt_blocks_with_turkish_initials() {
-        let sample = "İstanbul teknik üniversitesi\n\nÇok güzel günler dilerim".as_bytes();
+        let sample = "İyi toplu ürün\n\nÇok güzel günler dilerim".as_bytes();
         let items = parse_txt_blocks(sample);
         assert_eq!(items.len(), 2);
         assert_eq!(items[0].abbr, "İTÜ");

@@ -7,7 +7,7 @@
 //! - `{saat}` → `18:05`
 //! - `{pano}` → panodaki metin
 //! - `{imleç}` → genişletmeden sonra imlecin duracağı yer
-//! - `{alan:İsim}` / `{alan:Kanal|A Haber,ATV,A News}` → form alanı
+//! - `{alan:İsim}` / `{alan:Durum|Acil,Normal,Düşük}` → form alanı
 //! - `{ifade:KISALTMA}` → başka ifadeyi gömer (döngü korumalı)
 
 use std::collections::{HashMap, HashSet};
@@ -312,8 +312,8 @@ mod tests {
             now,
             clipboard_text: Some("Panodan Metin".to_string()),
             field_values: HashMap::from([
-                ("İsim".to_string(), "Ahmet".to_string()),
-                ("Kanal".to_string(), "A Haber".to_string()),
+                ("İsim".to_string(), "Örnek Kişi".to_string()),
+                ("Durum".to_string(), "Acil".to_string()),
             ]),
             fold_dotted_i: false,
             phrase_lookup: Box::new(lookup),
@@ -323,12 +323,12 @@ mod tests {
     #[test]
     fn resolves_dates_times_clipboard_fields_and_cursor() {
         let ctx = make_ctx(2026, 11, 26, 18, 5, |_| None);
-        let tpl = "Sayın {alan:İsim} ({alan:Kanal|A Haber,ATV}), {tarih} / {tarih:uzun} {saat} - {pano} [{imleç}]";
+        let tpl = "Sayın {alan:İsim} ({alan:Durum|Acil,Normal}), {tarih} / {tarih:uzun} {saat} - {pano} [{imleç}]";
         let out = resolve_template(tpl, &ctx);
 
         assert_eq!(
             out.text,
-            "Sayın Ahmet (A Haber), 26.11.2026 / 26 Kasım 2026 Perşembe 18:05 - Panodan Metin []"
+            "Sayın Örnek Kişi (Acil), 26.11.2026 / 26 Kasım 2026 Perşembe 18:05 - Panodan Metin []"
         );
         // Sonda yalnızca "]" kaldı → 1 kez sol ok
         assert_eq!(out.cursor_left_steps, 1);
@@ -357,7 +357,7 @@ mod tests {
         let ctx = make_ctx(2026, 11, 26, 10, 0, |abbr| match abbr {
             "A" => Some("Baş->{ifade:B}".to_string()),
             "B" => Some("Orta->{ifade:A}".to_string()),
-            "İMZA" => Some("İsmet Uluer".to_string()),
+            "İMZA" => Some("Örnek İmza".to_string()),
             _ => None,
         });
 
@@ -366,24 +366,24 @@ mod tests {
         assert_eq!(cyc.text, "Baş->Orta->");
 
         let ok = resolve_template("Saygılar, {ifade:İMZA}", &ctx);
-        assert_eq!(ok.text, "Saygılar, İsmet Uluer");
+        assert_eq!(ok.text, "Saygılar, Örnek İmza");
     }
 
     #[test]
     fn extracts_unique_form_fields_preserving_order() {
         let fields = extract_form_fields(
-            "Merhaba {alan:İsim}, {alan:Kanal|A Haber, ATV, A News} yayını için {alan:İsim} hazır.",
+            "Merhaba {alan:İsim}, {alan:Durum|Acil, Normal, Düşük} görevi için {alan:İsim} hazır.",
         );
         assert_eq!(fields.len(), 2);
         assert_eq!(fields[0].name, "İsim");
         assert_eq!(fields[0].options, None);
-        assert_eq!(fields[1].name, "Kanal");
+        assert_eq!(fields[1].name, "Durum");
         assert_eq!(
             fields[1].options,
             Some(vec![
-                "A Haber".to_string(),
-                "ATV".to_string(),
-                "A News".to_string()
+                "Acil".to_string(),
+                "Normal".to_string(),
+                "Düşük".to_string()
             ])
         );
     }

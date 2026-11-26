@@ -1,11 +1,12 @@
 import { invoke } from "@tauri-apps/api/core";
-import { t } from "../i18n";
+import { t, useLanguage } from "../i18n";
 import "./bubble.css";
 
 /**
  * Metin seçilince imlecin yanında beliren "+ Ekle" kabarcığı (§4.1, M3.2).
  */
 export function SelectionBubbleApp() {
+  useLanguage();
   return (
     <div className="bubble-stage">
       <button

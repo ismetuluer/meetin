@@ -5,6 +5,7 @@ use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{AppHandle, Emitter, Manager, Runtime};
 
+use crate::windows::{backdrop, theme};
 use crate::AppState;
 
 pub const TRAY_ID: &str = "meetin-tray";
@@ -62,6 +63,7 @@ pub fn setup_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
 
 pub fn show_main_window<R: Runtime>(app: &AppHandle<R>) {
     if let Some(win) = app.get_webview_window("main") {
+        backdrop::sync_app_windows(app, theme::read_system_theme().dark);
         let _ = win.show();
         let _ = win.unminimize();
         let _ = win.set_focus();

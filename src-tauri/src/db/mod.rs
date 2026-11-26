@@ -1336,27 +1336,27 @@ mod tests {
 
         let created = storage
             .create_phrase(&NewPhrase {
-                abbr: "CİPY".to_string(),
-                content: "Claude ile Proje Yapmak".to_string(),
+                abbr: "MİPY".to_string(),
+                content: "Metin ile Pratik Yazım".to_string(),
                 content_html: None,
                 description: "Örnek kısaltma".to_string(),
                 folder_id: None,
                 folder_ids: vec![],
                 case_mode: CaseMode::MatchTyped,
                 shortcut: None,
-                tags: vec!["genel".to_string(), "yapay-zeka".to_string()],
+                tags: vec!["genel".to_string(), "ofis".to_string()],
             })
             .unwrap();
 
-        assert_eq!(created.abbr, "CİPY");
-        assert_eq!(created.tags, vec!["genel", "yapay-zeka"]);
+        assert_eq!(created.abbr, "MİPY");
+        assert_eq!(created.tags, vec!["genel", "ofis"]);
 
         // Güncelleme
         let updated = storage
             .update_phrase(&UpdatePhrase {
                 id: created.id,
-                abbr: "CİPY".to_string(),
-                content: "Claude ile Proje Yapmak v2".to_string(),
+                abbr: "MİPY".to_string(),
+                content: "Metin ile Pratik Yazım v2".to_string(),
                 content_html: None,
                 description: "Güncellendi".to_string(),
                 folder_id: None,
@@ -1367,7 +1367,7 @@ mod tests {
                 tags: vec!["genel".to_string()],
             })
             .unwrap();
-        assert_eq!(updated.content, "Claude ile Proje Yapmak v2");
+        assert_eq!(updated.content, "Metin ile Pratik Yazım v2");
         assert_eq!(updated.case_mode, CaseMode::KeepOriginal);
         assert_eq!(updated.tags, vec!["genel"]);
 
@@ -1428,10 +1428,10 @@ mod tests {
         });
         assert!(dup.is_err());
 
-        // Türkçe i/İ ayrımı: cipy ile CİPY çakışır
+        // Türkçe i/İ ayrımı: mipy ile MİPY çakışır
         storage
             .create_phrase(&NewPhrase {
-                abbr: "cipy".to_string(),
+                abbr: "mipy".to_string(),
                 content: "Deneme".to_string(),
                 content_html: None,
                 description: String::new(),
@@ -1443,7 +1443,7 @@ mod tests {
             })
             .unwrap();
         let dup_tr = storage.create_phrase(&NewPhrase {
-            abbr: "CİPY".to_string(),
+            abbr: "MİPY".to_string(),
             content: "Deneme 2".to_string(),
             content_html: None,
             description: String::new(),

@@ -2,3 +2,4 @@
 
 pub mod csv;
 pub mod formats;
+pub mod mee_archive;

@@ -80,7 +80,7 @@ pub fn is_trigger_char(c: char) -> bool {
 }
 
 /// Kelime sınırı kontrolü (§3.1): kısaltma bir kelimenin başından başlamalıdır.
-/// Önceki karakter harf veya rakamsa kelime içi sayılır (`xCİPY` genişlemez).
+/// Önceki karakter harf veya rakamsa kelime içi sayılır (`xMİPY` genişlemez).
 #[inline]
 pub fn is_word_boundary(c: char) -> bool {
     !c.is_alphanumeric() && c != '_'
@@ -89,7 +89,10 @@ pub fn is_word_boundary(c: char) -> bool {
 /// Kuralın mevcut pencere bağlamıyla eşleşip eşleşmediğini kontrol eder.
 fn rule_matches_context(rule: &AppRule, ctx: &ActiveContext) -> bool {
     let proc_ok = match &ctx.process_name {
-        Some(active_proc) => tr_lower(active_proc) == tr_lower(&rule.process_name),
+        Some(active_proc) => {
+            active_proc.eq_ignore_ascii_case(&rule.process_name)
+                || tr_lower(active_proc) == tr_lower(&rule.process_name)
+        }
         None => false,
     };
     if !proc_ok {
@@ -407,19 +410,19 @@ mod tests {
         let mut m = Matcher::default();
         m.rebuild(vec![entry(
             1,
-            "CİPY",
-            "Claude ile Proje Yapmak",
+            "MİPY",
+            "Metin ile Pratik Yazım",
             CaseMode::MatchTyped,
         )]);
 
         let ctx = ActiveContext::default();
         // Kelime içinde genişlemez
-        assert!(m.try_match("xCİPY", ' ', &ctx).is_none());
-        assert!(m.try_match("1CİPY", ' ', &ctx).is_none());
+        assert!(m.try_match("xMİPY", ' ', &ctx).is_none());
+        assert!(m.try_match("1MİPY", ' ', &ctx).is_none());
         // Kelime başında genişler
-        assert!(m.try_match("CİPY", ' ', &ctx).is_some());
-        assert!(m.try_match("merhaba CİPY", ' ', &ctx).is_some());
-        assert!(m.try_match("(CİPY", ')', &ctx).is_some());
+        assert!(m.try_match("MİPY", ' ', &ctx).is_some());
+        assert!(m.try_match("merhaba MİPY", ' ', &ctx).is_some());
+        assert!(m.try_match("(MİPY", ')', &ctx).is_some());
     }
 
     #[test]
@@ -427,30 +430,30 @@ mod tests {
         let mut m = Matcher::default();
         m.rebuild(vec![entry(
             1,
-            "ABD BAŞKAN",
-            "ABD BAŞKANI DONALD TRUMP",
+            "İYİ GÜNLER",
+            "İYİ GÜNLER DİLERİM, SAYGILARIMLA",
             CaseMode::KeepOriginal,
         )]);
 
         let res = m
-            .try_match("Bugün ABD BAŞKAN", ' ', &ActiveContext::default())
+            .try_match("Bugün İYİ GÜNLER", ' ', &ActiveContext::default())
             .expect("çok kelimeli kısaltma eşleşmeli");
-        assert_eq!(res.expanded_text, "ABD BAŞKANI DONALD TRUMP");
-        assert_eq!(res.abbr_char_len, "ABD BAŞKAN".chars().count());
+        assert_eq!(res.expanded_text, "İYİ GÜNLER DİLERİM, SAYGILARIMLA");
+        assert_eq!(res.abbr_char_len, "İYİ GÜNLER".chars().count());
     }
 
     #[test]
     fn all_spec_trigger_chars_work() {
         let mut m = Matcher::default();
-        m.rebuild(vec![entry(1, "cipy", "test", CaseMode::KeepOriginal)]);
+        m.rebuild(vec![entry(1, "mipy", "test", CaseMode::KeepOriginal)]);
         let triggers = [' ', '\n', '\r', '\t', '.', ',', ';', ':', '!', '?', ')', '"'];
         for t in triggers {
-            let res = m.try_match("cipy", t, &ActiveContext::default());
+            let res = m.try_match("mipy", t, &ActiveContext::default());
             assert!(res.is_some(), "tetik '{:?}' eşleşmeli", t);
             assert_eq!(res.unwrap().trigger, t);
         }
         // Normal harf tetik değildir
-        assert!(m.try_match("cipy", 'a', &ActiveContext::default()).is_none());
+        assert!(m.try_match("mipy", 'a', &ActiveContext::default()).is_none());
     }
 
     #[test]
@@ -458,16 +461,16 @@ mod tests {
         let mut m = Matcher::default();
         m.rebuild(vec![entry(
             1,
-            "CİPY",
-            "Claude ile Proje Yapmak",
+            "MİPY",
+            "Metin ile Pratik Yazım",
             CaseMode::ExactMatch,
         )]);
 
         let ctx = ActiveContext::default();
-        assert!(m.try_match("cipy", ' ', &ctx).is_none());
-        assert!(m.try_match("Cipy", ' ', &ctx).is_none());
-        let ok = m.try_match("CİPY", ' ', &ctx).unwrap();
-        assert_eq!(ok.expanded_text, "Claude ile Proje Yapmak");
+        assert!(m.try_match("mipy", ' ', &ctx).is_none());
+        assert!(m.try_match("Mipy", ' ', &ctx).is_none());
+        let ok = m.try_match("MİPY", ' ', &ctx).unwrap();
+        assert_eq!(ok.expanded_text, "Metin ile Pratik Yazım");
     }
 
     #[test]
@@ -545,15 +548,15 @@ mod tests {
         let mut m = Matcher::default();
         m.rebuild(vec![entry(
             1,
-            "CİPY",
-            "Claude ile Proje Yapmak",
+            "MİPY",
+            "Metin ile Pratik Yazım",
             CaseMode::MatchTyped,
         )]);
         let ctx = ActiveContext::default();
 
         let mut buf = KeyBuffer::new();
         // Kullanıcı cümle içinde yazıp noktalama ve harf hatalarını silerek düzeltiyor
-        for c in "Merhaba, cix".chars() {
+        for c in "Merhaba, mix".chars() {
             buf.push(c);
         }
         buf.backspace(); // 'x' sil
@@ -567,7 +570,7 @@ mod tests {
         let res = m
             .try_match(&buf.as_string(), ' ', &ctx)
             .expect("geri silip yeniden yazdıktan sonra kısaltma eşleşmeli");
-        assert_eq!(res.expanded_text, "claude ile proje yapmak");
+        assert_eq!(res.expanded_text, "metin ile pratik yazım");
         assert_eq!(res.abbr_char_len, 4);
     }
 
@@ -575,22 +578,22 @@ mod tests {
     fn suggest_prefix_returns_up_to_3_and_respects_min_2_chars() {
         let mut m = Matcher::default();
         m.rebuild(vec![
-            entry(1, "CİPY", "Claude ile Proje Yapmak", CaseMode::MatchTyped),
-            entry(2, "CİM", "Cumhuriyet İletişim Merkezi", CaseMode::MatchTyped),
-            entry(3, "CİHAZ", "Cihaz listesi", CaseMode::MatchTyped),
-            entry(4, "CİLT", "Cilt raporu", CaseMode::MatchTyped),
+            entry(1, "MİPY", "Metin ile Pratik Yazım", CaseMode::MatchTyped),
+            entry(2, "MİSA", "Misafir karşılama metni", CaseMode::MatchTyped),
+            entry(3, "MİZA", "Mizanpaj notu", CaseMode::MatchTyped),
+            entry(4, "MİND", "Mini deneme", CaseMode::MatchTyped),
         ]);
         let ctx = ActiveContext::default();
 
         // Tek harfte öneri yok
-        assert!(m.suggest_prefix("c", &ctx, 3).is_empty());
+        assert!(m.suggest_prefix("m", &ctx, 3).is_empty());
         // 2+ harfte en fazla 3 öneri
-        let res = m.suggest_prefix("merhaba ci", &ctx, 3);
+        let res = m.suggest_prefix("merhaba mi", &ctx, 3);
         assert_eq!(res.len(), 3);
         assert_eq!(res[0].typed_len, 2);
 
-        let built = m.build_match_for_id(1, "ci", '\0').unwrap();
+        let built = m.build_match_for_id(1, "mi", '\0').unwrap();
         assert_eq!(built.abbr_char_len, 2);
-        assert_eq!(built.expanded_text, "claude ile proje yapmak");
+        assert_eq!(built.expanded_text, "metin ile pratik yazım");
     }
 }

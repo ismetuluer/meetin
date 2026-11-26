@@ -1,5 +1,5 @@
 ﻿param(
-  [string]$Version = "1.2.0",
+  [string]$Version = "1.3.0",
   [string]$ExePath = "src-tauri/target/release/meetin.exe",
   [string]$OutDir = "dist-packages",
   [switch]$SkipBuild

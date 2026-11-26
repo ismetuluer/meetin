@@ -9,14 +9,25 @@ import {
 } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { t } from "../i18n";
+import { t, useLanguage, type TranslationKey } from "../i18n";
 import { suggestAbbreviation } from "../island/abbrSuggest";
 import { MeetinSheep } from "../mascot/MeetinSheep";
 import { BulkAddModal } from "./BulkAddModal";
 import { CommandPalette, type PaletteCommand } from "./CommandPalette";
 import { CsvImportModal } from "./CsvImportModal";
+import { HelpView } from "./HelpView";
 import { OnboardingModal } from "./OnboardingModal";
+import { RichEditor } from "./RichEditor";
 import { SettingsView } from "./SettingsView";
+import { plainTextToRichHtml } from "./richHtml";
+import {
+  buildEmbeddedImageTag,
+  extractEmbeddedImages,
+  isSafeEmbeddedImageDataUrl,
+  isSupportedImageFile,
+  MAX_EMBEDDED_IMAGE_BYTES,
+  removeEmbeddedImageAt,
+} from "./richImages";
 import { captureShortcutCombo } from "./shortcutCapture";
 import type {
   AbbrSuggestMode,
@@ -44,7 +55,7 @@ type SidebarView =
   | { kind: "folder"; folderId: number };
 
 type SortMode = "updated" | "uses" | "abbr" | "recent";
-type PageMode = "studio" | "settings";
+type PageMode = "studio" | "settings" | "help";
 
 interface EditorDraft {
   id: number | null;
@@ -83,22 +94,26 @@ type ContextMenuState =
 
 const CASE_MODE_SYMBOLS: Record<
   CaseMode,
-  { symbol: string; labelKey: "caseMode.match_typed" | "caseMode.keep_original" | "caseMode.exact_match"; desc: string }
+  {
+    symbol: string;
+    labelKey: "caseMode.match_typed" | "caseMode.keep_original" | "caseMode.exact_match";
+    descKey: "caseMode.match_typedDesc" | "caseMode.keep_originalDesc" | "caseMode.exact_matchDesc";
+  }
 > = {
   match_typed: {
     symbol: "Aa",
     labelKey: "caseMode.match_typed",
-    desc: "syg → saygılarımla, Syg → Saygılarımla, SYG → SAYGILARIMLA",
+    descKey: "caseMode.match_typedDesc",
   },
   keep_original: {
     symbol: "A=",
     labelKey: "caseMode.keep_original",
-    desc: "Kısaltmayı nasıl yazarsan yaz, kayıtlı büyük/küçük biçimi korunur",
+    descKey: "caseMode.keep_originalDesc",
   },
   exact_match: {
     symbol: "AA",
     labelKey: "caseMode.exact_match",
-    desc: "Kısaltma tam kayıtlı harf biçimiyle eşleşirse genişler",
+    descKey: "caseMode.exact_matchDesc",
   },
 };
 
@@ -139,25 +154,22 @@ const VARIABLE_SNIPPETS = [
   { label: "{ifade:…}", snippet: "{ifade:KISALTMA}" },
 ];
 
-const VAR_LABELS: Record<string, string> = {
-  "{tarih}": "Tarih",
-  "{tarih:uzun}": "Tarih (uzun)",
-  "{saat}": "Saat",
-  "{pano}": "Pano",
-  "{imleç}": "İmleç",
+const VAR_LABEL_KEYS: Record<string, TranslationKey> = {
+  "{tarih}": "var.date",
+  "{tarih:uzun}": "var.dateLong",
+  "{saat}": "var.time",
+  "{pano}": "var.clipboard",
+  "{imleç}": "var.cursor",
 };
 
-function escapeHtml(raw: string): string {
-  return raw
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\r?\n/g, "<br>");
+function getVarLabel(token: string): string {
+  const key = VAR_LABEL_KEYS[token];
+  return key ? t(key) : token.slice(1, -1);
 }
 
 function formatPreviewLine(content: string): string {
   return content
-    .replace(/\{([^}]+)\}/g, (full) => `[${VAR_LABELS[full] ?? full.slice(1, -1)}]`)
+    .replace(/\{([^}]+)\}/g, (full) => `[${getVarLabel(full)}]`)
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -181,7 +193,7 @@ function renderContentSegments(text: string): { isVar: boolean; value: string }[
     if (m.index > last) {
       parts.push({ isVar: false, value: text.slice(last, m.index) });
     }
-    parts.push({ isVar: true, value: VAR_LABELS[m[0]] ?? m[0].slice(1, -1) });
+    parts.push({ isVar: true, value: getVarLabel(m[0]) });
     last = m.index + m[0].length;
   }
   if (last < text.length) {
@@ -191,6 +203,7 @@ function renderContentSegments(text: string): { isVar: boolean; value: string }[
 }
 
 export function StudioView() {
+  const lang = useLanguage();
   const initialPrefs = useMemo(() => loadUiPrefs(), []);
   const [pageMode, setPageMode] = useState<PageMode>("studio");
   const [phrases, setPhrases] = useState<PhraseRecord[]>([]);
@@ -232,7 +245,7 @@ export function StudioView() {
 
   const [versions, setVersions] = useState<PhraseVersionRecord[]>([]);
   const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
-  const [showVarMenu, setShowVarMenu] = useState(false);
+  const [editorSessionId, setEditorSessionId] = useState(0);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   const [showCsv, setShowCsv] = useState(false);
@@ -248,8 +261,8 @@ export function StudioView() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
   const autoSelectedRef = useRef(false);
   const lastSavedSnapshotRef = useRef<string>("");
   const autoSaveTimerRef = useRef<number | null>(null);
@@ -319,6 +332,7 @@ export function StudioView() {
         p.description.trim().length > 0 && p.description.trim() !== autoDesc,
       );
       lastSavedSnapshotRef.current = draftSnapshot(nextDraft);
+      setEditorSessionId((n) => n + 1);
       setDraft(nextDraft);
       void loadPhraseMeta(p.id);
     },
@@ -405,6 +419,7 @@ export function StudioView() {
       setNotice(null);
       setAppRules([]);
       setVersions([]);
+      setEditorSessionId((n) => n + 1);
       setDraft({
         ...EMPTY_DRAFT,
         abbr: ev.payload.abbr,
@@ -426,11 +441,22 @@ export function StudioView() {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setShowPalette((prev) => !prev);
+      } else if (e.key === "F1") {
+        e.preventDefault();
+        setPageMode((m) => (m === "help" ? "studio" : "help"));
+      } else if (
+        e.key === "Escape" &&
+        pageMode === "help" &&
+        !showPalette &&
+        !showOnboarding
+      ) {
+        e.preventDefault();
+        setPageMode("studio");
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [pageMode, showPalette, showOnboarding]);
 
   const activePhrases = useMemo(
     () => phrases.filter((p) => p.deleted_at === null),
@@ -527,6 +553,7 @@ export function StudioView() {
       };
       setDescriptionManual(false);
       lastSavedSnapshotRef.current = "";
+      setEditorSessionId((n) => n + 1);
       setDraft(next);
     },
     [abbrSuggestMode, folders, view],
@@ -742,18 +769,24 @@ export function StudioView() {
     setContextMenu(null);
     setError(null);
     try {
-      const text = await invoke<string>("export_phrases_subset", {
-        phraseIds,
-        format,
-      });
+      let blob: Blob;
       const ext = format === "meetin" ? "mee" : format;
-      const mime =
-        format === "csv"
-          ? "text/csv;charset=utf-8"
-          : format === "meetin"
-            ? "application/json;charset=utf-8"
+      if (format === "meetin") {
+        const bytes = await invoke<number[]>("export_phrases_subset_mee", {
+          phraseIds,
+        });
+        blob = new Blob([new Uint8Array(bytes)], { type: "application/zip" });
+      } else {
+        const text = await invoke<string>("export_phrases_subset", {
+          phraseIds,
+          format,
+        });
+        const mime =
+          format === "csv"
+            ? "text/csv;charset=utf-8"
             : "text/plain;charset=utf-8";
-      const blob = new Blob([text], { type: mime });
+        blob = new Blob([text], { type: mime });
+      }
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -954,15 +987,19 @@ export function StudioView() {
     setShowMoreMenu(false);
     setError(null);
     try {
-      const text = await invoke<string>("export_library", { format });
+      let blob: Blob;
       const ext = format === "meetin" ? "mee" : format;
-      const mime =
-        format === "csv"
-          ? "text/csv;charset=utf-8"
-          : format === "meetin"
-            ? "application/json;charset=utf-8"
+      if (format === "meetin") {
+        const bytes = await invoke<number[]>("export_mee_archive");
+        blob = new Blob([new Uint8Array(bytes)], { type: "application/zip" });
+      } else {
+        const text = await invoke<string>("export_library", { format });
+        const mime =
+          format === "csv"
+            ? "text/csv;charset=utf-8"
             : "text/plain;charset=utf-8";
-      const blob = new Blob([text], { type: mime });
+        blob = new Blob([text], { type: mime });
+      }
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -976,43 +1013,56 @@ export function StudioView() {
     }
   }
 
-  function insertSnippetAtCursor(snippet: string) {
-    setShowVarMenu(false);
-    if (!draft) return;
-    const el = textareaRef.current;
-    if (!el) {
-      setDraft({ ...draft, content: draft.content + snippet });
+  function handleInsertImageFile(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !draft) return;
+    setError(null);
+    setNotice(null);
+
+    if (!isSupportedImageFile(file)) {
+      setError(t("studio.imageUnsupportedType"));
       return;
     }
-    const start = el.selectionStart ?? draft.content.length;
-    const end = el.selectionEnd ?? draft.content.length;
-    const next =
-      draft.content.slice(0, start) + snippet + draft.content.slice(end);
-    setDraft({ ...draft, content: next });
-    requestAnimationFrame(() => {
-      el.focus();
-      el.setSelectionRange(start + snippet.length, start + snippet.length);
-    });
-  }
+    if (file.size > MAX_EMBEDDED_IMAGE_BYTES) {
+      setError(t("studio.imageTooLarge"));
+      return;
+    }
 
-  function applyRichTag(tag: "b" | "i" | "u" | "a") {
-    if (!draft) return;
-    const el = textareaRef.current;
-    const start = el?.selectionStart ?? 0;
-    const end = el?.selectionEnd ?? draft.content.length;
-    const selected = draft.content.slice(start, end) || draft.content;
-    if (!selected) return;
-
-    const baseHtml = draft.content_html ?? escapeHtml(draft.content);
-    const escapedSel = escapeHtml(selected);
-    const wrapped =
-      tag === "a"
-        ? `<a href="https://">${escapedSel}</a>`
-        : `<${tag}>${escapedSel}</${tag}>`;
-    const nextHtml = baseHtml.includes(escapedSel)
-      ? baseHtml.replace(escapedSel, wrapped)
-      : `${baseHtml} ${wrapped}`.trim();
-    setDraft({ ...draft, content_html: nextHtml });
+    const reader = new FileReader();
+    reader.onerror = () => {
+      setError(t("studio.imageReadError"));
+    };
+    reader.onload = () => {
+      const dataUrl = typeof reader.result === "string" ? reader.result : "";
+      if (!isSafeEmbeddedImageDataUrl(dataUrl)) {
+        setError(t("studio.imageUnsupportedType"));
+        return;
+      }
+      const imgTag = buildEmbeddedImageTag(
+        dataUrl,
+        file.name || t("studio.imageAltFallback"),
+      );
+      setDraft((prev) => {
+        if (!prev) return prev;
+        const baseHtml =
+          prev.content_html ?? (prev.content ? plainTextToRichHtml(prev.content) : "");
+        const nextHtml = baseHtml ? `${baseHtml}<br>${imgTag}` : imgTag;
+        const nextContent = prev.content.trim()
+          ? prev.content
+          : `[${t("studio.imageAltFallback")}: ${file.name}]`;
+        return {
+          ...prev,
+          content: nextContent,
+          content_html: nextHtml,
+          description: descriptionManual
+            ? prev.description
+            : prev.description.trim() || deriveAutoDescription(nextContent),
+        };
+      });
+      setNotice(t("studio.imageAddedNotice"));
+    };
+    reader.readAsDataURL(file);
   }
 
   const paletteCommands: PaletteCommand[] = useMemo(
@@ -1049,12 +1099,18 @@ export function StudioView() {
         onRun: () => setPageMode("settings"),
       },
       {
+        id: "cmd-help",
+        label: t("palette.actionHelp"),
+        hint: "F1",
+        onRun: () => setPageMode("help"),
+      },
+      {
         id: "cmd-pause",
         label: t("palette.actionTogglePause"),
         onRun: () => void handleTogglePause(),
       },
     ],
-    [openNewDraft],
+    [lang, openNewDraft],
   );
 
   function handleImportDone(summary: CsvImportSummary) {
@@ -1078,18 +1134,22 @@ export function StudioView() {
     if (view.kind === "stats") return t("studio.viewStats");
     if (view.kind === "trash") return t("studio.viewTrash");
     return folders.find((f) => f.id === view.folderId)?.name ?? t("studio.foldersTitle");
-  }, [view, folders]);
+  }, [lang, view, folders]);
 
   const contentSegments = useMemo(
     () => (draft ? renderContentSegments(draft.content) : []),
-    [draft?.content],
+    [lang, draft?.content],
+  );
+
+  const embeddedImages = useMemo(
+    () => extractEmbeddedImages(draft?.content_html ?? null),
+    [draft?.content_html],
   );
 
   return (
     <div
       className="fluent-shell"
       onClick={() => {
-        setShowVarMenu(false);
         setShowMoreMenu(false);
         setShowCaseMenu(false);
         setShowListExportMenu(false);
@@ -1105,7 +1165,10 @@ export function StudioView() {
           {pageMode === "settings" && (
             <span className="topbar-sub">{t("studio.settingsBtn")}</span>
           )}
-          {pageMode === "settings" ? (
+          {pageMode === "help" && (
+            <span className="topbar-sub">{t("studio.helpBtn")}</span>
+          )}
+          {pageMode !== "studio" ? (
             <button
               type="button"
               className="btn btn-sm"
@@ -1222,6 +1285,12 @@ export function StudioView() {
           onRefresh={() => void loadAll()}
           onExport={handleExport}
           onReplayOnboarding={() => setShowOnboarding(true)}
+        />
+      ) : pageMode === "help" ? (
+        <HelpView
+          onOpenSettings={() => setPageMode("settings")}
+          onReplayOnboarding={() => setShowOnboarding(true)}
+          onCreatePhrase={() => openNewDraft()}
         />
       ) : (
         <div className={`fluent-workspace ${sidebarCollapsed ? "is-sidebar-collapsed" : ""}`}>
@@ -1498,6 +1567,22 @@ export function StudioView() {
                   </span>
                 </button>
               )}
+
+              <button
+                type="button"
+                className="nav-item"
+                title={t("tip.openHelp")}
+                onClick={() => setPageMode("help")}
+              >
+                <span className="nav-label">
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                    <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.4" />
+                    <path d="M6.4 6.2C6.6 5.3 7.2 4.8 8 4.8C8.9 4.8 9.5 5.4 9.5 6.2C9.5 6.9 9 7.3 8.4 7.7C8 8 7.9 8.3 7.9 8.9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                    <circle cx="8" cy="11.2" r="0.8" fill="currentColor" />
+                  </svg>
+                  {!sidebarCollapsed && <span>{t("studio.helpBtn")}</span>}
+                </span>
+              </button>
 
               <button
                 type="button"
@@ -2114,87 +2199,20 @@ export function StudioView() {
                 <div className="content-card-section">
                   <span className="tiny-label">{t("studio.tabContent")}</span>
                   <div className="unified-content-card" onClick={(e) => e.stopPropagation()}>
-                    <div className="unified-toolbar">
-                      <div className="toolbar-fmt-group">
-                        <button
-                          type="button"
-                          className="fmt-btn"
-                          title={t("studio.fmtBold")}
-                          onClick={() => applyRichTag("b")}
-                        >
-                          <strong>B</strong>
-                        </button>
-                        <button
-                          type="button"
-                          className="fmt-btn"
-                          title={t("studio.fmtItalic")}
-                          onClick={() => applyRichTag("i")}
-                        >
-                          <em>I</em>
-                        </button>
-                        <button
-                          type="button"
-                          className="fmt-btn"
-                          title={t("studio.fmtUnderline")}
-                          onClick={() => applyRichTag("u")}
-                        >
-                          <u>U</u>
-                        </button>
-                        <button
-                          type="button"
-                          className="fmt-btn"
-                          title={t("tip.fmtLink")}
-                          aria-label={t("studio.fmtLink")}
-                          onClick={() => applyRichTag("a")}
-                        >
-                          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                            <path
-                              d="M6.5 9.5L9.5 6.5M5.2 7.2L3.8 8.6C2.7 9.7 2.7 11.4 3.8 12.4C4.9 13.5 6.6 13.5 7.6 12.4L9 11M10.8 8.8L12.2 7.4C13.3 6.3 13.3 4.6 12.2 3.6C11.1 2.5 9.4 2.5 8.4 3.6L7 5"
-                              stroke="currentColor"
-                              strokeWidth="1.5"
-                              strokeLinecap="round"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-
-                      <div className="dropdown-wrap">
-                        <button
-                          type="button"
-                          className="link-btn"
-                          title={t("tip.insertVar")}
-                          onClick={() => setShowVarMenu((v) => !v)}
-                        >
-                          + {t("studio.insertVar")}
-                        </button>
-                        {showVarMenu && (
-                          <div className="dropdown-menu">
-                            {VARIABLE_SNIPPETS.map((vs) => (
-                              <button
-                                key={vs.label}
-                                type="button"
-                                onClick={() => insertSnippetAtCursor(vs.snippet)}
-                              >
-                                {vs.label}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <textarea
-                      ref={textareaRef}
-                      className="unified-textarea"
-                      rows={5}
-                      value={draft.content}
-                      onChange={(e) => {
-                        const nextContent = e.target.value;
+                    <RichEditor
+                      draftKey={`${editorSessionId}-${draft.id ?? "new"}`}
+                      content={draft.content}
+                      contentHtml={draft.content_html}
+                      placeholder={t("form.contentPlaceholder")}
+                      variableSnippets={VARIABLE_SNIPPETS}
+                      onRequestInsertImage={() => imageInputRef.current?.click()}
+                      onChange={(nextContent, nextHtml) => {
                         setDraft((prev) =>
                           prev
                             ? {
                                 ...prev,
                                 content: nextContent,
+                                content_html: nextHtml,
                                 description: descriptionManual
                                   ? prev.description
                                   : deriveAutoDescription(nextContent),
@@ -2202,7 +2220,13 @@ export function StudioView() {
                             : prev,
                         );
                       }}
-                      placeholder={t("form.contentPlaceholder")}
+                    />
+                    <input
+                      ref={imageInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml"
+                      style={{ display: "none" }}
+                      onChange={handleInsertImageFile}
                     />
 
                     {contentSegments.some((s) => s.isVar) && (
@@ -2219,25 +2243,46 @@ export function StudioView() {
                       </div>
                     )}
 
-                    {draft.content_html && (
-                      <div className="rich-html-strip">
-                        <span className="muted small">HTML</span>
-                        <input
-                          className="inline-html-input"
-                          value={draft.content_html}
-                          onChange={(e) =>
-                            setDraft({ ...draft, content_html: e.target.value })
-                          }
-                        />
-                        <button
-                          type="button"
-                          className="mini-icon-btn"
-                          onClick={() =>
-                            setDraft({ ...draft, content_html: null })
-                          }
-                        >
-                          ×
-                        </button>
+                    {embeddedImages.length > 0 && (
+                      <div className="rich-image-preview-strip">
+                        <span className="muted small">
+                          {t("studio.embeddedImages", {
+                            count: embeddedImages.length,
+                          })}
+                        </span>
+                        <div className="rich-image-grid">
+                          {embeddedImages.map((img) => (
+                            <div key={img.key} className="rich-image-card">
+                              <img
+                                src={img.src}
+                                alt={img.alt || t("studio.imageAltFallback")}
+                                className="rich-image-thumb"
+                              />
+                              <button
+                                type="button"
+                                className="rich-image-remove"
+                                title={t("studio.removeImage")}
+                                aria-label={t("studio.removeImage")}
+                                onClick={() =>
+                                  setDraft((prev) =>
+                                    prev && prev.content_html
+                                      ? {
+                                          ...prev,
+                                          content_html: removeEmbeddedImageAt(
+                                            prev.content_html,
+                                            img.matchStart,
+                                            img.matchEnd,
+                                          ),
+                                        }
+                                      : prev,
+                                  )
+                                }
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -2259,7 +2304,7 @@ export function StudioView() {
                         <button
                           type="button"
                           className="case-mode-symbol-btn"
-                          title={`${t("form.caseModeLabel")}: ${t(CASE_MODE_SYMBOLS[draft.case_mode].labelKey)} — ${CASE_MODE_SYMBOLS[draft.case_mode].desc}`}
+                          title={`${t("form.caseModeLabel")}: ${t(CASE_MODE_SYMBOLS[draft.case_mode].labelKey)} — ${t(CASE_MODE_SYMBOLS[draft.case_mode].descKey)}`}
                           onClick={() => setShowCaseMenu((v) => !v)}
                         >
                           {CASE_MODE_SYMBOLS[draft.case_mode].symbol}
@@ -2286,7 +2331,7 @@ export function StudioView() {
                                   <div className="case-popover-meta">
                                     <strong>{t(CASE_MODE_SYMBOLS[mode].labelKey)}</strong>
                                     <span className="muted small">
-                                      {CASE_MODE_SYMBOLS[mode].desc}
+                                      {t(CASE_MODE_SYMBOLS[mode].descKey)}
                                     </span>
                                   </div>
                                 </button>

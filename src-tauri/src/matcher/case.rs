@@ -100,7 +100,7 @@ pub fn tr_lower(s: &str) -> String {
 }
 
 /// İlk harfi Türkçe büyük, kalanını Türkçe küçük yapar (cümle düzeni).
-/// Örn: "Claude ile Proje Yapmak" → "Claude ile proje yapmak".
+/// Örn: "Metin ile Pratik Yazım" → "Metin ile pratik yazım".
 pub fn tr_title(s: &str) -> String {
     let mut out = String::with_capacity(s.len());
     let mut first_done = false;
@@ -211,12 +211,12 @@ pub fn apply_case(typed: &str, expansion: &str, mode: CaseMode) -> String {
                 return tr_upper(expansion);
             }
 
-            // İlk harf büyük, kalanı küçükse (ör. "Cipy") → cümle düzeni
+            // İlk harf büyük, kalanı küçükse (ör. "Mipy") → cümle düzeni
             if is_tr_upper(letters[0]) && letters[1..].iter().all(|&c| is_tr_lower(c)) {
                 return tr_title(expansion);
             }
 
-            // Karışık harf (ör. "cİpy" veya "CiPy") → kayıtlı metni koru
+            // Karışık harf (ör. "mİpy" veya "MiPy") → kayıtlı metni koru
             expansion.to_string()
         }
     }
@@ -228,10 +228,10 @@ mod tests {
 
     #[test]
     fn tr_upper_and_lower_i_dot_rules() {
-        assert_eq!(tr_upper("cipy"), "CİPY");
-        assert_eq!(tr_upper("cıpy"), "CIPY");
-        assert_eq!(tr_lower("CİPY"), "cipy");
-        assert_eq!(tr_lower("CIPY"), "cıpy");
+        assert_eq!(tr_upper("mipy"), "MİPY");
+        assert_eq!(tr_upper("mıpy"), "MIPY");
+        assert_eq!(tr_lower("MİPY"), "mipy");
+        assert_eq!(tr_lower("MIPY"), "mıpy");
         assert_eq!(tr_upper("istanbul ığdır çğöşü"), "İSTANBUL IĞDIR ÇĞÖŞÜ");
         assert_eq!(tr_lower("İSTANBUL IĞDIR ÇĞÖŞÜ"), "istanbul ığdır çğöşü");
     }
@@ -239,59 +239,59 @@ mod tests {
     #[test]
     fn tr_lower_handles_combining_dot_above() {
         // Bazı sistemlerde İ, 'I' + '\u{0307}' olarak gelebilir
-        assert_eq!(tr_lower("CI\u{0307}PY"), "cipy");
+        assert_eq!(tr_lower("MI\u{0307}PY"), "mipy");
     }
 
     #[test]
     fn spec_section_3_2_table_all_cells() {
-        let expansion = "Claude ile Proje Yapmak";
+        let expansion = "Metin ile Pratik Yazım";
 
-        // Yazışa uy (MatchTyped)
+        // Harf uyumu (MatchTyped)
         assert_eq!(
-            apply_case("cipy", expansion, CaseMode::MatchTyped),
-            "claude ile proje yapmak"
+            apply_case("mipy", expansion, CaseMode::MatchTyped),
+            "metin ile pratik yazım"
         );
         assert_eq!(
-            apply_case("Cipy", expansion, CaseMode::MatchTyped),
-            "Claude ile proje yapmak"
+            apply_case("Mipy", expansion, CaseMode::MatchTyped),
+            "Metin ile pratik yazım"
         );
         assert_eq!(
-            apply_case("CİPY", expansion, CaseMode::MatchTyped),
-            "CLAUDE İLE PROJE YAPMAK"
+            apply_case("MİPY", expansion, CaseMode::MatchTyped),
+            "METİN İLE PRATİK YAZIM"
         );
 
         // Aynen getir (KeepOriginal)
         assert_eq!(
-            apply_case("cipy", expansion, CaseMode::KeepOriginal),
-            "Claude ile Proje Yapmak"
+            apply_case("mipy", expansion, CaseMode::KeepOriginal),
+            "Metin ile Pratik Yazım"
         );
         assert_eq!(
-            apply_case("Cipy", expansion, CaseMode::KeepOriginal),
-            "Claude ile Proje Yapmak"
+            apply_case("Mipy", expansion, CaseMode::KeepOriginal),
+            "Metin ile Pratik Yazım"
         );
         assert_eq!(
-            apply_case("CİPY", expansion, CaseMode::KeepOriginal),
-            "Claude ile Proje Yapmak"
+            apply_case("MİPY", expansion, CaseMode::KeepOriginal),
+            "Metin ile Pratik Yazım"
         );
 
         // Birebir eşleşme (ExactMatch) — eşleştiğinde metin aynen gelir
         assert_eq!(
-            apply_case("CİPY", expansion, CaseMode::ExactMatch),
-            "Claude ile Proje Yapmak"
+            apply_case("MİPY", expansion, CaseMode::ExactMatch),
+            "Metin ile Pratik Yazım"
         );
     }
 
     #[test]
     fn normalize_separates_dotted_and_dotless_by_default() {
-        assert_eq!(normalize_abbr("CİPY", false), "cipy");
-        assert_eq!(normalize_abbr("cipy", false), "cipy");
-        assert_eq!(normalize_abbr("CIPY", false), "cıpy");
-        assert_eq!(normalize_abbr("cıpy", false), "cıpy");
-        assert_ne!(normalize_abbr("CİPY", false), normalize_abbr("CIPY", false));
+        assert_eq!(normalize_abbr("MİPY", false), "mipy");
+        assert_eq!(normalize_abbr("mipy", false), "mipy");
+        assert_eq!(normalize_abbr("MIPY", false), "mıpy");
+        assert_eq!(normalize_abbr("mıpy", false), "mıpy");
+        assert_ne!(normalize_abbr("MİPY", false), normalize_abbr("MIPY", false));
 
         // ignore_accents açıkken Türkçe aksanlı harfler eşitlenir
-        assert_eq!(normalize_abbr("CİPY", true), "cipy");
-        assert_eq!(normalize_abbr("CIPY", true), "cipy");
+        assert_eq!(normalize_abbr("MİPY", true), "mipy");
+        assert_eq!(normalize_abbr("MIPY", true), "mipy");
         assert_eq!(normalize_abbr("ÇİÇEK", true), "cicek");
         assert_eq!(normalize_abbr("ŞİRKET", true), "sirket");
         assert_eq!(normalize_abbr("IŞIK", true), "isik");
@@ -300,9 +300,9 @@ mod tests {
 
     #[test]
     fn mixed_case_preserves_original() {
-        let expansion = "Claude ile Proje Yapmak";
-        assert_eq!(apply_case("cİpy", expansion, CaseMode::MatchTyped), expansion);
-        assert_eq!(apply_case("CiPy", expansion, CaseMode::MatchTyped), expansion);
+        let expansion = "Metin ile Pratik Yazım";
+        assert_eq!(apply_case("mİpy", expansion, CaseMode::MatchTyped), expansion);
+        assert_eq!(apply_case("MiPy", expansion, CaseMode::MatchTyped), expansion);
     }
 
     #[test]

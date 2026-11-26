@@ -1,19 +1,19 @@
 # Meetin — Metin Genişletici · Ürün ve Teknik Şartname
 
-> **Sürüm:** 0.3 · **Tarih:** 25 Kasım 2026 · **Hazırlayan:** İsmet Uluer
-> **Uygulayıcı:** Claude Code (bu belge proje klasörünün kökünde `docs/SARTNAME.md` olarak durur)
+> **Sürüm:** 0.3 · **Tarih:** 25 Kasım 2026 · **Hazırlayan:** Meetin Ekibi
+> **Uygulayıcı:** Geliştirici (bu belge proje klasörünün kökünde `docs/MEETIN-SARTNAME.md` olarak durur)
 > **Program adı [K]:** **Meetin** ("mee" + "metin"). Maskot bir koyundur; kullanıcı ilk açılışta koyuna kendi adını verebilir (bkz. §5.1).
 > **Ekler:** `meetin-maskot.svg` (maskotun ana çizimi) ve `meetin-maskot-animasyon.html` (tarayıcıda açılan, tüm animasyonların çalışan referansı). İkisi de `docs/` klasörüne konur.
 
-İşaretler: **[K]** = Saul'un verdiği karar · **[Ö]** = Claude'un önerisi / varsayılanı (itiraz edilebilir) · **[A]** = uygulayıcıya bırakılan, ilk adımda doğrulanacak konu
+İşaretler: **[K]** = Proje karar vericisi kararı · **[Ö]** = Varsayılan öneri (değiştirilebilir) · **[A]** = ilk adımda doğrulanacak konu
 
 ---
 
 ## 1. Amaç
 
-Windows'ta sık yazılan ifade kalıplarını kısaltmalarla çağırmak. `ABD BAŞKAN` yazıp boşluğa basınca yerine **"ABD BAŞKANI DONALD TRUMP"** gelir. PhraseExpress'in gücü, Apple'ın Dinamik Ada'sının sadeliği ve yumuşak, sevimli bir maskot bir arada olacak.
+Windows'ta sık yazılan ifade kalıplarını kısaltmalarla çağırmak. `İYİ GÜNLER` yazıp boşluğa basınca yerine **"İYİ GÜNLER DİLERİM"** gelir. PhraseExpress'in gücü, Apple'ın Dinamik Ada'sının sadeliği ve yumuşak, sevimli bir maskot bir arada olacak.
 
-Kullanım yerleri **[K]**: haber/arşiv sistemleri ve tarayıcı formları, Word/Excel raporları, e-posta ve mesajlaşma (Outlook, WhatsApp Web, Telegram), kod ve yapay zekâ istemleri (Claude, terminal).
+Kullanım yerleri **[K]**: masaüstü ve tarayıcı formları, Word/Excel raporları, e-posta ve mesajlaşma (Outlook, WhatsApp Web, Telegram), kod ve terminal istemleri.
 
 ### 1.1 Hedefler
 
@@ -35,7 +35,7 @@ Kullanım yerleri **[K]**: haber/arşiv sistemleri ve tarayıcı formları, Word
 - Genişletme sırasında harf kaçması, sıranın bozulması ya da Türkçe karakterin (ı, İ, ş, ğ, ç, ö, ü) yanlış gelmesi.
 - Panonun (clipboard) kullanıcının haberi olmadan değişip eski hâline dönmemesi.
 - Parola kutusunda yazılanların dinlenmesi ya da herhangi bir tuş vuruşunun diske/loga yazılması.
-- Maskotun ya da adanın tam ekran video, sunum veya canlı yayın ekranının üstünde kalması.
+- Maskotun ya da adanın tam ekran video, sunum veya tam ekran uygulamanın üstünde kalması.
 - Boştayken işlemciyi meşgul etmesi, fanı çalıştırması.
 - Veritabanının bozulması ya da bir ifadenin geri getirilemez şekilde kaybolması.
 - Yarım kalmış özellik, işe yaramayan düğme, sahte veri (bkz. §16).
@@ -47,7 +47,7 @@ Kullanım yerleri **[K]**: haber/arşiv sistemleri ve tarayıcı formları, Word
 | Terim                 | Anlamı                                                                                         |
 | --------------------- | ---------------------------------------------------------------------------------------------- |
 | **İfade**             | Kaydedilen metin (düz ya da biçimli). Açıklama, etiketler, klasör, kısaltma ve kurallar taşır. |
-| **Kısaltma**          | İfadeyi çağıran harf dizisi (`CİPY`).                                                          |
+| **Kısaltma**          | İfadeyi çağıran harf dizisi (`MİPY`).                                                          |
 | **Tetik tuşu**        | Kısaltmayı bitiren tuş: boşluk, Enter, Tab, nokta ve diğer noktalama işaretleri **[K]**.       |
 | **Değişken**          | Genişletme anında doldurulan yer tutucu: tarih, saat, pano, imleç konumu.                      |
 | **Doldurulacak alan** | Genişletmeden önce adanın sorduğu kullanıcı girdisi (`{alan:İsim}`).                           |
@@ -63,7 +63,7 @@ Kullanım yerleri **[K]**: haber/arşiv sistemleri ve tarayıcı formları, Word
 ### 3.1 Tetikleme **[K]**
 
 - Kısaltmadan sonra **boşluk / Enter / Tab / . , ; : ! ? ) "** basılınca genişler. Tetik tuşu metnin sonuna eklenir: boşlukla tetiklendiyse sonda boşluk kalır, nokta ile tetiklendiyse nokta kalır.
-- Kısaltma bir kelimenin **başından** başlamalı. `xCİPY` genişlemez **[Ö]**.
+- Kısaltma bir kelimenin **başından** başlamalı. `xMİPY` genişlemez **[Ö]**.
 - **Geri al:** Genişletmeden hemen sonra (başka tuşa basmadan) **Backspace** basılırsa genişletme geri alınır ve kısaltma tekrar yazılmış hâle döner **[Ö]**.
 - **Duraklat:** Maskotun sağ tık menüsünden ya da kısayolla bütün genişletmeler geçici olarak durur. Durunca maskot uyur.
 
@@ -71,15 +71,15 @@ Kullanım yerleri **[K]**: haber/arşiv sistemleri ve tarayıcı formları, Word
 
 Ayarlarda genel bir varsayılan seçilir, her ifadede bu varsayılan ayrıca değiştirilebilir:
 
-| Mod                              | `cipy`                  | `Cipy`                  | `CİPY`                  |
+| Mod                              | `mipy`                  | `Mipy`                  | `MİPY`                  |
 | -------------------------------- | ----------------------- | ----------------------- | ----------------------- |
-| **Yazışa uy** **[Ö varsayılan]** | claude ile proje yapmak | Claude ile proje yapmak | CLAUDE İLE PROJE YAPMAK |
-| **Aynen getir**                  | Claude ile Proje Yapmak | Claude ile Proje Yapmak | Claude ile Proje Yapmak |
-| **Birebir eşleşme**              | (açılmaz)               | (açılmaz)               | Claude ile Proje Yapmak |
+| **Yazışa uy** **[Ö varsayılan]** | metin ile pratik yazım  | Metin ile pratik yazım  | METİN İLE PRATİK YAZIM  |
+| **Aynen getir**                  | Metin ile Pratik Yazım  | Metin ile Pratik Yazım  | Metin ile Pratik Yazım  |
+| **Birebir eşleşme**              | (açılmaz)               | (açılmaz)               | Metin ile Pratik Yazım  |
 
-**Türkçe kuralı (kritik):** Büyük/küçük dönüşümler **tr-TR** kurallarıyla yapılır: `i ↔ İ`, `ı ↔ I`. `cipy` ile `CİPY` eşleşir. `cıpy` ise `CIPY` ile eşleşir ve ikisi ayrı kısaltmadır. Rust tarafında varsayılan `to_uppercase()` kullanılmaz. Türkçe kurallı özel bir eşleme fonksiyonu yazılır ve birim testiyle korunur.
+**Türkçe kuralı (kritik):** Büyük/küçük dönüşümler **tr-TR** kurallarıyla yapılır: `i ↔ İ`, `ı ↔ I`. `mipy` ile `MİPY` eşleşir. `mıpy` ise `MIPY` ile eşleşir ve ikisi ayrı kısaltmadır. Rust tarafında varsayılan `to_uppercase()` kullanılmaz. Türkçe kurallı özel bir eşleme fonksiyonu yazılır ve birim testiyle korunur.
 
-**[A]** İngilizce klavye düzeninde `CIPY` yazan biri için "noktasız/noktalı i'yi eşit say" seçeneği eklenmeli mi? Ayar olarak eklensin, varsayılan kapalı olsun **[Ö]**.
+**[A]** İngilizce klavye düzeninde `MIPY` yazan biri için "aksanları yoksay" seçeneği eklenmeli mi? Ayar olarak eklensin, varsayılan kapalı olsun **[Ö]**.
 
 ### 3.3 İçerik türleri **[K: hepsi]**
 
@@ -99,7 +99,7 @@ Ayarlarda genel bir varsayılan seçilir, her ifadede bu varsayılan ayrıca de�
 | `{pano}`                           | panodaki metin                                               |
 | `{imleç}`                          | genişletmeden sonra imlecin duracağı yer                     |
 | `{alan:İsim}`                      | adada "İsim" kutusu açılır                                   |
-| `{alan:Kanal\|A Haber,ATV,A News}` | açılır liste                                                 |
+| `{alan:Durum\|Acil,Normal,Düşük}` | açılır liste                                                 |
 | `{ifade:KISALTMA}`                 | başka bir ifadeyi içine yerleştirir (döngü koruması zorunlu) |
 
 Uzman düzenleyicisinde değişkenler, ekran görüntüsündeki PhraseExpress örneği gibi **renkli hap (chip)** olarak gösterilir, düz `{…}` yazısı görünmez. Hap, araç çubuğundaki "Değişken ekle" menüsünden eklenir.
@@ -110,7 +110,7 @@ Uzman düzenleyicisinde değişkenler, ekran görüntüsündeki PhraseExpress ö
 - **Uzun ya da biçimli metin:** pano yedeklenir → HTML + RTF + düz metin biçimleri birlikte panoya konur → `Ctrl+V` → kısa bir gecikmeden sonra **pano eski hâline getirilir**. Pano geçmişi bu ara adımı kaydetmez.
 - `{imleç}` varsa genişletmeden sonra gereken sayıda `←` tuşu gönderilir.
 - Program bazlı yapıştırma yöntemi ayarlanabilir (bazı terminaller `Ctrl+Shift+V` ister).
-- **[A]** Kurum içi haber/arşiv yazılımlarında `SendInput` ile pano yöntemleri ilk hafta gerçek ortamda denenecek. Gerekirse program bazlı istisna tablosu eklenecek.
+- **[A]** Masaüstü ve web formlarında `SendInput` ile pano yöntemleri gerçek ortamda denenecek. Gerekirse program bazlı istisna tablosu eklenecek.
 
 ### 3.5 Programa özel ifadeler **[K]**
 
@@ -127,7 +127,7 @@ Windows, yönetici olarak çalışan bir programa normal yetkili programın tuş
 ### 4.1 Seçim balonu (PopClip tarzı)
 
 - Mausla sürükleyerek, çift ya da üç tıklayarak metin seçilince imlecin yanında ~300 ms sonra küçük, vurgu renginde bir **"+ Ekle"** balonu belirir.
-- Balona tıklanınca ada açılır. Metin önizlemesi gösterilir, kısaltma kutusu odaklanır, öneri kısaltma hazırdır (ifadenin baş harfleri: "Claude ile Proje Yapmak" → `CİPY`). Kullanıcı Enter'a basınca kaydedilir ve maskot ifadeyi "yutar".
+- Balona tıklanınca ada açılır. Metin önizlemesi gösterilir, kısaltma kutusu odaklanır, öneri kısaltma hazırdır (ifadenin baş harfleri: "Metin ile Pratik Yazım" → `MİPY`). Kullanıcı Enter'a basınca kaydedilir ve maskot ifadeyi "yutar".
 - Balon 3 sn içinde kullanılmazsa ya da kullanıcı yazmaya devam ederse sessizce kaybolur.
 - Seçili metin önce **UI Automation (TextPattern)** ile okunur. Program bunu desteklemiyorsa pano yedeklenir → `Ctrl+C` → okunur → pano geri yüklenir **[Ö]**.
 - Ayar: balon kapatılabilir ve belirli programlarda gizlenebilir (ör. Photoshop, oyunlar).
@@ -211,7 +211,7 @@ Ada maskottan "doğar". Maskot yatayda uzayarak hapa, hap da panele dönüşür 
 | ------------------ | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | **Arama**          | Tek tık ya da kısayol (`Ctrl+Alt+Space` iki kere ya da ayrı bir kısayol **[A]**) | Arama kutusu, bulanık arama (kısaltma + açıklama + içerik + etiket), ↑↓ ile gezme, Enter ile o anki programa yapıştırma, sağda önizleme |
 | **Yazarken öneri** | Bir kısaltmanın ilk 2+ harfi yazılınca                                           | Maskotun altında 1–3 öneri hapı. `Tab` ile seçilir, yazmaya devam edilirse kaybolur. Ayardan kapatılabilir                              |
-| **İşlem onayı**    | Genişletme, kaydetme, hata                                                       | 1,2 sn'lik hap: "✓ Kaydedildi · CİPY"                                                                                                   |
+| **İşlem onayı**    | Genişletme, kaydetme, hata                                                       | 1,2 sn'lik hap: "✓ Kaydedildi · MİPY"                                                                                                   |
 | **Alan doldurma**  | `{alan:…}` içeren ifade                                                          | Kompakt form. Tab ile alanlar arasında geçilir, Enter ile yazılır                                                                       |
 | **Ekleme**         | §4                                                                               | Ekleme formu                                                                                                                            |
 
@@ -272,8 +272,8 @@ Her gün ilk açılışta ve kapanışta veritabanının tutarlı kopyası alın
 | ------------------ | -------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | Excel / CSV        | `.xlsx`, `.csv`            | Sütun eşleme ekranı: Kısaltma · Metin · Açıklama · Klasör · Etiketler. UTF-8 ve Windows-1254 otomatik algılanır  |
 | Word / metin       | `.docx`, `.txt`            | Her paragraf ya da boş satırla ayrılmış blok bir ifade olur. Kısaltmalar sonra toplu atanır (öneri: baş harfler) |
-| PhraseExpress      | dışa aktarma dosyası       | **[A]** Saul'dan örnek dosya alınıp biçim doğrulanacak                                                           |
-| AutoHotkey         | `.ahk` hotstring satırları | `::cipy::Claude ile Proje Yapmak`                                                                                |
+| PhraseExpress      | dışa aktarma dosyası       | **[A]** Örnek dosya biçimi doğrulanacak                                                                          |
+| AutoHotkey         | `.ahk` hotstring satırları | `::mipy::Metin ile Pratik Yazım`                                                                                 |
 | Beeftext / Espanso | JSON / YAML                |                                                                                                                  |
 
 - İçe aktarmadan önce **önizleme** gösterilir: kaç ifade, kaç çakışma. Çakışmada seçenekler: üzerine yaz · atla · yeni kısaltma öner.
@@ -397,7 +397,7 @@ Bütün bileşenler yalnızca bu rolleri kullanır. Bileşen içinde sabit renk 
 
 ### 11.6 Tasarım kaynakları
 
-- **Tasarım tuvali:** https://claude.ai/artifact/XdbvzgCZMpGKceVg2XwBcR. 01–05 numaralı ada çalışmaları **düzen ve hareket** için referanstır: ada biçim değiştirerek açılır, arama, ekleme ve onay hapı. Renkleri bağlayıcı değildir; renkler §11.2–11.4'e göre temadan gelir.
+- **Tasarım tuvali:** Yüzen ada çalışmaları **düzen ve hareket** için referanstır: ada biçim değiştirerek açılır, arama, ekleme ve onay hapı. Renkleri bağlayıcı değildir; renkler §11.2–11.4'e göre temadan gelir.
 - **Maskot:** Harman B (22). Bkz. §5.1.
 
 ## 12. Varsayılan kısayollar **[Ö]**
@@ -420,9 +420,9 @@ Her aşama kullanılabilir, test edilmiş, sürüm numarası verilmiş bir hâld
 
 | Aşama                         | İçerik                                                                                                                                                       | Bitti sayılması için                                          |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
-| **M1 · Motor** (v0.1)         | Klavye kancası, eşleme (tr-TR), düz metin genişletme, SQLite, tepsi simgesi, CSV içe aktarma                                                                 | `CİPY␣` Notepad, Word, Chrome, Outlook'ta doğru çalışıyor     |
+| **M1 · Motor** (v0.1)         | Klavye kancası, eşleme (tr-TR), düz metin genişletme, SQLite, tepsi simgesi, CSV içe aktarma                                                                 | `MİPY␣` Notepad, Word, Chrome, Outlook'ta doğru çalışıyor     |
 | **M2 · Maskot ve ada** (v0.2) | Meetin koyunu (referans SVG'den, animasyon kataloğuyla), sürükleme, göster/gizle, arama adası, onay hapı                                                     | Maskotla arayıp yapıştırma çalışıyor                          |
-| **M3 · Ekleme** (v0.3)        | Seçim balonu, seç+kısayol, panodan ekleme, sıkma hareketi                                                                                                    | Üç yol da Word, Chrome ve kurum yazılımında çalışıyor         |
+| **M3 · Ekleme** (v0.3)        | Seçim balonu, seç+kısayol, panodan ekleme, sıkma hareketi                                                                                                    | Üç yol da Word, Chrome ve masaüstü uygulamalarda çalışıyor    |
 | **M4 · Zengin içerik** (v0.4) | Biçimli metin, değişkenler, alan doldurma, `{imleç}`, geri al                                                                                                | Biçimli ifade Word/Outlook'a biçimiyle gidiyor                |
 | **M5 · Uzman arayüzü** (v0.5) | Klasör/etiket, düzenleyici, kurallar, geçmiş, çöp kutusu, pano geçmişi, istatistik, içe/dışa aktarma                                                         | PhraseExpress'teki temel işler yapılabiliyor                  |
 | **M6 · Dağıtım** (v1.0)       | Görünüm ayarları (palet üretici, tek tek düzenleme, tema dosyası), NSIS + portable, GitHub güncelleme, ilk açılış ve isim verme, yedek, ayarlar, öneri adası | Temiz bir Windows'ta kurulum → güncelleme → kaldırma sorunsuz |
@@ -436,7 +436,7 @@ Her aşama kullanılabilir, test edilmiş, sürüm numarası verilmiş bir hâld
 **Elle (her aşama sonunda):**
 
 - Tema: Windows açık↔koyu geçişi ve vurgu rengi değişimi (uygulama açıkken), saydamlık kapalı, yüksek karşıtlık teması, Windows 10.
-- Programlar: Notepad, Word, Excel (hücre içinde ve formül çubuğunda), Outlook, Chrome/Edge (WhatsApp Web, Gmail), Telegram masaüstü, Windows Terminal, VS Code, kurum içi haber/arşiv yazılımı.
+- Programlar: Notepad, Word, Excel (hücre içinde ve formül çubuğunda), Outlook, Chrome/Edge (WhatsApp Web, Gmail), Telegram masaüstü, Windows Terminal, VS Code.
 - Durumlar: hızlı yazma (100+ kelime/dk), çok uzun ifade (10.000 karakter), boş ifade, emoji, sağdan sola metin, iki monitör ve farklı DPI (%100/%150), uyku/uyanma, kilit ekranı, yönetici olarak çalışan pencere, tam ekran video, oyun, uzak masaüstü, parola kutusu, pano yöneticisi açıkken, uzun süre (24 saat) açık kalma ve bellek sızıntısı.
 - Veri: genişletme sırasında programı zorla kapatma → DB sağlam mı; disk dolu; salt okunur USB'de portable.
 
@@ -444,8 +444,8 @@ Her aşama kullanılabilir, test edilmiş, sürüm numarası verilmiş bir hâld
 
 ## 15. Uygulayıcıya bırakılanlar ve açık sorular
 
-1. **[A]** PhraseExpress dışa aktarma biçimi: Saul örnek dosya verecek.
-2. **[A]** Kurum içi yazılımda en güvenilir yazma yöntemi (§3.4): ilk hafta gerçek ortamda denenecek.
+1. **[A]** PhraseExpress dışa aktarma biçimi doğrulanacak.
+2. **[A]** Farklı masaüstü yazılımlarda en güvenilir yazma yöntemi (§3.4) gerçek ortamda denenecek.
 3. **[A]** Öneri adasının kaç harften sonra açılacağı (varsayılan 2) ve dikkat dağıtıp dağıtmadığı: M6'da kullanımla ayarlanacak.
 4. **[A]** Arama adası kısayolunun ayrı mı yoksa göster/gizle ile ortak mı olacağı.
 5. **Karar verildi:** Program adı **Meetin**, maskot **Harman B** koyunu.
@@ -454,7 +454,7 @@ Her aşama kullanılabilir, test edilmiş, sürüm numarası verilmiş bir hâld
 
 ---
 
-## 16. Claude Code için çalışma kuralları
+## 16. Geliştirme çalışma kuralları
 
 - Her anlamlı adım sonunda **sürüm numarası** artırılır ve `CHANGELOG.md` gerçek değişikliklerle güncellenir.
 - Bir özellik ancak tüm zincir çalışınca **bitti** sayılır: arayüz → etkileşim → iş mantığı → veri → hata durumu → kullanıcıya geri bildirim → test.
@@ -463,4 +463,4 @@ Her aşama kullanılabilir, test edilmiş, sürüm numarası verilmiş bir hâld
 - Önceki yapay zekâ raporlarına körü körüne güvenilmez; gerçek dosya ve davranış kontrol edilir.
 - **Aynı anda en fazla bir alt ajan** çalıştırılır; kota tasarrufu önceliklidir.
 - Bağlam sınırına yaklaşınca `HANDOFF.md` yazılır: durum, yığın, bitenler, bilinen hatalar, teknik borç, sıradaki önerilen iş.
-- Saul kısa "Devam" komutu verdiğinde: mevcut durumu anla → en önemli kalan işi seç → yap → test et → gerilemeyi kontrol et → arayüzü kontrol et → sürüm + CHANGELOG → rapor + sıradaki adım.
+- Kısa "Devam" komutu verildiğinde: mevcut durumu anla → en önemli kalan işi seç → yap → test et → gerilemeyi kontrol et → arayüzü kontrol et → sürüm + CHANGELOG → rapor + sıradaki adım.

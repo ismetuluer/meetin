@@ -33,14 +33,14 @@ function makePhrase(
 describe("searchEngine", () => {
   it("matches Turkish abbreviations, descriptions, content, and tags", () => {
     const idx = createPhraseSearchIndex([
-      makePhrase(1, "CİPY", "Claude ile Proje Yapmak", "Yapay zeka notu", ["ai"], 5),
-      makePhrase(2, "ŞĞÜ", "İstanbul Büyükşehir", "Belediye", ["resmi"], 12),
+      makePhrase(1, "MİPY", "Metin ile Pratik Yazım", "Üretkenlik notu", ["genel"], 5),
+      makePhrase(2, "ŞĞÜ", "Şehirlerarası Güvenli Ürün", "Genel not", ["resmi"], 12),
       makePhrase(3, "SLM", "Selamlar herkese", "Kısa selam", ["sohbet"], 2),
     ]);
 
     expect(idx.search("")[0].abbr).toBe("ŞĞÜ");
-    expect(idx.search("cipy")[0].id).toBe(1);
-    expect(idx.search("Belediye")[0].id).toBe(2);
+    expect(idx.search("mipy")[0].id).toBe(1);
+    expect(idx.search("Genel not")[0].id).toBe(2);
     expect(idx.search("sohbet")[0].id).toBe(3);
   });
 

@@ -10,14 +10,25 @@ import {
   type ThemeConfig,
 } from "./design/palette";
 import { BasketballHoopApp } from "./games/BasketballHoopApp";
+import { setLanguage, useLanguage } from "./i18n";
 import { MascotIslandApp } from "./island/MascotIslandApp";
 import { StudioView } from "./studio/StudioView";
+import type { AppSettingsDto } from "./studio/types";
 
 type WindowRole = "main" | "mascot" | "bubble" | "hoop";
 
 interface SystemThemeInfo {
   dark: boolean;
   accent_hex: string;
+}
+
+interface WindowBackdropInfo {
+  windows_build: number;
+  is_windows_11: boolean;
+  main_backdrop: string;
+  island_backdrop: string;
+  mica_active: boolean;
+  acrylic_active: boolean;
 }
 
 function parseThemeConfig(raw: string | null): ThemeConfig {
@@ -35,6 +46,8 @@ function parseThemeConfig(raw: string | null): ThemeConfig {
 }
 
 export function App() {
+  useLanguage();
+
   const [role] = useState<WindowRole>(() => {
     try {
       const label = getCurrentWebviewWindow().label;
@@ -53,15 +66,59 @@ export function App() {
     document.documentElement.classList.toggle("is-mascot-window", isTransparent);
     document.body.classList.toggle("is-mascot-window", isTransparent);
 
+    let cancelled = false;
+    void invoke<WindowBackdropInfo>("get_window_backdrop_info")
+      .then((info) => {
+        if (cancelled) return;
+        document.documentElement.classList.toggle(
+          "has-mica-backdrop",
+          role === "main" && Boolean(info?.mica_active),
+        );
+        document.documentElement.classList.toggle(
+          "has-acrylic-backdrop",
+          role === "mascot" && Boolean(info?.acrylic_active),
+        );
+      })
+      .catch(() => {
+        if (cancelled) return;
+        document.documentElement.classList.remove(
+          "has-mica-backdrop",
+          "has-acrylic-backdrop",
+        );
+      });
+
     if (role !== "mascot") {
       const preventBrowserMenu = (e: MouseEvent) => {
         e.preventDefault();
       };
       window.addEventListener("contextmenu", preventBrowserMenu);
-      return () => window.removeEventListener("contextmenu", preventBrowserMenu);
+      return () => {
+        cancelled = true;
+        window.removeEventListener("contextmenu", preventBrowserMenu);
+      };
     }
-    return undefined;
+    return () => {
+      cancelled = true;
+    };
   }, [role]);
+
+  useEffect(() => {
+    void invoke<AppSettingsDto>("get_app_settings")
+      .then((s) => {
+        if (s?.language) {
+          setLanguage(s.language);
+        }
+      })
+      .catch(() => {});
+
+    const unlistenLang = listen<string>("language-changed", (ev) => {
+      setLanguage(ev.payload);
+    });
+
+    return () => {
+      void unlistenLang.then((f) => f());
+    };
+  }, []);
 
   useEffect(() => {
     let config: ThemeConfig = DEFAULT_THEME_CONFIG;

@@ -64,14 +64,14 @@ mod tests {
     #[test]
     fn push_backspace_and_clear() {
         let mut buf = KeyBuffer::new();
-        for c in "CİPY".chars() {
+        for c in "MİPY".chars() {
             buf.push(c);
         }
-        assert_eq!(buf.as_string(), "CİPY");
+        assert_eq!(buf.as_string(), "MİPY");
         buf.backspace();
-        assert_eq!(buf.as_string(), "CİP");
+        assert_eq!(buf.as_string(), "MİP");
         buf.push('Y');
-        assert_eq!(buf.as_string(), "CİPY");
+        assert_eq!(buf.as_string(), "MİPY");
         buf.clear();
         assert!(buf.is_empty());
         assert_eq!(buf.as_string(), "");

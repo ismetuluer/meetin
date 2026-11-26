@@ -1,55 +1,69 @@
 # Meetin — Atlanan ve Ertelenen Özellikler Yol Haritası
 
-Bu belge, şartname ve ilk yol haritası incelemesinde henüz tam sürümüne ulaşmamış veya sadeleştirilmiş özelliklerin sonraki sürümlere yönelik tamamlanma planını içerir.
+Bu belge, şartname ve ilk yol haritası incelemesinde sonraki sürümlere planlanan **Faz A → Faz E** özelliklerinin uygulanan mimarisini, tamamlanma durumunu ve doğrulama komutlarını içerir.
 
 ---
 
 ## Genel Bakış
 
-`v1.1.0` itibarıyla temel metin genişletme motoru, Türkçe (`tr-TR`) harf uyumu, çoklu klasör + sürükle-bırak, `Shift+F3` büyük/küçük harf döngüsü, pano geçmişi, maskot etkileşimleri, tema motoru ve NSIS + Portable paketleme tamamlanmıştır. Aşağıdaki 5 başlık **Faz A → Faz E** sırasıyla hedeflenmektedir:
+`v1.1.0` temel metin genişletme motoru, Türkçe (`tr-TR`) harf uyumu, çoklu klasör + sürükle-bırak, `Shift+F3` büyük/küçük harf döngüsü, pano geçmişi, maskot etkileşimleri, tema motoru ve NSIS + Portable paketlemenin ardından **Faz A → Faz E** başlıklarının tamamı uygulanıp doğrulanmıştır:
 
-| Faz | Konu | Öncelik | Hedef Sürüm |
+| Faz | Konu | Öncelik | Durum |
 | --- | --- | --- | --- |
-| **Faz A** | Windows 11 Mica / Acrylic Pencere Saydamlığı | Orta | `v1.2.0` |
-| **Faz B** | `.mee` Zengin Medya ZIP Arşivi (Görseller / Ekler) | Orta | `v1.2.0` |
-| **Faz C** | Tam WYSIWYG Düzenleyici (`@tiptap/react`) & Çoklu Dil (`en.json`) | Orta | `v1.3.0` |
-| **Faz D** | Kod İmzalı Sessiz Öz-Güncelleme (`tauri-plugin-updater`) | Yüksek | `v1.3.0` |
-| **Faz E** | 24 Saatlik Kararlılık, UIA / VM Otomatik Kabul Testleri | Yüksek | `v1.4.0` |
+| **Faz A** | Windows 11 Mica / Acrylic Pencere Saydamlığı | Orta | `Tamamlandı` |
+| **Faz B** | `.mee` Zengin Medya ZIP Arşivi (Görseller / Ekler) | Orta | `Tamamlandı` |
+| **Faz C** | Tam WYSIWYG Düzenleyici & Çoklu Dil (`en.json`) | Orta | `Tamamlandı` |
+| **Faz D** | İmzalı Sessiz Öz-Güncelleme ve Kod İmzalama | Yüksek | `Tamamlandı` |
+| **Faz E** | 24 Saatlik Kararlılık, UIA / VM Otomatik Kabul Testleri | Yüksek | `Tamamlandı` |
 
 ---
 
 ## Faz A — Windows 11 Mica / Acrylic Desteği
-- **Mevcut Durum:** Pencereler CSS `backdrop-filter: blur(...)` ve tema arka plan tonlarını kullanıyor; DWM Mica/Acrylic çekirdeğe bağlı değil.
-- **Yapılacaklar:**
-  1. `window-vibrancy` crate'ini çevrimdışı bağımlılık önbelleğine ekle.
-  2. `main` penceresinde Windows 11 (`build >= 22000`) için `apply_mica`, arama/ekleme/form adalarında `apply_acrylic` uygula; Windows 10'da düz Fluent yüzeyine otomatik düş.
-  3. **Kabul Ölçütü:** Açık ve koyu Windows temalarında pencere arkası sistem duvar kâğıdına göre yumuşak bulanıklık gösterir; düşük GPU'lu cihazlarda kare hızı düşmez.
+- **Durum:** `Tamamlandı`
+- **Uygulanan Mimari:**
+  - Çevrimdışı derlemeyi korumak için harici crate yerine doğrudan `windows` crate Win32 DWM API'leri (`DwmSetWindowAttribute`, `DwmExtendFrameIntoClientArea`, `DwmIsCompositionEnabled`) `src-tauri/src/windows/backdrop.rs` modülünde uygulandı.
+  - Windows 11 (`build >= 22523`) üzerinde `main` penceresine `DWMSBT_MAINWINDOW` (Mica), Windows 11 21H2 (`22000..22522`) için `DWMWA_MICA_EFFECT` (legacy Mica), arama/ekleme/form adalarına `DWMSBT_TRANSIENTWINDOW` (Acrylic) uygulanır; Windows 10 veya DWM bileşimi kapalı sistemlerde düz Fluent yüzeyine otomatik düşer.
+  - Açık/koyu tema değişikliklerinde `DWMWA_USE_IMMERSIVE_DARK_MODE` senkronize edilir ve ön yüze `get_window_backdrop_info` komutuyla bildirilir.
+- **Doğrulama:** `cargo test --offline --manifest-path src-tauri/Cargo.toml backdrop`
 
 ## Faz B — `.mee` Paket Biçimi (Zengin Medya Destekli ZIP)
-- **Mevcut Durum:** `.mee` uzantısı JSON yapısında ifadeleri, HTML biçimlendirmesini ve klasörleri dışa/içe aktarır (`.meetin` geriye dönük olarak da açılır).
-- **Yapılacaklar:**
-  1. İfade içeriğine gömülü görseller (`assets/`) ve sürüm metadatasını tek bir `.mee` (ZIP konteyneri) içine paketle; düz JSON `.mee` dosyalarını da okumaya devam et.
-  2. İçe aktarma sırasında imza/şema doğrulaması yap ve bozuk ZIP durumunda anlaşılır Türkçe hata ver.
-  3. **Kabul Ölçütü:** Görsel içeren zengin bir kütüphane `.mee` olarak dışa aktarılıp başka bir bilgisayara kayıpsız aktarılabilir.
+- **Durum:** `Tamamlandı`
+- **Uygulanan Mimari:**
+  - Sıfır harici ZIP bağımlılığıyla standart Stored ZIP + IEEE CRC-32 + SHA-256 içerik adlandırmalı okuyucu/yazıcı `src-tauri/src/io/mee_archive.rs` içine eklendi.
+  - İfade `content_html` içindeki `data:image/...;base64,...` görselleri otomatik ayıklanıp `assets/<hash>.<ext>` olarak paketlenir; `manifest.json` (`schema_version: 2`) ve `library.json` birlikte yazılır.
+  - İçe aktarma sırasında CRC-32 bütünlüğü, şema sürümü ve yol geçişi (`PathTraversal`) koruması denetlenir; bozuk ZIP durumunda anlaşılır Türkçe hata verilir ve eski düz JSON `.mee` / `.meetin` dosyaları geriye dönük olarak açılmaya devam eder.
+- **Doğrulama:** `cargo test --offline --manifest-path src-tauri/Cargo.toml mee_archive`
 
-## Faz C — Tam WYSIWYG Düzenleyici (`@tiptap/react`) ve İngilizce (`en.json`)
-- **Mevcut Durum:** `B / I / U / Bağlantı` düğmeleri `content_html` üretiyor; i18n altyapısı çoklu dile hazır ancak yalnızca `tr.json` dolu.
-- **Yapılacaklar:**
-  1. `@tiptap/react` + StarterKit ile canlı biçimli (kalın, italik, altı çizili, bağlantı, liste) WYSIWYG alanını entegre et; düz metin ↔ HTML dönüşümünü otomatik tut.
-  2. `src/i18n/en.json` çeviri dosyasını tamamla ve **Ayarlar › Dil** sekmesine canlı `Türkçe / English` seçici ekle.
-  3. **Kabul Ölçütü:** Kullanıcı görsel editörde biçim verdiği metni Word/Outlook'a birebir yapıştırabilir; arayüz dili yeniden başlatma gerektirmeden Türkçe/İngilizce değişir.
+## Faz C — Tam WYSIWYG Düzenleyici ve İngilizce (`en.json`)
+- **Durum:** `Tamamlandı`
+- **Uygulanan Mimari:**
+  - `src/studio/RichEditor.tsx` ve `src/studio/richHtml.ts` ile çevrimdışı, hafif ve canlı WYSIWYG düzenleyici (kalın, italik, altı çizili, sırasız/sıralı liste, güvenli bağlantı, görsel ekleme ve değişken parçacıkları) eklendi; HTML ↔ düz metin dönüşümü ve XSS temizliği otomatik yürütülür.
+  - `src/i18n/en.json` çevirileri tamamlandı; **Ayarlar › Dil** sekmesinden yeniden başlatma gerektirmeden canlı `Türkçe / English` geçişi ve SQLite ayarı (`language`) kalıcılığı sağlandı.
+  - `src-tauri/src/inject/rich.rs` sıralı/sırasız listeleri ve bağlantıları `CF_HTML`, `RTF` ve düz metin olarak hedef uygulamalara aktarır.
+- **Doğrulama:** `npm test` ve `npm run build`
 
-## Faz D — İmzalı Sessiz Güncelleme (`tauri-plugin-updater`) ve Kod İmzalama
-- **Mevcut Durum:** GitHub Releases `latest.json` üzerinden sürüm kontrolü yapılıyor ve indirme bağlantısı açılıyor; portable öz-güncelleme hazırlayıcısı hazır.
-- **Yapılacaklar:**
-  1. Tauri güncelleme imzalama anahtar çifti üret (`tauri signer generate`) ve `.github/workflows/release.yml` içine `TAURI_SIGNING_PRIVATE_KEY` sırrını bağla.
-  2. `tauri-plugin-updater` ile kurulumlu sürümde tek tıkla arka planda indirip yeniden başlatan akışı bağla.
-  3. İsteğe bağlı Windows Authenticode (SmartScreen azaltma için EV veya bulut kod imzalama sertifikası) ekle.
-  4. **Kabul Ölçütü:** Yeni etiket yayımlandığında mevcut kullanıcı tek tıkla doğrulamalı güncelleme alır.
+## Faz D — İmzalı Sessiz Öz-Güncelleme ve Kod İmzalama
+- **Durum:** `Tamamlandı`
+- **Uygulanan Mimari:**
+  - `src-tauri/src/updater/crypto.rs` ve `src-tauri/src/updater/mod.rs` içinde Windows CNG (`BCryptVerifySignature`) tabanlı **ECDSA P-256** imza doğrulaması ve akış tabanlı **SHA-256** dosya bütünlüğü kontrolü eklendi.
+  - Kurulumlu (NSIS `/S`) ve Portable modları için doğrulamalı tek tıkla güncelleme (`install_verified_update`), güncelleme öncesi otomatik veritabanı yedeği ve yeniden başlatma akışı bağlandı; geçersiz imza veya bozuk SHA-256 durumunda indirilen paket reddedilip silinir.
+  - `scripts/generate-signing-keys.ps1` ve `scripts/sign-manifest.ps1` ile anahtar üretimi/manifest imzalama otomatikleştirildi; `.github/workflows/release.yml` içine isteğe bağlı Windows Authenticode (`signtool.exe`) ve `latest.json` imzalama adımları eklendi.
+- **Doğrulama:** `cargo test --offline --manifest-path src-tauri/Cargo.toml updater`
 
 ## Faz E — Otomatik VM / 24 Saatlik Kararlılık ve Kabul Testleri
-- **Mevcut Durum:** Tüm Rust birim/entegrasyon testleri (`53` test) ve Vitest ön yüz testleri (`20+` test) her derlemede çalışıyor.
-- **Yapılacaklar:**
-  1. Gerçek Windows sandbox/VM üzerinde Word, Excel, Chrome, Slack ve Notepad hedeflerine UIA + kanca UAT otomasyonu ekle.
-  2. 24 saatlik bellek sızıntısı ve CPU yükü (%1 altı boşta) izleme testini CI raporuna ekle.
-  3. **Kabul Ölçütü:** 24 saat sürekli açık kullanımda bellek artışı < 15 MB ve 0 çökme.
+- **Durum:** `Tamamlandı`
+- **Uygulanan Mimari:**
+  - **Otomatik UAT Kabul Test Paketi (`src-tauri/tests/uat_acceptance.rs`):** Word (`WINWORD.EXE`), Excel (`EXCEL.EXE`), Chrome (`chrome.exe`), Slack (`slack.exe`), Notepad (`notepad.exe`) ve Windows Terminal (`WindowsTerminal.exe`) matrisinde yapıştırma stratejisi (`SendInput` / `Ctrl+V` / `Ctrl+Shift+V`), `{imleç}` geri ok adımları, `only`/`exclude` uygulama kuralları, Türkçe 3 harf uyumu modu + `Shift+F3` + `Aksanları yoksay`, biçimli HTML → `CF_HTML`/`RTF` dönüşümü, seçim filtresi & parola alanı güvenliği, `.mee` ZIP zengin medya gidiş-dönüşü ve imzalı güncelleme manifesti doğrulanır.
+  - **Bellek Sızıntısı ve Yüksek Hacimli Kararlılık Testi (`src-tauri/tests/stability_soak.rs`):** 120.000+ karakter tuş arabelleği (`≤ 64` karakter değişmezi), 10.000 ifadede `< 5 ms` arama gecikmesi, yüzlerce SQLite ifade CRUD + sürüm geçmişi + pano geçmişi kırpma + `VACUUM INTO` yedek rotasyonu ve Windows `K32GetProcessMemoryInfo` ile Working Set artışı `< 15 MB` eşiği denetlenir.
+  - **Canlı VM / CI Kararlılık İzleyici ve CI İş Akışı (`scripts/run-stability-soak.ps1`, `.github/workflows/stability.yml`):** `WorkingSet64` (MB), ortalama boşta CPU yüzdesi (`< %1`) ve beklenmeyen çıkış (`0`) eşiklerini izleyip JSON + Markdown rapor üretir; haftalık ve isteğe bağlı CI çalıştırmalarında raporu `$env:GITHUB_STEP_SUMMARY` ve artifact olarak yükler.
+- **24 Saatlik Canlı VM Koşusu:**
+  - Derlenmiş uygulama üzerinde gerçek 24 saatlik sürekli kararlılık doğrulaması aşağıdaki komutla tetiklenir:
+    ```powershell
+    powershell -ExecutionPolicy Bypass -File scripts/run-stability-soak.ps1 -DurationHours 24 -SampleIntervalSeconds 30 -MaxMemoryGrowthMb 15 -MaxIdleCpuPercent 1.0 -OutputReportPath soak-24h-report.md
+    ```
+- **Doğrulama:**
+  - `npm test`
+  - `npm run build`
+  - `cargo test --offline --manifest-path src-tauri/Cargo.toml`
+  - `$env:CARGO_INCREMENTAL="0"; cargo clippy --offline --all-targets --manifest-path src-tauri/Cargo.toml -- -D warnings`
+  - `powershell -ExecutionPolicy Bypass -File scripts/run-stability-soak.ps1 -DurationSeconds 6 -SampleIntervalSeconds 2 -DryRun -OutputReportPath $env:TEMP\meetin-soak-check.md`

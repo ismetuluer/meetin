@@ -549,19 +549,19 @@ export function AppearanceSettings() {
 
           <div className="preview-island-card">
             <div className="preview-search-box">
-              <span>bülten</span>
+              <span>toplantı</span>
             </div>
             <div className="preview-island-row is-selected">
-              <span className="abbr-chip">BLT</span>
-              <span>Bülten girişi</span>
+              <span className="abbr-chip">TPL</span>
+              <span>Toplantı notu</span>
             </div>
             <div className="preview-island-row">
-              <span className="abbr-chip">STR</span>
-              <span>Simultane raporu</span>
+              <span className="abbr-chip">TRH</span>
+              <span>Günün tarihi</span>
             </div>
             <div className="preview-island-row">
-              <span className="abbr-chip">AKHA</span>
-              <span>Birim adı</span>
+              <span className="abbr-chip">TSK</span>
+              <span>Teşekkür notu</span>
             </div>
           </div>
 

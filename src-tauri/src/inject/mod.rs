@@ -10,7 +10,6 @@ pub mod rich;
 
 use thiserror::Error;
 
-use crate::matcher::case::tr_lower;
 use crate::matcher::MatchResult;
 
 use self::clipboard::PasteShortcut;
@@ -31,8 +30,10 @@ pub fn should_use_clipboard(text_char_len: usize, process_name: Option<&str>) ->
         return true;
     }
     if let Some(proc_name) = process_name {
-        let lower = tr_lower(proc_name);
-        if CLIPBOARD_PREFERRED_PROCESSES.iter().any(|&p| p == lower) {
+        if CLIPBOARD_PREFERRED_PROCESSES
+            .iter()
+            .any(|&p| p.eq_ignore_ascii_case(proc_name))
+        {
             return true;
         }
     }
@@ -42,8 +43,10 @@ pub fn should_use_clipboard(text_char_len: usize, process_name: Option<&str>) ->
 /// Hedef programa uygun yapıştırma kısayolunu döndürür.
 pub fn paste_shortcut_for_process(process_name: Option<&str>) -> PasteShortcut {
     if let Some(proc_name) = process_name {
-        let lower = tr_lower(proc_name);
-        if CTRL_SHIFT_V_PROCESSES.iter().any(|&p| p == lower) {
+        if CTRL_SHIFT_V_PROCESSES
+            .iter()
+            .any(|&p| p.eq_ignore_ascii_case(proc_name))
+        {
             return PasteShortcut::CtrlShiftV;
         }
     }
