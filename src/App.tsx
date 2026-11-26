@@ -76,7 +76,7 @@ export function App() {
         sysTheme.dark,
         sysTheme.accent_hex,
       );
-      applyThemeToDocument(resolved);
+      applyThemeToDocument(resolved, config.fontSize ?? "md");
     };
 
     sync();

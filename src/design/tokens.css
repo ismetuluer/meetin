@@ -44,9 +44,20 @@
   --r-md: 8px;
   --r-lg: 12px;
   --r-pill: 999px;
+  --font-size-base: 14px;
+
+  /* Klasör renk paleti */
+  --folder-c-1: #0078d4;
+  --folder-c-2: #7c4dff;
+  --folder-c-3: #0e9488;
+  --folder-c-4: #1e8e5a;
+  --folder-c-5: #d97706;
+  --folder-c-6: #d6336c;
+  --folder-c-7: #dc2626;
+  --folder-c-8: #525b6b;
 
   font-family: "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, sans-serif;
-  font-size: 14px;
+  font-size: var(--font-size-base);
   line-height: 1.45;
 }
 
@@ -210,3 +221,21 @@ select {
   color: var(--uyari);
   background: var(--yuzey-2);
 }
+
+.folder-tint-c1 { color: var(--folder-c-1); }
+.folder-tint-c2 { color: var(--folder-c-2); }
+.folder-tint-c3 { color: var(--folder-c-3); }
+.folder-tint-c4 { color: var(--folder-c-4); }
+.folder-tint-c5 { color: var(--folder-c-5); }
+.folder-tint-c6 { color: var(--folder-c-6); }
+.folder-tint-c7 { color: var(--folder-c-7); }
+.folder-tint-c8 { color: var(--folder-c-8); }
+
+.folder-dot-c1 { background: var(--folder-c-1); }
+.folder-dot-c2 { background: var(--folder-c-2); }
+.folder-dot-c3 { background: var(--folder-c-3); }
+.folder-dot-c4 { background: var(--folder-c-4); }
+.folder-dot-c5 { background: var(--folder-c-5); }
+.folder-dot-c6 { background: var(--folder-c-6); }
+.folder-dot-c7 { background: var(--folder-c-7); }
+.folder-dot-c8 { background: var(--folder-c-8); }

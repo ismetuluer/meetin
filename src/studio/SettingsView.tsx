@@ -78,7 +78,6 @@ export function SettingsView({
   const [backups, setBackups] = useState<BackupFileInfo[]>([]);
   const [startup, setStartup] = useState<StartupStatus | null>(null);
   const [updateInfo, setUpdateInfo] = useState<UpdateCheckResult | null>(null);
-  const [manifestSource, setManifestSource] = useState("");
   const [confirmRestore, setConfirmRestore] = useState<string | null>(null);
   const [busyMsg, setBusyMsg] = useState<string | null>(null);
   const [errMsg, setErrMsg] = useState<string | null>(null);
@@ -94,7 +93,6 @@ export function SettingsView({
       setSettings(s);
       setUserNameDraft(s.user_name);
       setShortcutDraft(s.shortcuts);
-      setManifestSource(s.update_manifest_url || "");
       setBackups(list);
       setStartup(stp);
       setUpdateInfo(upd);
@@ -137,12 +135,35 @@ export function SettingsView({
   };
 
   const updateMascotPrefs = async (
-    sound: boolean,
-    size: AppSettingsDto["mascot_size"],
+    patch: Partial<{
+      sound: boolean;
+      size: AppSettingsDto["mascot_size"];
+      sound_baa: boolean;
+      sound_throw: boolean;
+      sound_impact: boolean;
+    }>,
   ) => {
     if (!settings) return;
-    setSettings({ ...settings, mascot_sound: sound, mascot_size: size });
-    await invoke("set_mascot_prefs", { sound, size });
+    const sound = patch.sound ?? settings.mascot_sound;
+    const size = patch.size ?? settings.mascot_size;
+    const soundBaa = patch.sound_baa ?? settings.sound_baa;
+    const soundThrow = patch.sound_throw ?? settings.sound_throw;
+    const soundImpact = patch.sound_impact ?? settings.sound_impact;
+    setSettings({
+      ...settings,
+      mascot_sound: sound,
+      mascot_size: size,
+      sound_baa: soundBaa,
+      sound_throw: soundThrow,
+      sound_impact: soundImpact,
+    });
+    await invoke("set_mascot_prefs", {
+      sound,
+      size,
+      soundBaa,
+      soundThrow,
+      soundImpact,
+    });
     setBusyMsg(t("settings.saved"));
   };
 
@@ -589,12 +610,7 @@ export function SettingsView({
                       key={sz}
                       type="button"
                       className={`seg-btn ${settings?.mascot_size === sz ? "is-active" : ""}`}
-                      onClick={() =>
-                        void updateMascotPrefs(
-                          settings?.mascot_sound ?? false,
-                          sz,
-                        )
-                      }
+                      onClick={() => void updateMascotPrefs({ size: sz })}
                     >
                       {t(`settings.size.${sz}` as TranslationKey)}
                     </button>
@@ -605,6 +621,23 @@ export function SettingsView({
               <label
                 className="settings-row"
                 style={{ marginTop: 14, cursor: "pointer" }}
+              >
+                <div>
+                  <div className="card-title">{t("settings.mascotMasterSoundTitle")}</div>
+                  <div className="muted small">{t("settings.mascotMasterSoundDesc")}</div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={settings?.mascot_sound ?? true}
+                  onChange={(e) =>
+                    void updateMascotPrefs({ sound: e.target.checked })
+                  }
+                />
+              </label>
+
+              <label
+                className="settings-row"
+                style={{ marginTop: 12, cursor: "pointer" }}
               >
                 <div>
                   <div className="card-title">{t("settings.mascotSoundTitle")}</div>
@@ -622,17 +655,57 @@ export function SettingsView({
                   >
                     {t("settings.testBaaBtn")}
                   </button>
+                  <input
+                    type="checkbox"
+                    disabled={!(settings?.mascot_sound ?? true)}
+                    checked={settings?.sound_baa ?? false}
+                    onChange={(e) =>
+                      void updateMascotPrefs({ sound_baa: e.target.checked })
+                    }
+                  />
+                </div>
+              </label>
+
+              <label
+                className="settings-row"
+                style={{ marginTop: 12, cursor: "pointer" }}
+              >
+                <div>
+                  <div className="card-title">{t("settings.soundThrowTitle")}</div>
+                  <div className="muted small">{t("settings.soundThrowDesc")}</div>
+                </div>
+                <div className="row-actions">
                   <button
                     type="button"
                     className="btn btn-sm"
                     title={t("settings.testThrowBtn")}
                     onClick={(e) => {
                       e.preventDefault();
-                      playThrowSound("rocket");
+                      playThrowSound();
                     }}
                   >
                     {t("settings.testThrowBtn")}
                   </button>
+                  <input
+                    type="checkbox"
+                    disabled={!(settings?.mascot_sound ?? true)}
+                    checked={settings?.sound_throw ?? true}
+                    onChange={(e) =>
+                      void updateMascotPrefs({ sound_throw: e.target.checked })
+                    }
+                  />
+                </div>
+              </label>
+
+              <label
+                className="settings-row"
+                style={{ marginTop: 12, cursor: "pointer" }}
+              >
+                <div>
+                  <div className="card-title">{t("settings.soundImpactTitle")}</div>
+                  <div className="muted small">{t("settings.soundImpactDesc")}</div>
+                </div>
+                <div className="row-actions">
                   <button
                     type="button"
                     className="btn btn-sm"
@@ -646,12 +719,10 @@ export function SettingsView({
                   </button>
                   <input
                     type="checkbox"
-                    checked={settings?.mascot_sound ?? false}
+                    disabled={!(settings?.mascot_sound ?? true)}
+                    checked={settings?.sound_impact ?? true}
                     onChange={(e) =>
-                      void updateMascotPrefs(
-                        e.target.checked,
-                        settings?.mascot_size ?? "normal",
-                      )
+                      void updateMascotPrefs({ sound_impact: e.target.checked })
                     }
                   />
                 </div>
@@ -931,7 +1002,7 @@ export function SettingsView({
               <div className="settings-row">
                 <div>
                   <div className="card-title">
-                    {t("settings.currentVersionTitle")} v{updateInfo?.current_version ?? "1.1.0"}
+                    {t("settings.currentVersionTitle")} v{updateInfo?.current_version ?? "1.2.0"}
                   </div>
                   <div className="muted small">
                     {updateInfo?.is_portable
@@ -951,12 +1022,6 @@ export function SettingsView({
               </div>
 
               <div className="row-actions" style={{ marginTop: 14 }}>
-                <input
-                  className="input"
-                  value={manifestSource}
-                  onChange={(e) => setManifestSource(e.target.value)}
-                  placeholder={t("settings.manifestPlaceholder")}
-                />
                 <button
                   type="button"
                   className="btn btn-primary btn-sm"
@@ -966,7 +1031,7 @@ export function SettingsView({
                     try {
                       const res = await invoke<UpdateCheckResult>(
                         "check_for_updates",
-                        { manifestSource },
+                        { manifestSource: null },
                       );
                       setUpdateInfo(res);
                       setBusyMsg(

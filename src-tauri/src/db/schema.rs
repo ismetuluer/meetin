@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS phrases (
     content TEXT NOT NULL,
     content_html TEXT,
     description TEXT NOT NULL DEFAULT '',
-    case_mode TEXT NOT NULL DEFAULT 'match_typed',
+    case_mode TEXT NOT NULL DEFAULT 'keep_original',
     shortcut TEXT,
     enabled INTEGER NOT NULL DEFAULT 1,
     use_count INTEGER NOT NULL DEFAULT 0,

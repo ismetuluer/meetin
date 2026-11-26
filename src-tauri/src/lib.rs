@@ -120,6 +120,9 @@ pub struct AppSettingsDto {
     pub clipboard_limit: usize,
     pub abbr_suggest_mode: String,
     pub shift_f3_enabled: bool,
+    pub sound_baa: bool,
+    pub sound_throw: bool,
+    pub sound_impact: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -132,6 +135,9 @@ pub struct RunningAppInfo {
 pub struct MascotPrefsPayload {
     pub sound: bool,
     pub size: String,
+    pub sound_baa: bool,
+    pub sound_throw: bool,
+    pub sound_impact: bool,
 }
 
 fn parse_shortcut(raw: &str) -> Result<Shortcut, String> {
@@ -294,7 +300,28 @@ fn get_app_settings(state: State<'_, AppState>) -> Result<AppSettingsDto, String
         .ok()
         .flatten()
         .map(|v| v == "true")
+        .unwrap_or(true);
+    let sound_baa = state
+        .storage
+        .get_setting("sound_baa")
+        .ok()
+        .flatten()
+        .map(|v| v == "true")
         .unwrap_or(false);
+    let sound_throw = state
+        .storage
+        .get_setting("sound_throw")
+        .ok()
+        .flatten()
+        .map(|v| v == "true")
+        .unwrap_or(true);
+    let sound_impact = state
+        .storage
+        .get_setting("sound_impact")
+        .ok()
+        .flatten()
+        .map(|v| v == "true")
+        .unwrap_or(true);
     let mascot_size = state
         .storage
         .get_setting("mascot_size")
@@ -364,6 +391,9 @@ fn get_app_settings(state: State<'_, AppState>) -> Result<AppSettingsDto, String
         clipboard_limit,
         abbr_suggest_mode,
         shift_f3_enabled,
+        sound_baa,
+        sound_throw,
+        sound_impact,
     })
 }
 
@@ -589,13 +619,23 @@ fn get_update_env_info() -> UpdateCheckResult {
 fn check_for_updates(
     app: AppHandle,
     state: State<'_, AppState>,
-    manifest_source: String,
+    manifest_source: Option<String>,
 ) -> Result<UpdateCheckResult, String> {
-    let trimmed = manifest_source.trim().to_string();
-    let _ = state.storage.set_setting("update_manifest_url", &trimmed);
+    let raw = manifest_source.unwrap_or_default();
+    let effective = if raw.trim().is_empty() {
+        state
+            .storage
+            .get_setting("update_manifest_url")
+            .ok()
+            .flatten()
+            .filter(|u| !u.trim().is_empty())
+            .unwrap_or_else(|| DEFAULT_UPDATE_MANIFEST_URL.to_string())
+    } else {
+        raw.trim().to_string()
+    };
     let cur = env!("CARGO_PKG_VERSION");
     let portable = startup::is_portable_mode();
-    let res = updater::check_manifest_source(&trimmed, cur, portable)?;
+    let res = updater::check_manifest_source(&effective, cur, portable)?;
     if res.update_available {
         let _ = app.emit("update-available", res.latest_version.clone().unwrap_or_default());
     }
@@ -638,12 +678,43 @@ fn set_mascot_prefs(
     state: State<'_, AppState>,
     sound: bool,
     size: String,
+    sound_baa: Option<bool>,
+    sound_throw: Option<bool>,
+    sound_impact: Option<bool>,
 ) -> Result<(), String> {
     let norm_size = if matches!(size.as_str(), "small" | "normal" | "large") {
         size
     } else {
         "normal".to_string()
     };
+    let cur_baa = sound_baa.unwrap_or_else(|| {
+        state
+            .storage
+            .get_setting("sound_baa")
+            .ok()
+            .flatten()
+            .map(|v| v == "true")
+            .unwrap_or(false)
+    });
+    let cur_throw = sound_throw.unwrap_or_else(|| {
+        state
+            .storage
+            .get_setting("sound_throw")
+            .ok()
+            .flatten()
+            .map(|v| v == "true")
+            .unwrap_or(true)
+    });
+    let cur_impact = sound_impact.unwrap_or_else(|| {
+        state
+            .storage
+            .get_setting("sound_impact")
+            .ok()
+            .flatten()
+            .map(|v| v == "true")
+            .unwrap_or(true)
+    });
+
     state
         .storage
         .set_setting("mascot_sound", if sound { "true" } else { "false" })
@@ -652,11 +723,27 @@ fn set_mascot_prefs(
         .storage
         .set_setting("mascot_size", &norm_size)
         .map_err(|e| e.to_string())?;
+    state
+        .storage
+        .set_setting("sound_baa", if cur_baa { "true" } else { "false" })
+        .map_err(|e| e.to_string())?;
+    state
+        .storage
+        .set_setting("sound_throw", if cur_throw { "true" } else { "false" })
+        .map_err(|e| e.to_string())?;
+    state
+        .storage
+        .set_setting("sound_impact", if cur_impact { "true" } else { "false" })
+        .map_err(|e| e.to_string())?;
+
     let _ = app.emit(
         "mascot-prefs-changed",
         MascotPrefsPayload {
             sound,
             size: norm_size,
+            sound_baa: cur_baa,
+            sound_throw: cur_throw,
+            sound_impact: cur_impact,
         },
     );
     Ok(())
@@ -951,7 +1038,7 @@ fn set_mascot_mode(app: AppHandle, state: State<'_, AppState>, mode: String) {
             resize_mascot_window(&app, &state.mascot, 360.0, 96.0, false);
         }
         "menu" => {
-            resize_mascot_window(&app, &state.mascot, 220.0, 248.0, true);
+            resize_mascot_window(&app, &state.mascot, 224.0, 286.0, true);
         }
         _ => {
             resize_mascot_window(&app, &state.mascot, 100.0, 100.0, false);
@@ -1165,6 +1252,47 @@ fn delete_folder(state: State<'_, AppState>, id: i64) -> Result<(), String> {
     state.storage.delete_folder(id).map_err(|e| e.to_string())?;
     let _ = state.hook.reload_matcher(&state.storage);
     Ok(())
+}
+
+#[tauri::command]
+fn update_folder(
+    state: State<'_, AppState>,
+    id: i64,
+    name: Option<String>,
+    color: Option<String>,
+) -> Result<FolderRecord, String> {
+    let color_arg = color.map(|c| {
+        if c.trim().is_empty() {
+            None
+        } else {
+            Some(c)
+        }
+    });
+    let color_ref = color_arg.as_ref().map(|opt| opt.as_deref());
+    state
+        .storage
+        .update_folder(id, name.as_deref(), color_ref)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn export_phrases_subset(
+    state: State<'_, AppState>,
+    phrase_ids: Vec<i64>,
+    format: String,
+) -> Result<String, String> {
+    let phrases = state
+        .storage
+        .list_phrases_by_ids(&phrase_ids)
+        .map_err(|e| e.to_string())?;
+    let folders = state.storage.list_folders().map_err(|e| e.to_string())?;
+    if format.eq_ignore_ascii_case("csv") {
+        export_csv(&phrases, &folders).map_err(|e| e.to_string())
+    } else if format.eq_ignore_ascii_case("ahk") {
+        Ok(export_ahk(&phrases))
+    } else {
+        export_meetin_json(&phrases, &folders).map_err(|e| e.to_string())
+    }
 }
 
 #[tauri::command]
@@ -1665,6 +1793,8 @@ pub fn run() {
             cancel_fill_island,
             create_folder,
             delete_folder,
+            update_folder,
+            export_phrases_subset,
             list_phrase_versions,
             restore_phrase_version,
             hard_delete_phrase,

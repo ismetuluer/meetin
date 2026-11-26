@@ -68,7 +68,10 @@ export function MascotIslandApp() {
   const [paused, setPaused] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [isAdminWindow, setIsAdminWindow] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [soundBaa, setSoundBaa] = useState(false);
+  const [soundThrow, setSoundThrow] = useState(true);
+  const [soundImpact, setSoundImpact] = useState(true);
   const [mascotSize, setMascotSize] = useState<"small" | "normal" | "large">("normal");
   const [pupilOffset, setPupilOffset] = useState({ x: 0, y: 0 });
   const [flightAngleDeg, setFlightAngleDeg] = useState(0);
@@ -131,6 +134,12 @@ export function MascotIslandApp() {
   pausedRef.current = paused;
   const soundEnabledRef = useRef(soundEnabled);
   soundEnabledRef.current = soundEnabled;
+  const soundBaaRef = useRef(soundBaa);
+  soundBaaRef.current = soundBaa;
+  const soundThrowRef = useRef(soundThrow);
+  soundThrowRef.current = soundThrow;
+  const soundImpactRef = useRef(soundImpact);
+  soundImpactRef.current = soundImpact;
   const lastImpactSoundRef = useRef(0);
 
   // İşaretçi hareket / basılı tutma / tıklama ayrımı (maskot)
@@ -208,10 +217,10 @@ export function MascotIslandApp() {
   }, []);
 
   const playAnim = useCallback(
-    (next: MascotAnim) => {
+    (next: MascotAnim, allowBaaSound = true) => {
       clearAnimTimer();
       setAnim(next);
-      if (next === "baa" && soundEnabled) {
+      if (next === "baa" && allowBaaSound && soundEnabledRef.current && soundBaaRef.current) {
         playBaaSound();
       }
       const dur = ANIM_DURATIONS[next];
@@ -221,7 +230,7 @@ export function MascotIslandApp() {
         }, dur);
       }
     },
-    [clearAnimTimer, soundEnabled],
+    [clearAnimTimer],
   );
 
   const showNoticePill = useCallback(
@@ -285,15 +294,20 @@ export function MascotIslandApp() {
           .split(/\r?\n/)
           .map((l) => l.trim())
           .find(Boolean) ?? "";
+      const initialFid = lastUsedFolderIdRef.current;
+      const initialFolderName =
+        initialFid !== null
+          ? folders.find((f) => f.id === initialFid)?.name ?? ""
+          : "";
       setAddContent(initialText);
-      setAddAbbr(suggestAbbreviation(cleaned, effMode, []));
+      setAddAbbr(suggestAbbreviation(cleaned, effMode, initialFolderName ? [initialFolderName] : []));
       setAddAbbrManual(false);
       setAddDescription(firstLine.slice(0, 80));
       setAddDescriptionManual(false);
-      setAddFolderId(lastUsedFolderIdRef.current);
+      setAddFolderId(initialFid);
       setShowInlineNewFolder(false);
       setInlineFolderName("");
-      setAddTagsText("");
+      setAddTagsText(initialFolderName);
       setAddError(null);
       setMode("add");
       await invoke("set_mascot_mode", { mode: "add" });
@@ -323,6 +337,9 @@ export function MascotIslandApp() {
     void invoke<AppSettingsDto>("get_app_settings")
       .then((s) => {
         setSoundEnabled(s.mascot_sound);
+        setSoundBaa(s.sound_baa ?? false);
+        setSoundThrow(s.sound_throw ?? true);
+        setSoundImpact(s.sound_impact ?? true);
         setMascotSize(s.mascot_size);
         setAbbrSuggestMode(s.abbr_suggest_mode ?? "initials");
       })
@@ -330,13 +347,25 @@ export function MascotIslandApp() {
     void loadPhrases();
 
     const unlisteners = [
-      listen<{ sound: boolean; size: "small" | "normal" | "large" }>(
-        "mascot-prefs-changed",
-        (ev) => {
-          setSoundEnabled(ev.payload.sound);
-          setMascotSize(ev.payload.size);
-        },
-      ),
+      listen<{
+        sound: boolean;
+        size: "small" | "normal" | "large";
+        sound_baa?: boolean;
+        sound_throw?: boolean;
+        sound_impact?: boolean;
+      }>("mascot-prefs-changed", (ev) => {
+        setSoundEnabled(ev.payload.sound);
+        setMascotSize(ev.payload.size);
+        if (typeof ev.payload.sound_baa === "boolean") {
+          setSoundBaa(ev.payload.sound_baa);
+        }
+        if (typeof ev.payload.sound_throw === "boolean") {
+          setSoundThrow(ev.payload.sound_throw);
+        }
+        if (typeof ev.payload.sound_impact === "boolean") {
+          setSoundImpact(ev.payload.sound_impact);
+        }
+      }),
       listen<void>("onboarding-wake-mascot", () => {
         playAnim("hop");
       }),
@@ -437,7 +466,7 @@ export function MascotIslandApp() {
       ) {
         return;
       }
-      playAnim(pickAutoAnim());
+      playAnim(pickAutoAnim(), false);
     }, 6000);
     return () => window.clearInterval(id);
   }, [anim, isVisible, mode, paused, playAnim]);
@@ -538,6 +567,10 @@ export function MascotIslandApp() {
       setFolders((prev) => [...prev, created]);
       setAddFolderId(created.id);
       lastUsedFolderIdRef.current = created.id;
+      setAddTagsText((prev) => {
+        const list = prev.split(",").map((s) => s.trim()).filter(Boolean);
+        return list.includes(created.name) ? prev : [...list, created.name].join(", ");
+      });
       try {
         window.localStorage.setItem("meetin:last_folder_id", String(created.id));
       } catch {
@@ -570,7 +603,7 @@ export function MascotIslandApp() {
           description: addDescription.trim(),
           folder_id: addFolderId,
           folder_ids: addFolderId !== null ? [addFolderId] : [],
-          case_mode: "match_typed",
+          case_mode: "keep_original",
           shortcut: null,
           tags,
         },
@@ -645,18 +678,15 @@ export function MascotIslandApp() {
   }
 
   // Maskot fare etkileşimleri: tek tık / çift tık / basılı tut / sürükle-fırlat / salla / sağ tık (§5.1)
-  function startThrowLoop(
-    initial: ThrowState,
-    tier: "gentle" | "fast" | "rocket" = "fast",
-  ) {
+  function startThrowLoop(initial: ThrowState) {
     cancelThrow();
     const isBasket = basketballModeRef.current;
     const gravity = isBasket ? 1150 : 0;
 
     clearAnimTimer();
     setAnim("super");
-    if (soundEnabledRef.current) {
-      playThrowSound(tier);
+    if (soundEnabledRef.current && soundThrowRef.current) {
+      playThrowSound();
     }
     setFlightAngleDeg((Math.atan2(initial.vy, initial.vx) * 180) / Math.PI);
 
@@ -695,7 +725,7 @@ export function MascotIslandApp() {
           const prevCy = sim.y + halfW;
           const step = stepThrowPhysics(sim, bounds, dtSec, { gravity });
           sim = step.state;
-          if (step.bounced && soundEnabledRef.current) {
+          if (step.bounced && soundEnabledRef.current && soundImpactRef.current) {
             const sinceLast = now - lastImpactSoundRef.current;
             if (sinceLast >= 90) {
               lastImpactSoundRef.current = now;
@@ -891,15 +921,12 @@ export function MascotIslandApp() {
         const launchVy =
           tier === "none" ? vel.vy * 1.15 : vel.vy;
         if (Math.hypot(launchVx, launchVy) >= 140) {
-          startThrowLoop(
-            {
-              x: ps.lastSentX,
-              y: ps.lastSentY,
-              vx: launchVx,
-              vy: launchVy,
-            },
-            tier === "none" ? "gentle" : tier,
-          );
+          startThrowLoop({
+            x: ps.lastSentX,
+            y: ps.lastSentY,
+            vx: launchVx,
+            vy: launchVy,
+          });
           return;
         }
       }
@@ -1067,6 +1094,24 @@ export function MascotIslandApp() {
           }}
         >
           {t("mascot.menuStudio")}
+        </button>
+        <button
+          type="button"
+          className="mascot-menu-item"
+          onClick={async () => {
+            const nextSound = !soundEnabled;
+            setSoundEnabled(nextSound);
+            await invoke("set_mascot_prefs", {
+              sound: nextSound,
+              size: mascotSize,
+              soundBaa,
+              soundThrow,
+              soundImpact,
+            });
+            await closeToMascot();
+          }}
+        >
+          {soundEnabled ? t("mascot.menuMute") : t("mascot.menuUnmute")}
         </button>
         <button
           type="button"
@@ -1344,6 +1389,15 @@ export function MascotIslandApp() {
                   const fid = v === "" ? null : Number(v);
                   setAddFolderId(fid);
                   lastUsedFolderIdRef.current = fid;
+                  if (fid !== null) {
+                    const fname = folders.find((f) => f.id === fid)?.name;
+                    if (fname) {
+                      setAddTagsText((prev) => {
+                        const list = prev.split(",").map((s) => s.trim()).filter(Boolean);
+                        return list.includes(fname) ? prev : [...list, fname].join(", ");
+                      });
+                    }
+                  }
                 }}
               >
                 <option value="">{t("add.noFolder")}</option>

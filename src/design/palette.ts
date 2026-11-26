@@ -7,6 +7,14 @@
 export type ThemeMode = "system" | "light" | "dark";
 export type PaletteSource = "system" | "custom";
 export type IslandSurface = "match_theme" | "always_dark";
+export type FontSizeOption = "sm" | "md" | "lg" | "xl";
+
+export const FONT_SIZE_PX: Record<FontSizeOption, number> = {
+  sm: 12,
+  md: 14,
+  lg: 16,
+  xl: 18,
+};
 
 export type ThemeRoleKey =
   | "--vurgu"
@@ -33,6 +41,7 @@ export interface ThemeConfig {
   accentHex: string;
   islandSurface: IslandSurface;
   acrylicOpacity: number;
+  fontSize?: FontSizeOption;
   overrides: Partial<Record<ThemeRoleKey, string>>;
 }
 
@@ -44,6 +53,7 @@ export const DEFAULT_THEME_CONFIG: ThemeConfig = {
   accentHex: "#7C4DFF",
   islandSurface: "match_theme",
   acrylicOpacity: 0.92,
+  fontSize: "md",
   overrides: {},
 };
 
@@ -456,7 +466,10 @@ export function resolveThemeTokens(
   };
 }
 
-export function applyThemeToDocument(theme: ResolvedTheme): void {
+export function applyThemeToDocument(
+  theme: ResolvedTheme,
+  fontSize: FontSizeOption = "md",
+): void {
   const root = document.documentElement;
   root.dataset.theme = theme.resolvedDark ? "dark" : "light";
   root.style.colorScheme = theme.resolvedDark ? "dark" : "light";
@@ -466,4 +479,7 @@ export function applyThemeToDocument(theme: ResolvedTheme): void {
   }
   root.style.setProperty("--ada-zemin", theme.adaZemin);
   root.style.setProperty("--ada-metin", theme.adaMetin);
+  const px = FONT_SIZE_PX[fontSize] ?? 14;
+  root.style.setProperty("--font-size-base", `${px}px`);
+  root.style.fontSize = `${px}px`;
 }

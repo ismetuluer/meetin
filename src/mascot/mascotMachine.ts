@@ -5,7 +5,6 @@
 
 import baaMp3Url from "../assets/sounds/baaa.mp3";
 import whooshMp3Url from "../assets/sounds/dragon-studio-simple-whoosh-382724.mp3";
-import screamMp3Url from "../assets/sounds/universfield-cartoon-scream-323779.mp3";
 import punchClassicMp3Url from "../assets/sounds/universfield-classic-punch-impact-352711.mp3";
 import thudImpactMp3Url from "../assets/sounds/universfield-impact-thud-291047.mp3";
 import punchPowerMp3Url from "../assets/sounds/universfield-power-punch-192118.mp3";
@@ -75,7 +74,15 @@ export function getMascotFlags(anim: MascotAnim): MascotFlags {
   };
 }
 
-const AUTO_POOL: MascotAnim[] = ["graze", "graze", "baa", "stare", "hop"];
+const AUTO_POOL: MascotAnim[] = [
+  "graze",
+  "graze",
+  "graze",
+  "stare",
+  "stare",
+  "hop",
+  "baa",
+];
 
 /**
  * "Kendi hâlinde" modu için rastgele animasyon seçer (§5.1.1).
@@ -119,16 +126,10 @@ export function playBaaSound(): void {
 }
 
 /**
- * Fırlatma anında gerçek fırlatma ses efekti çalar (§5.1.1).
+ * Fırlatma anında gerçek hava vınlaması (whoosh) ses efekti çalar (§5.1.1).
  */
-export function playThrowSound(tier: "gentle" | "fast" | "rocket" = "fast"): void {
-  if (tier === "rocket") {
-    playMp3(screamMp3Url, 0.74);
-  } else if (tier === "fast") {
-    playMp3(Math.random() < 0.45 ? screamMp3Url : whooshMp3Url, 0.68);
-  } else {
-    playMp3(whooshMp3Url, 0.62);
-  }
+export function playThrowSound(): void {
+  playMp3(whooshMp3Url, 0.66);
 }
 
 const WALL_IMPACT_SOUNDS = [

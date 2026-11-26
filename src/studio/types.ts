@@ -153,6 +153,9 @@ export interface AppSettingsDto {
   clipboard_limit: number;
   abbr_suggest_mode: AbbrSuggestMode;
   shift_f3_enabled: boolean;
+  sound_baa: boolean;
+  sound_throw: boolean;
+  sound_impact: boolean;
 }
 
 export interface BackupFileInfo {

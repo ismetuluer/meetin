@@ -117,6 +117,131 @@ pub fn build_cursor_left_steps(left_count: usize) -> Vec<InjectStep> {
     vec![InjectStep::LeftArrow; left_count]
 }
 
+/// Yapıştırma sonrasında metni seçili bırakmak için gereken `Shift+Left` sayısını hesaplar.
+/// `\r\n` satır sonlarını tek hareket sayar ve aşırı uzun seçimleri 2000 ile sınırlar.
+pub fn build_reselect_left_count(text: &str) -> usize {
+    let normalized = text.replace("\r\n", "\n");
+    normalized.chars().count().min(2000)
+}
+
+/// Fiziksel `Shift` tuşları basılıyken `Ctrl+C`/`Ctrl+V` enjeksiyonlarının
+/// `Ctrl+Shift+...` olmaması için geçici key-up olayı gönderir.
+pub fn release_shift_keys() -> Result<(), InjectError> {
+    #[cfg(windows)]
+    {
+        use crate::hook::INJECTED_EXTRA_INFO;
+        use std::mem::size_of;
+        use windows::Win32::UI::Input::KeyboardAndMouse::{
+            MapVirtualKeyW, SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_KEYUP,
+            MAPVK_VK_TO_VSC, VK_LSHIFT, VK_RSHIFT, VK_SHIFT,
+        };
+        let keys = [VK_SHIFT, VK_LSHIFT, VK_RSHIFT];
+        let inputs: Vec<INPUT> = keys
+            .iter()
+            .map(|&vk| {
+                let scan = unsafe { MapVirtualKeyW(vk.0 as u32, MAPVK_VK_TO_VSC) as u16 };
+                INPUT {
+                    r#type: INPUT_KEYBOARD,
+                    Anonymous: INPUT_0 {
+                        ki: KEYBDINPUT {
+                            wVk: vk,
+                            wScan: scan,
+                            dwFlags: KEYEVENTF_KEYUP,
+                            time: 0,
+                            dwExtraInfo: INJECTED_EXTRA_INFO,
+                        },
+                    },
+                }
+            })
+            .collect();
+        unsafe {
+            let _ = SendInput(&inputs, size_of::<INPUT>() as i32);
+        }
+    }
+    Ok(())
+}
+
+/// Yapıştırılan metnin sonundan geriye doğru `char_count` karakteri `Shift+Left` ile yeniden seçer.
+pub fn send_reselect_left(char_count: usize) -> Result<(), InjectError> {
+    if char_count == 0 {
+        return Ok(());
+    }
+    #[cfg(windows)]
+    {
+        use crate::hook::INJECTED_EXTRA_INFO;
+        use std::mem::size_of;
+        use windows::Win32::UI::Input::KeyboardAndMouse::{
+            MapVirtualKeyW, SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT,
+            KEYEVENTF_EXTENDEDKEY, KEYEVENTF_KEYUP, MAPVK_VK_TO_VSC, VK_LEFT, VK_SHIFT,
+        };
+
+        let scan_shift = unsafe { MapVirtualKeyW(VK_SHIFT.0 as u32, MAPVK_VK_TO_VSC) as u16 };
+        let scan_left = unsafe { MapVirtualKeyW(VK_LEFT.0 as u32, MAPVK_VK_TO_VSC) as u16 };
+
+        let mut inputs = Vec::with_capacity(char_count * 2 + 2);
+        inputs.push(INPUT {
+            r#type: INPUT_KEYBOARD,
+            Anonymous: INPUT_0 {
+                ki: KEYBDINPUT {
+                    wVk: VK_SHIFT,
+                    wScan: scan_shift,
+                    dwFlags: Default::default(),
+                    time: 0,
+                    dwExtraInfo: INJECTED_EXTRA_INFO,
+                },
+            },
+        });
+        for _ in 0..char_count {
+            inputs.push(INPUT {
+                r#type: INPUT_KEYBOARD,
+                Anonymous: INPUT_0 {
+                    ki: KEYBDINPUT {
+                        wVk: VK_LEFT,
+                        wScan: scan_left,
+                        dwFlags: KEYEVENTF_EXTENDEDKEY,
+                        time: 0,
+                        dwExtraInfo: INJECTED_EXTRA_INFO,
+                    },
+                },
+            });
+            inputs.push(INPUT {
+                r#type: INPUT_KEYBOARD,
+                Anonymous: INPUT_0 {
+                    ki: KEYBDINPUT {
+                        wVk: VK_LEFT,
+                        wScan: scan_left,
+                        dwFlags: KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP,
+                        time: 0,
+                        dwExtraInfo: INJECTED_EXTRA_INFO,
+                    },
+                },
+            });
+        }
+        inputs.push(INPUT {
+            r#type: INPUT_KEYBOARD,
+            Anonymous: INPUT_0 {
+                ki: KEYBDINPUT {
+                    wVk: VK_SHIFT,
+                    wScan: scan_shift,
+                    dwFlags: KEYEVENTF_KEYUP,
+                    time: 0,
+                    dwExtraInfo: INJECTED_EXTRA_INFO,
+                },
+            },
+        });
+
+        let sent = unsafe { SendInput(&inputs, size_of::<INPUT>() as i32) };
+        if sent as usize != inputs.len() {
+            return Err(InjectError::Win32(format!(
+                "Yeniden seçim SendInput eksik: {sent}/{}",
+                inputs.len()
+            )));
+        }
+    }
+    let _ = char_count;
+    Ok(())
+}
+
 /// Değişkenleri ve `{imleç}` konumu çözümlenmiş ifadeyi (düz veya biçimli) hedef pencereye yazar.
 pub fn inject_resolved(
     abbr_char_len: usize,
@@ -378,5 +503,6 @@ mod tests {
             PasteShortcut::CtrlV
         );
         assert_eq!(build_cursor_left_steps(3), vec![InjectStep::LeftArrow; 3]);
+        assert_eq!(build_reselect_left_count("abc\r\ndef"), 7);
     }
 }

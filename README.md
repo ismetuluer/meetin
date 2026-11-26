@@ -1,16 +1,43 @@
-# Meetin · Akıllı Türkçe Metin Genişletici (`v1.1.0`)
+<p align="center">
+  <img src="docs/screenshots/meetin-mascot.png" alt="Meetin Maskotu" width="112" />
+</p>
 
-Meetin, Windows için tasarlanmış yerel, hızlı ve Türkçe (`tr-TR`) uyumlu akıllı metin genişletici ve üretkenlik maskotudur.
+<h1 align="center">Meetin · Akıllı Türkçe Metin Genişletici (<code>v1.2.0</code>)</h1>
 
-## Özellikler
+<p align="center">
+  Windows için tasarlanmış yerel, hızlı, gizlilik odaklı ve Türkçe (<code>tr-TR</code>) uyumlu akıllı metin genişletici ve etkileşimli masaüstü koyun maskotu.
+</p>
 
-- **Türkçe Harf Uyumu (`tr-TR`):** `i ↔ İ`, `ı ↔ I` ayrımını bozmadan *Yazışa uy*, *Aynen getir* ve *Birebir eşleşme* modlarıyla genişletme ve *Aksanları yoksay* seçeneği.
-- **Evrensel `Shift+F3` Harf Döngüsü:** Herhangi bir düzenlenebilir Windows programında seçili metni Word tarzı `küçük → İlk harf büyük → TÜMÜ BÜYÜK` döngüsüyle tek kısayolla dönüştürme.
-- **Zengin İçerik ve Değişkenler:** Word/Outlook için `CF_HTML` + Türkçe Unicode kaçışlı `RTF`, `{tarih}`, `{tarih:±g/h/a/y}`, `{saat}`, `{pano}`, `{imleç}`, `{alan:…}` form adası ve `{ifade:…}`.
-- **Maskot ve Dinamik Ada:** Masaüstünde serbestçe sürüklenip fırlatılabilen koyun maskotu (gerçek mee, fırlatma ve duvar çarpma ses efektleriyle), yazarken önek öneri adası (`Tab`), seçili metinde `+ Ekle` balonu (doğrudan yeni klasör ekleme) ve basketbol mini oyunu.
-- **Ana Arayüz (Fluent 2):** Daraltılabilir sol kenar çubuğu, sürükle-bırak ile klasöre taşıma (`Ctrl+bırak` ile çoklu klasöre kopyalama), tekil kısaltma koruması, otomatik kaydetme, içerik→açıklama otomatik eşitleme, açık uygulamaları otomatik algılayan kurallar, Pano Geçmişi (hatırlama/limit ve büyük/küçük harf kopyalama seçenekleri), Çöp Kutusu, sürüm geçmişi, `Ctrl+K` Komut Paleti ve `.mee` / CSV / `.ahk` / `.txt` içe/dışa aktarma.
-- **Tema ve OKLCH Palet Motoru:** Windows açık/koyu modu ve vurgu rengini canlı izler; WCAG ≥ 4,5:1 karşıtlık güvenceli 3 düzeyli renk özelleştirme ve `.mee-tema` paylaşımı sunar.
-- **Güvenilir Yedekleme (`%APPDATA%\Meetin`):** Tüm veriler kullanıcı `AppData\Roaming\Meetin\` klasöründe tutulur; açılış ve kapanışta otomatik SQLite `VACUUM INTO` yedeği (30 kopya rotasyonu) alınır.
+---
+
+## Ekran Görüntüleri
+
+<p align="center">
+  <img src="docs/screenshots/meetin-studio.png" alt="Meetin Ana Arayüz" width="48%" />
+  &nbsp;
+  <img src="docs/screenshots/meetin-appearance.png" alt="Meetin Görünüm ve Tema Motoru" width="48%" />
+</p>
+
+- **Masaüstü Koyun Maskotu ([meetin-maskot.svg](docs/meetin-maskot.svg)):** Sürüklenebilir, fırlatılabilir, tıklayınca arama adası ve seçili metinlerde anında `+ Ekle` balonu açan; sağ tıkla tek adımda **Sessize Al** / **Duraklat** seçenekleri sunan üretkenlik maskotu.
+
+---
+
+## Öne Çıkan Özellikler
+
+- **Türkçe Büyük/Küçük Harf Uyumu (`tr-TR`):** `i ↔ İ`, `ı ↔ I` ayrımını bozmadan *Aynen getir* (varsayılan), *Harf uyumu* ve *Birebir eşleşme* modlarıyla genişletme + *Aksanları yoksay* seçeneği.
+- **Kesintisiz `Shift+F3` Harf Döngüsü:** Hangi düzenlenebilir uygulamada olursan ol seçili metni Word tarzı `küçük → İlk harf büyük → TÜMÜ BÜYÜK` döngüsüyle dönüştürür ve seçimi korur; ardı ardına `Shift+F3` basarak devam edebilirsiniz.
+- **Güçlü Kütüphane ve Klasör Yönetimi:**
+  - Tek ifadeyi birden fazla klasörde bulundurma, klasörler arası serbest taşıma veya `Ctrl+sürükle` ile kopyalama.
+  - **Toplu seçme**, sağ tık bağlam menüsü, klasörlere 8 farklı renk atama ve yeniden adlandırma.
+  - İfadeyi **Çöp Kutusu**na sürükleyerek veya listede sola kaydırıp kırmızı **Sil** ile anında silme.
+  - Kütüphanenin tamamını, bir klasörü ya da filtrelenmiş listeyi `.mee`, `CSV` veya `.ahk` olarak dışa aktarma.
+- **Akıllı Otomatik İşlemler:** 650 ms otomatik kaydetme, içerik yazıldıkça otomatik açıklama doldurma (elle müdahale edilene dek), klasör adını etikete otomatik ekleme ve ayarlanabilir kısaltma önerisi (*İlk harfler*, *İlk kelime*, *Son kelime*, *Etiket*).
+- **Pano Geçmişi ve Biçim Dönüştürücü:** Ayarlanabilir kayıt sayısı (varsayılan son 10 kopya); kayıtlı her metni tek tıkla *Kopyala*, *TÜMÜ BÜYÜK*, *tümü küçük*, *İlk Harf Büyük* olarak kopyalama.
+- **Ayrı Ses Kontrolleri:** `Ayarlar › Maskot` üzerinden ana ses, *Mee sesi*, *Fırlatma sesi (whoosh)* ve *Duvar çarpma sesi* ayrı ayrı açılıp kapatılabilir.
+- **Tema ve Yazı Boyutu Özelleştirme:** Windows açık/koyu modu ve vurgu rengini canlı izler; WCAG ≥ 4,5:1 karşıtlık güvenceli OKLCH paleti, `.mee-tema` paylaşımı ve **Küçük / Normal / Büyük / Çok Büyük** yazı boyutu sunar.
+- **Güvenilir Yedekleme (`%APPDATA%\Meetin`):** Tüm veriler kullanıcı `AppData\Roaming\Meetin\` klasöründe tutulur; açılışta ve kapanışta otomatik SQLite `VACUUM INTO` yedeği (30 kopya rotasyonu) alınır.
+
+---
 
 ## Varsayılan Kısayollar
 
@@ -22,16 +49,19 @@ Meetin, Windows için tasarlanmış yerel, hızlı ve Türkçe (`tr-TR`) uyumlu 
 | `Ctrl + Alt + P` | Motoru duraklat / sürdür |
 | `Ctrl + Alt + Space` | Maskotu göster / gizle |
 | `Ctrl + K` | Ana pencerede Komut Paleti |
-| `Shift + F3` | Seçili metnin büyük/küçük harf biçimini değiştir |
+| `Shift + F3` | Seçili metnin büyük/küçük harf biçimini değiştir (ardı ardına döngü) |
 
-## Kurulum ve Taşınabilir (Portable) Kullanım
+---
 
-- **Kurulumlu (NSIS):** `Meetin_1.1.0_x64-setup.exe` kullanıcı düzeyinde kurulur.
-- **Taşınabilir (Portable):** `Meetin_1.1.0_portable.zip` kurulum gerektirmeden doğrudan çalışır ve kullanıcı verilerini varsayılan olarak `%APPDATA%\Meetin\` altında saklar (yerel `.\data\` klasörüne almak için EXE yanına boş `local-data.flag` dosyası eklenebilir).
+## İndirme ve Kurulum
+
+- **Kurulumlu (NSIS):** [GitHub Releases](https://github.com/ismetuluer/meetin/releases/latest) üzerinden `Meetin_1.2.0_x64-setup.exe` indirip kurabilirsiniz.
+- **Taşınabilir (Portable):** `Meetin_1.2.0_portable.zip` kurulum gerektirmeden çalışır ve verileri varsayılan olarak `%APPDATA%\Meetin\` altında saklar (yerel `.\data\` klasörüne almak için EXE yanına boş `local-data.flag` dosyası eklenebilir).
+- **Otomatik Güncelleme:** Meetin yeni sürümleri doğrudan GitHub Releases (`v*` etiketi iş akışı: [release.yml](.github/workflows/release.yml)) üzerinden denetler.
 - **Geliştirme başlatma:** Projeden doğrudan çalıştırmak için [Start.bat](Start.bat) dosyasını kullanabilirsiniz.
-- **Portable paket oluşturma:** `scripts\package-portable.ps1` betiği `dist-packages\Meetin_1.1.0_portable.zip` üretir.
 - **Atlanan Özellikler Yol Haritası:** Gelecek sürümler için planlanan özellikler [docs/ATLANANLAR_YOL_HARITASI.md](docs/ATLANANLAR_YOL_HARITASI.md) dosyasında yer alır.
-- **GitHub Otomatik Sürüm ve Güncelleme:** `.github/workflows/release.yml`, `v*` etiketi itildiğinde NSIS kurulum (`Meetin_<sürüm>_x64-setup.exe`), Portable ZIP (`Meetin_<sürüm>_portable.zip`) ve `latest.json` dosyalarını [ismetuluer/meetin Releases](https://github.com/ismetuluer/meetin/releases/latest) altında otomatik yayımlar; Meetin varsayılan olarak `https://github.com/ismetuluer/meetin/releases/latest/download/latest.json` üzerinden güncellemeleri kontrol eder.
+
+---
 
 ## Windows SmartScreen Uyarısı (§9)
 

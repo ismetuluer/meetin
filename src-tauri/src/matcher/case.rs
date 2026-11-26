@@ -9,10 +9,10 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum CaseMode {
-    /// Yazışa uy (varsayılan): `cipy` → küçük, `Cipy` → ilk harf büyük, `CİPY` → tümü büyük.
-    #[default]
+    /// Harf uyumu: `syg` → küçük, `Syg` → ilk harf büyük, `SYG` → tümü büyük.
     MatchTyped,
-    /// Aynen getir: kısaltma büyük/küçük fark etmeksizin eşleşir, ifade kayıtlı hâliyle gelir.
+    /// Aynen getir (varsayılan): kısaltma büyük/küçük fark etmeksizin eşleşir, ifade kayıtlı hâliyle gelir.
+    #[default]
     KeepOriginal,
     /// Birebir eşleşme: kısaltma tam olarak kayıtlı harf biçimiyle yazılmalıdır.
     ExactMatch,

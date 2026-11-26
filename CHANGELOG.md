@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü (CHANGELOG)
 
+## [1.2.0] - 2026-11-26 (Ses Ayarları · Shift+F3 Döngüsü · Toplu Seçim · Sola Kaydır Sil · Klasör Renkleri)
+
+### Eklenenler ve İyileştirmeler
+- **Ayrı maskot ses kontrolleri & sağ-tık sessize alma:** Ana ses anahtarının yanında *Mee sesi*, *Fırlatma sesi* ve *Duvar çarpma sesi* ayrı ayrı açılıp kapatılabilir; rahatsız edici çığlık sesi kaldırıldı, otomatik *mee* sıklığı azaltıldı ve maskota sağ tıklayınca doğrudan **Sessize Al / Sesi Aç** eklendi.
+- **Ardı ardına `Shift+F3` büyük/küçük harf döngüsü:** `Shift+F3` yapıştırma sonrası `Shift+Left` ile metni yeniden seçili bırakır ve fiziksel Shift tuşlarını temizler; böylece seçim bozulmadan art arda `küçük → İlk büyük → TÜMÜ BÜYÜK` geçişi yapılır.
+- **Toplu seçme, sürükle-sil, sola kaydırıp silme & sağ-tık bağlam menüsü:** Listede onay kutusu / `Ctrl+Tık` / `Shift+Tık` ile toplu seçme; toplu veya tekli ifadeleri Çöp Kutusuna sürükleyerek ya da satırı sola kaydırıp kırmızı **Sil** ile silme; ifade ve klasörlerde özel sağ-tık bağlam menüsü (`Düzenle`, `Klasöre taşı/kopyala`, `Dışa aktar`, `Sil`, `Yeniden adlandır`, `Renk ata`).
+- **Klasör renkleri, liste dışa aktarma & klasör etiket eşitleme:** Klasörlere 8 renk atanabilir; görüntülenen listeler veya seçili ifadeler doğrudan `.mee` / `CSV` / `.ahk` olarak dışa aktarılabilir; yeni/seçili klasör adı otomatik olarak etiketlere eklenir.
+- **Yazı boyutu ayarı & sade güncellemeler:** *Ayarlar › Görünüm* altına **Yazı boyutu** (*Küçük / Normal / Büyük / Çok Büyük*) eklendi; varsayılan harf uyumu *Aynen getir* yapıldı, güncelleme URL'si arayüzden gizlendi, kullanıcı adı yer tutucusu sadeleştirildi ve `Harf uyumu` / `Büyük/Küçük Harf Uyumu` etiketleri güncellendi.
+- **GitHub görsel galerisi:** `README.md` içine maskot ve gerçek uygulama ekran görüntüleri eklendi.
+
 ## [1.1.0] - 2026-11-26 (Çoklu Klasör · Otomatik Kaydetme · Shift+F3 · Pano & Ses İyileştirmeleri)
 
 ### Eklenenler ve İyileştirmeler

@@ -584,6 +584,8 @@ impl HookStarter {
                                 continue;
                             }
                             worker_injecting.store(true, Ordering::SeqCst);
+                            let _ = inject::release_shift_keys();
+                            thread::sleep(std::time::Duration::from_millis(20));
                             if let Some(selected) = selection::read_selected_text() {
                                 if !selected.trim().is_empty() {
                                     let cycled = crate::matcher::case::cycle_turkish_case(&selected);
@@ -591,11 +593,17 @@ impl HookStarter {
                                     let shortcut = inject::paste_shortcut_for_process(
                                         ctx.process_name.as_deref(),
                                     );
-                                    let _ = inject::clipboard::paste_rich_preserving_clipboard(
+                                    if inject::clipboard::paste_rich_preserving_clipboard(
                                         &cycled,
                                         None,
                                         shortcut,
-                                    );
+                                    )
+                                    .is_ok()
+                                    {
+                                        thread::sleep(std::time::Duration::from_millis(30));
+                                        let left_n = inject::build_reselect_left_count(&cycled);
+                                        let _ = inject::send_reselect_left(left_n);
+                                    }
                                 }
                             }
                             worker_injecting.store(false, Ordering::SeqCst);

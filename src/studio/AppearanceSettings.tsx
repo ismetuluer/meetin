@@ -11,6 +11,7 @@ import {
   resolveThemeTokens,
   SCALE_STEPS,
   THEME_ROLES,
+  type FontSizeOption,
   type IslandSurface,
   type PaletteSource,
   type ThemeConfig,
@@ -132,12 +133,14 @@ export function AppearanceSettings() {
   const commitConfig = (next: ThemeConfig) => {
     setConfig(next);
     const res = resolveThemeTokens(next, sysTheme.dark, sysTheme.accent_hex);
-    applyThemeToDocument(res);
+    applyThemeToDocument(res, next.fontSize ?? "md");
     void invoke("save_theme_config", {
       configJson: JSON.stringify(next),
     });
   };
 
+  const setFontSize = (fontSize: FontSizeOption) =>
+    commitConfig({ ...config, fontSize });
   const setMode = (mode: ThemeMode) => commitConfig({ ...config, mode });
   const setSource = (source: PaletteSource) =>
     commitConfig({ ...config, source });
@@ -231,6 +234,25 @@ export function AppearanceSettings() {
                   onClick={() => setMode(m)}
                 >
                   {t(`settings.mode.${m}` as TranslationKey)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="settings-row" style={{ marginTop: 12 }}>
+            <div>
+              <div className="card-title">{t("settings.fontSizeTitle")}</div>
+              <div className="muted small">{t("settings.fontSizeDesc")}</div>
+            </div>
+            <div className="segmented-control">
+              {(["sm", "md", "lg", "xl"] as FontSizeOption[]).map((sz) => (
+                <button
+                  key={sz}
+                  type="button"
+                  className={`seg-btn ${(config.fontSize ?? "md") === sz ? "is-active" : ""}`}
+                  onClick={() => setFontSize(sz)}
+                >
+                  {t(`settings.fontSize.${sz}` as TranslationKey)}
                 </button>
               ))}
             </div>

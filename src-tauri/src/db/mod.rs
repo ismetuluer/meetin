@@ -915,6 +915,72 @@ impl Storage {
         Ok(())
     }
 
+    pub fn update_folder(
+        &self,
+        id: i64,
+        name: Option<&str>,
+        color: Option<Option<&str>>,
+    ) -> Result<FolderRecord, DbError> {
+        let mut conn = self.conn.lock().map_err(|_| DbError::LockPoisoned)?;
+        let tx = conn.transaction()?;
+        let existing: Option<(String, Option<String>)> = tx
+            .query_row(
+                "SELECT name, color FROM folders WHERE id = ?1",
+                params![id],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .optional()?;
+        let Some((cur_name, cur_color)) = existing else {
+            return Err(DbError::NotFound(id));
+        };
+        let next_name = match name {
+            Some(n) => {
+                let t = n.trim();
+                if t.is_empty() {
+                    return Err(DbError::InvalidInput("Klasör adı boş olamaz".to_string()));
+                }
+                t.to_string()
+            }
+            None => cur_name,
+        };
+        let next_color: Option<String> = match color {
+            Some(Some(c)) if !c.trim().is_empty() => Some(c.trim().to_string()),
+            Some(_) => None,
+            None => cur_color,
+        };
+        tx.execute(
+            "UPDATE folders SET name = ?1, color = ?2, updated_at = datetime('now') WHERE id = ?3",
+            params![next_name, next_color, id],
+        )?;
+        let updated = tx.query_row(
+            "SELECT id, parent_id, name, color, sort_order FROM folders WHERE id = ?1",
+            params![id],
+            |r| {
+                Ok(FolderRecord {
+                    id: r.get(0)?,
+                    parent_id: r.get(1)?,
+                    name: r.get(2)?,
+                    color: r.get(3)?,
+                    sort_order: r.get(4)?,
+                })
+            },
+        )?;
+        tx.commit()?;
+        Ok(updated)
+    }
+
+    pub fn list_phrases_by_ids(&self, ids: &[i64]) -> Result<Vec<PhraseRecord>, DbError> {
+        let mut out = Vec::new();
+        for &id in ids {
+            if let Some(rec) = self.get_phrase(id)? {
+                if rec.deleted_at.is_none() {
+                    out.push(rec);
+                }
+            }
+        }
+        Ok(out)
+    }
+
     pub fn list_phrase_versions(
         &self,
         phrase_id: i64,
@@ -1451,6 +1517,23 @@ mod tests {
         assert_eq!(storage.list_folders().unwrap().len(), 0);
         let detached = storage.get_phrase(phrase.id).unwrap().unwrap();
         assert_eq!(detached.folder_id, None);
+    }
+
+    #[test]
+    fn folder_rename_and_color_update_works() {
+        let dir = TempDir::new().unwrap();
+        let storage = Storage::open(&dir.path().join("meetin.db")).unwrap();
+        let f = storage.create_folder("Eski Ad", None, None).unwrap();
+        let updated = storage
+            .update_folder(f.id, Some("Yeni Ad"), Some(Some("c3")))
+            .unwrap();
+        assert_eq!(updated.name, "Yeni Ad");
+        assert_eq!(updated.color.as_deref(), Some("c3"));
+        let cleared = storage
+            .update_folder(f.id, None, Some(None))
+            .unwrap();
+        assert_eq!(cleared.name, "Yeni Ad");
+        assert_eq!(cleared.color, None);
     }
 
     #[test]
