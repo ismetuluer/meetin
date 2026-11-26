@@ -1,0 +1,66 @@
+name: Meetin Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Depoyu al
+        uses: actions/checkout@v4
+
+      - name: Node.js kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Rust kur
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Bağlılıkları kur ve test et
+        run: |
+          npm ci
+          npm test
+          npm run build
+          cargo test --manifest-path src-tauri/Cargo.toml
+
+      - name: NSIS Kurulum ve Release EXE oluştur
+        run: npx tauri build --bundles nsis
+
+      - name: Portable ZIP oluştur
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}".TrimStart("v")
+          ./scripts/package-portable.ps1 -Version $tag -SkipBuild
+
+      - name: latest.json oluştur
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}".TrimStart("v")
+          $setup = Get-ChildItem "src-tauri/target/release/bundle/nsis/*-setup.exe" | Select-Object -First 1
+          $hash = (Get-FileHash $setup.FullName -Algorithm SHA256).Hash
+          $repo = "${{ github.repository }}"
+          $manifest = @{
+            version = $tag
+            pub_date = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+            notes = "Meetin v$tag otomatik GitHub sürümü"
+            download_url = "https://github.com/$repo/releases/download/${{ github.ref_name }}/$($setup.Name)"
+            sha256 = $hash
+          } | ConvertTo-Json -Depth 4
+          New-Item -ItemType Directory -Path "dist-packages" -Force | Out-Null
+          Set-Content -Path "dist-packages/latest.json" -Value $manifest -Encoding UTF8
+
+      - name: GitHub Release yayımla
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            src-tauri/target/release/bundle/nsis/*-setup.exe
+            dist-packages/Meetin_*_portable.zip
+            dist-packages/latest.json
+          generate_release_notes: true

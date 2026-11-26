@@ -1,6 +1,6 @@
 # Meetin — Metin Genişletici · Ürün ve Teknik Şartname
 
-> **Sürüm:** 0.3 · **Tarih:** 25 Kasım 2026 · **Hazırlayan:** Saul + Claude
+> **Sürüm:** 0.3 · **Tarih:** 25 Kasım 2026 · **Hazırlayan:** İsmet Uluer
 > **Uygulayıcı:** Claude Code (bu belge proje klasörünün kökünde `docs/SARTNAME.md` olarak durur)
 > **Program adı [K]:** **Meetin** ("mee" + "metin"). Maskot bir koyundur; kullanıcı ilk açılışta koyuna kendi adını verebilir (bkz. §5.1).
 > **Ekler:** `meetin-maskot.svg` (maskotun ana çizimi) ve `meetin-maskot-animasyon.html` (tarayıcıda açılan, tüm animasyonların çalışan referansı). İkisi de `docs/` klasörüne konur.
@@ -11,7 +11,7 @@
 
 ## 1. Amaç
 
-Windows'ta sık yazılan ifade kalıplarını kısaltmalarla çağırmak. `CİPY` yazıp boşluğa basınca yerine **"Claude ile Proje Yapmak"** gelir. PhraseExpress'in gücü, Apple'ın Dinamik Ada'sının sadeliği ve yumuşak, sevimli bir maskot bir arada olacak.
+Windows'ta sık yazılan ifade kalıplarını kısaltmalarla çağırmak. `ABD BAŞKAN` yazıp boşluğa basınca yerine **"ABD BAŞKANI DONALD TRUMP"** gelir. PhraseExpress'in gücü, Apple'ın Dinamik Ada'sının sadeliği ve yumuşak, sevimli bir maskot bir arada olacak.
 
 Kullanım yerleri **[K]**: haber/arşiv sistemleri ve tarayıcı formları, Word/Excel raporları, e-posta ve mesajlaşma (Outlook, WhatsApp Web, Telegram), kod ve yapay zekâ istemleri (Claude, terminal).
 

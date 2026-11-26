@@ -1,8 +1,0 @@
-dist
-node_modules
-src-tauri/target
-src-tauri/gen
-docs/*.html
-docs/*.svg
-package-lock.json
-docs/MEETIN-SARTNAME.md

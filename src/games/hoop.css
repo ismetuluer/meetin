@@ -1,0 +1,96 @@
+.hoop-stage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  background: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.hoop-hud {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 6px;
+  gap: 6px;
+}
+
+.hoop-score-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  background: var(--ada-zemin);
+  color: var(--ada-metin);
+  border: 1px solid var(--cizgi);
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22);
+}
+
+.hoop-streak {
+  color: var(--vurgu);
+}
+
+.hoop-close-btn {
+  all: unset;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ada-zemin);
+  color: var(--ada-metin);
+  border: 1px solid var(--cizgi);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.hoop-close-btn:hover {
+  background: var(--hata);
+  color: var(--vurgu-ustu);
+}
+
+@keyframes netSwish {
+  0% { transform: scaleY(1) skewX(0deg); }
+  25% { transform: scaleY(1.16) skewX(9deg); }
+  55% { transform: scaleY(0.92) skewX(-7deg); }
+  80% { transform: scaleY(1.06) skewX(4deg); }
+  100% { transform: scaleY(1) skewX(0deg); }
+}
+
+.hoop-net {
+  transform-box: fill-box;
+  transform-origin: top center;
+}
+
+.hoop-stage.is-swish .hoop-net {
+  animation: netSwish 550ms ease;
+}
+
+@keyframes hoopToastPop {
+  0% { opacity: 0; transform: translateY(8px) scale(0.8); }
+  35% { opacity: 1; transform: translateY(-2px) scale(1.08); }
+  100% { opacity: 0; transform: translateY(-14px) scale(1); }
+}
+
+.hoop-toast {
+  position: absolute;
+  top: 42px;
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  background: var(--basari);
+  color: var(--vurgu-ustu);
+  font-size: 12px;
+  font-weight: 800;
+  animation: hoopToastPop 900ms ease forwards;
+  pointer-events: none;
+}

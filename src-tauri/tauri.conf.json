@@ -1,31 +1,87 @@
 {
-  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "$schema": "https://schema.tauri.app/config/2",
   "productName": "Meetin",
-  "version": "0.0.1",
-  "identifier": "app.meetin.desktop",
+  "version": "1.1.0",
+  "identifier": "com.meetin.app",
   "build": {
-    "frontendDist": "../dist",
-    "devUrl": "http://localhost:1420",
     "beforeDevCommand": "npm run dev",
-    "beforeBuildCommand": "npm run build"
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
   },
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "Meetin",
-        "width": 800,
-        "height": 600,
+        "width": 980,
+        "height": 680,
+        "minWidth": 720,
+        "minHeight": 480,
         "resizable": true,
-        "fullscreen": false
+        "visible": true
+      },
+      {
+        "label": "mascot",
+        "title": "Meetin Maskot",
+        "width": 100,
+        "height": 100,
+        "resizable": false,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "shadow": false,
+        "visible": true
+      },
+      {
+        "label": "bubble",
+        "title": "Meetin Balon",
+        "width": 104,
+        "height": 42,
+        "resizable": false,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "shadow": false,
+        "visible": false
+      },
+      {
+        "label": "hoop",
+        "title": "Meetin Basket",
+        "width": 170,
+        "height": 220,
+        "resizable": false,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "shadow": false,
+        "visible": false
       }
     ],
     "security": {
-      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
+      "csp": null
     }
   },
   "bundle": {
     "active": true,
     "targets": ["nsis"],
-    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.ico"]
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      },
+      "nsis": {
+        "languages": ["Turkish"],
+        "displayLanguageSelector": false,
+        "installMode": "currentUser"
+      }
+    }
   }
 }

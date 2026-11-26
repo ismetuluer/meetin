@@ -1,0 +1,212 @@
+/* Meetin Tasarım Tokenları (§11.4, §11.5)
+ * Tüm bileşenler yalnızca bu CSS değişkenlerini kullanır; sabit renk yazılmaz.
+ */
+
+:root {
+  color-scheme: light dark;
+
+  /* Vurgu (Windows 11 varsayılanı, çalışma zamanında OKLCH üretici günceller) */
+  --vurgu: #0078d4;
+  --vurgu-hover: #0066b8;
+  --vurgu-basili: #00559c;
+  --vurgu-ustu: #ffffff;
+  --vurgu-zayif: #e8f3fc;
+
+  /* Yüzeyler */
+  --zemin: #f5f6fa;
+  --yuzey: #ffffff;
+  --yuzey-2: #f0f2f7;
+  --cizgi: #e3e6ee;
+
+  /* Metin */
+  --metin: #1a1b20;
+  --metin-ikincil: #5b5e6b;
+  --metin-pasif: #8b8f9e;
+
+  /* Durum */
+  --basari: #16803c;
+  --uyari: #b45309;
+  --hata: #c62828;
+
+  /* Ada */
+  --ada-zemin: rgba(255, 255, 255, 0.92);
+  --ada-metin: #1b1a20;
+
+  /* Maskot renkleri (kullanıcı değiştiremez, §5.1 & §11.4) */
+  --koyun-yun: #ffffff;
+  --koyun-komur: #2e2a28;
+  --koyun-komur-koyu: #1f1b19;
+  --koyun-yanak: #c77b86;
+  --koyun-agiz: #a2958e;
+
+  /* Ölçüler (4 px ızgara, Windows 11 köşe) */
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-pill: 999px;
+
+  font-family: "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --vurgu: #9474ff;
+    --vurgu-hover: #a78cff;
+    --vurgu-basili: #7c56f5;
+    --vurgu-ustu: #14111c;
+    --vurgu-zayif: #28213d;
+
+    --zemin: #17171b;
+    --yuzey: #202026;
+    --yuzey-2: #292932;
+    --cizgi: #343440;
+
+    --metin: #f2f1f7;
+    --metin-ikincil: #b2b0be;
+    --metin-pasif: #7d7a8a;
+
+    --basari: #4ade80;
+    --uyari: #fbbf24;
+    --hata: #f87171;
+
+    --ada-zemin: rgba(28, 28, 34, 0.92);
+    --ada-metin: #f2f1f7;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--zemin);
+  color: var(--metin);
+  transition: background-color 200ms ease, color 200ms ease;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--cizgi);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@media (forced-colors: active) {
+  :root {
+    --zemin: Canvas;
+    --yuzey: Canvas;
+    --yuzey-2: Canvas;
+    --metin: CanvasText;
+    --metin-ikincil: CanvasText;
+    --cizgi: ButtonBorder;
+    --vurgu: Highlight;
+    --vurgu-ustu: HighlightText;
+    --vurgu-zayif: Canvas;
+  }
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--cizgi);
+  background: var(--yuzey);
+  color: var(--metin);
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.btn:hover {
+  background: var(--yuzey-2);
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--vurgu);
+  border-color: var(--vurgu);
+  color: var(--vurgu-ustu);
+}
+
+.btn-primary:hover {
+  background: var(--vurgu-hover);
+  border-color: var(--vurgu-hover);
+}
+
+.btn-primary:active {
+  background: var(--vurgu-basili);
+}
+
+.btn-danger {
+  color: var(--hata);
+}
+
+.input,
+.textarea,
+.select {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--cizgi);
+  background: var(--yuzey);
+  color: var(--metin);
+}
+
+.input:focus,
+.textarea:focus,
+.select:focus {
+  outline: 2px solid var(--vurgu);
+  outline-offset: 1px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--vurgu-zayif);
+  color: var(--vurgu);
+}
+
+.badge-ok {
+  color: var(--basari);
+  background: var(--yuzey-2);
+}
+
+.badge-warn {
+  color: var(--uyari);
+  background: var(--yuzey-2);
+}

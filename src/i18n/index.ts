@@ -1,12 +1,24 @@
 import tr from "./tr.json";
 
-export type MetinAnahtari = keyof typeof tr;
+export type TranslationKey = keyof typeof tr;
 
-const sozluk: Record<string, string> = tr;
+const catalog: Record<string, string> = tr;
 
-/** Arayüz metnini döndürür. Eksik anahtar geliştirme sırasında hata fırlatır. */
-export function t(anahtar: MetinAnahtari): string {
-  const metin = sozluk[anahtar];
-  if (metin === undefined) throw new Error(`Eksik metin anahtarı: ${anahtar}`);
-  return metin;
+/**
+ * Bağımlılıksız çeviri yardımcısı. `{param}` yer tutucularını değiştirir.
+ */
+export function t(
+  key: TranslationKey,
+  params?: Record<string, string | number>,
+): string {
+  const raw = catalog[key];
+  if (raw === undefined) {
+    return key;
+  }
+  if (!params) {
+    return raw;
+  }
+  return raw.replace(/\{(\w+)\}/g, (_, name: string) =>
+    params[name] !== undefined ? String(params[name]) : `{${name}}`,
+  );
 }

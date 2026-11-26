@@ -1,0 +1,401 @@
+/* Meetin maskot CSS animasyonları — docs/meetin-maskot-animasyon.html (Harman B · k-b2) birebir referansı */
+
+@keyframes wb {
+  0%, 100% { transform: scale(1, 1); }
+  50% { transform: scale(1.015, 1.035); }
+}
+
+@keyframes jelly {
+  0%, 100% { transform: scale(1, 1); }
+  50% { transform: scale(1.035, 0.97); }
+}
+
+@keyframes blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.08); }
+}
+
+@keyframes flick {
+  0%, 86%, 100% { transform: rotate(0); }
+  89% { transform: rotate(-16deg); }
+  93% { transform: rotate(6deg); }
+}
+
+@keyframes flickr {
+  0%, 70%, 100% { transform: rotate(0); }
+  73% { transform: rotate(16deg); }
+  77% { transform: rotate(-6deg); }
+}
+
+@keyframes chew {
+  from { transform: scaleY(0.35); }
+  to { transform: scaleY(1); }
+}
+
+@keyframes grazeM {
+  0%, 100% { transform: translateY(20px); }
+  50% { transform: translateY(25px); }
+}
+
+@keyframes vib {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-1.6px); }
+  75% { transform: translateX(1.6px); }
+}
+
+@keyframes hop {
+  0%, 100% { transform: none; }
+  35% { transform: translateY(-34px) scale(0.95, 1.06); }
+  60% { transform: translateY(0) scale(1.08, 0.92); }
+  80% { transform: translateY(-6px); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: none; }
+  20% { transform: translateX(-7px) rotate(-4deg); }
+  40% { transform: translateX(6px) rotate(3deg); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(3px); }
+}
+
+@keyframes gulp {
+  0%, 100% { transform: none; }
+  40% { transform: scale(1.07, 0.93); }
+  65% { transform: scale(0.96, 1.05); }
+}
+
+@keyframes cardfly2 {
+  0% { transform: translate(0, 0); opacity: 0; }
+  15% { opacity: 1; }
+  70% {
+    transform: translate(calc(var(--cx) * 0.92), calc(var(--cy) * 0.92))
+      rotate(-30deg) scale(0.6);
+    opacity: 1;
+  }
+  100% { transform: translate(var(--cx), var(--cy)) scale(0); opacity: 0; }
+}
+
+@keyframes zz {
+  0% { transform: translate(0, 6px); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: translate(8px, -14px); opacity: 0; }
+}
+
+@keyframes popin {
+  0% { opacity: 0; transform: translateY(10px) scale(0.7); }
+  60% { opacity: 1; transform: translateY(-3px) scale(1.06); }
+  100% { opacity: 1; transform: none; }
+}
+
+@keyframes thumbPop {
+  0% { opacity: 0; transform: translateY(18px) scale(0.6); }
+  65% { opacity: 1; transform: translateY(-4px) scale(1.08); }
+  100% { opacity: 1; transform: none; }
+}
+
+@keyframes capeWave {
+  0% { transform: skewY(-3deg) scaleX(0.96); }
+  100% { transform: skewY(4deg) scaleX(1.05); }
+}
+
+.sheep {
+  display: block;
+  overflow: visible;
+  --cx: -67px;
+  --cy: 104px;
+}
+
+.sheep .sh-all {
+  transform-box: view-box;
+  transform-origin: 100px 184px;
+  transition: transform 0.75s cubic-bezier(0.2, 2.4, 0.4, 1);
+}
+
+.sheep .wool {
+  transform-box: view-box;
+  transform-origin: 100px 172px;
+  animation: jelly 2.8s ease-in-out infinite;
+  transition: transform 0.3s;
+}
+
+.sheep .head {
+  transform-box: view-box;
+  transform-origin: 100px 150px;
+  transition: transform 0.5s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+.sheep .ear-l {
+  transform-box: view-box;
+  transform-origin: 74px 98px;
+  animation: flick 7s infinite;
+  transition: transform 0.4s;
+}
+
+.sheep .ear-r {
+  transform-box: view-box;
+  transform-origin: 126px 98px;
+  animation: flickr 9s infinite;
+  transition: transform 0.4s;
+}
+
+.sheep .eyes {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: blink 4.4s infinite;
+}
+
+.sheep .eye-w {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.35s cubic-bezier(0.3, 1.8, 0.5, 1);
+}
+
+.sheep .pupil {
+  transition: transform 0.12s ease-out;
+}
+
+.sheep .chew {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: chew 0.28s ease-in-out infinite alternate;
+}
+
+.sheep .legs {
+  transform-box: view-box;
+  transform-origin: 100px 150px;
+  transition: transform 0.3s;
+}
+
+.sheep .grass {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: bottom center;
+  transform: scaleY(0);
+  transition: transform 0.5s cubic-bezier(0.3, 1.8, 0.5, 1), opacity 0.3s;
+}
+
+.sheep .card {
+  opacity: 0;
+}
+
+.sheep .gshadow {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.4s;
+}
+
+.sheep .zzz text {
+  animation: zz 2.4s infinite;
+}
+
+.sheep .zzz .z2 {
+  animation-delay: 0.8s;
+}
+
+.sheep .zzz .z3 {
+  animation-delay: 1.6s;
+}
+
+/* Durum animasyonları (§5.1.1) */
+.k-b2.a-graze .head {
+  animation: grazeM 1.4s ease-in-out infinite;
+}
+
+.k-b2.a-graze .grass {
+  opacity: 1;
+  transform: scaleY(1);
+}
+
+.k-b2.a-graze .legs {
+  transform: translateY(1px);
+}
+
+.k-b2.a-baa .head {
+  transform: translateY(-8px) scale(1.04);
+}
+
+.k-b2.a-baa .sh-all {
+  animation: vib 0.11s linear 6;
+}
+
+.k-b2.a-stare .eye-w {
+  transform: scale(1.32);
+}
+
+.k-b2.a-stare .head {
+  transform: translateY(-3px) scale(1.05);
+}
+
+.k-b2.a-sleep .head {
+  transform: translateY(6px);
+}
+
+.k-b2.a-sleep .wool {
+  animation-duration: 6s;
+}
+
+.k-b2.a-sleep .ear-l {
+  animation: none;
+  transform: rotate(22deg);
+}
+
+.k-b2.a-sleep .ear-r {
+  animation: none;
+  transform: rotate(-22deg);
+}
+
+.k-b2.a-hop .sh-all {
+  animation: hop 0.7s ease 2;
+}
+
+.k-b2.a-hop .legs {
+  transform: scaleY(0.72);
+}
+
+.k-b2.a-sad .ear-l {
+  animation: none;
+  transform: rotate(42deg);
+}
+
+.k-b2.a-sad .ear-r {
+  animation: none;
+  transform: rotate(-42deg);
+}
+
+.k-b2.a-sad .sh-all {
+  animation: shake 0.6s ease;
+}
+
+.k-b2.a-sad .head {
+  transform: translateY(5px);
+}
+
+.k-b2.a-squeeze .sh-all {
+  transform: scale(1.26, 0.72);
+  transition: transform 0.14s ease-out;
+}
+
+.k-b2.a-squeeze .wool {
+  transform: scale(1.06, 1.02);
+}
+
+.k-b2.a-squeeze .gshadow {
+  transform: scale(1.2);
+}
+
+.k-b2.a-eat .card {
+  animation: cardfly2 0.9s ease-in forwards;
+}
+
+.k-b2.a-eat .sh-all {
+  animation: gulp 0.5s 0.85s ease;
+}
+
+/* Başparmak Onay (§Görsel 1) */
+.k-b2.a-thumbsup .sh-all {
+  animation: hop 0.55s ease 1;
+}
+
+.k-b2.a-thumbsup .thumbs-hands {
+  transform-box: view-box;
+  transform-origin: 100px 124px;
+  animation: thumbPop 0.45s cubic-bezier(0.2, 2.2, 0.4, 1) both;
+}
+
+/* Süper Koyun Uçuş Modu (§Görsel 2) */
+.k-b2.a-super .super-cape-fabric {
+  transform-box: view-box;
+  transform-origin: 96px 108px;
+  animation: capeWave 0.24s ease-in-out infinite alternate;
+}
+
+.k-b2.a-super .wool {
+  transform: scale(0.96, 1.03);
+}
+
+.k-b2.a-super .gshadow {
+  opacity: 0.25;
+  transform: scale(0.7);
+}
+
+/* Gizliyken 0% CPU için tüm animasyonları durdur (§5.1.1 & §10.1) */
+.sheep.is-paused-motion * {
+  animation-play-state: paused !important;
+}
+
+/* Azaltılmış hareket: yalnızca göz kırpma kalır (§5.1.1) */
+@media (prefers-reduced-motion: reduce) {
+  .sheep * {
+    animation: none !important;
+    transition: none !important;
+  }
+  .sheep .eyes {
+    animation: blink 4.4s infinite !important;
+  }
+}
+
+/* Yüksek karşıtlık modu: yalnızca kontur çizgileri (§11.1) */
+@media (forced-colors: active) {
+  .sheep path,
+  .sheep ellipse,
+  .sheep rect,
+  .sheep circle {
+    fill: Canvas !important;
+    stroke: CanvasText !important;
+  }
+}
+
+/* Maskot kapsayıcı rozetleri ve Mee balonu */
+.mascot-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.mascot-baa-bubble {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  padding: 2px 8px;
+  border-radius: 12px 12px 12px 4px;
+  background: var(--yuzey);
+  color: var(--metin);
+  border: 1px solid var(--cizgi);
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
+  animation: popin 0.35s both;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.mascot-badge-admin {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--uyari);
+  color: var(--vurgu-ustu);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.mascot-badge-update {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--vurgu);
+  border: 2px solid var(--yuzey);
+}

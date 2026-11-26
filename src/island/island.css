@@ -1,0 +1,436 @@
+/* Yüzen maskot penceresi ve Ada morph animasyonları (§5.2, §11.4, §11.5) */
+
+html.is-mascot-window,
+html.is-mascot-window body,
+html.is-mascot-window #root {
+  background: transparent !important;
+  background-color: transparent !important;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.mascot-stage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+}
+
+.mascot-hit {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 96px;
+  height: 96px;
+  border-radius: 999px;
+  cursor: grab;
+  touch-action: none;
+  position: relative;
+  transition: transform 220ms cubic-bezier(0.22, 1.25, 0.36, 1);
+}
+
+.mascot-hit:active {
+  cursor: grabbing;
+}
+
+.mascot-hit:focus-visible {
+  outline: 2px solid var(--vurgu);
+  outline-offset: 2px;
+}
+
+/* Onay / hata hapı (morph açılış ~350 ms, kapanış ~220 ms) */
+@keyframes islandMorphIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.76);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.island-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px 8px 10px;
+  border-radius: var(--r-pill);
+  background: var(--ada-zemin);
+  color: var(--ada-metin);
+  border: 1px solid var(--cizgi);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  animation: islandMorphIn 350ms cubic-bezier(0.22, 1.25, 0.36, 1) both;
+  max-width: 274px;
+}
+
+.island-pill-text {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.island-pill-ok {
+  color: var(--basari);
+}
+
+.island-pill-err {
+  color: var(--hata);
+}
+
+/* Arama adası paneli */
+.island-search-panel {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: 18px;
+  background: var(--ada-zemin);
+  color: var(--ada-metin);
+  border: 1px solid var(--cizgi);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  overflow: hidden;
+  animation: islandMorphIn 350ms cubic-bezier(0.22, 1.25, 0.36, 1) both;
+}
+
+.island-search-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--cizgi);
+  cursor: grab;
+  touch-action: none;
+}
+
+.island-search-top.is-dragging {
+  cursor: grabbing;
+}
+
+.island-drag-grip {
+  color: var(--metin-pasif);
+  font-size: 13px;
+  letter-spacing: -1px;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.island-mascot-close-btn {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 160ms ease;
+}
+
+.island-mascot-close-btn:hover {
+  transform: scale(1.06);
+}
+
+.island-mascot-close-btn:active {
+  transform: scale(0.94);
+}
+
+.island-search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--ada-metin);
+  font-size: 15px;
+  outline: none;
+  cursor: text;
+}
+
+.island-search-input::placeholder {
+  color: var(--metin-pasif);
+}
+
+.island-kbd {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--cizgi);
+  background: var(--yuzey-2);
+  color: var(--metin-ikincil);
+}
+
+.island-search-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  min-height: 0;
+}
+
+.island-results {
+  overflow-y: auto;
+  border-right: 1px solid var(--cizgi);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.island-result-item {
+  all: unset;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.island-result-item:hover {
+  background: var(--yuzey-2);
+}
+
+.island-result-item.is-selected {
+  background: var(--vurgu-zayif);
+}
+
+.island-result-abbr {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--vurgu);
+  flex-shrink: 0;
+}
+
+.island-result-snippet {
+  font-size: 13px;
+  color: var(--ada-metin);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  text-align: right;
+}
+
+.island-preview {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.island-preview-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.island-preview-desc {
+  font-size: 12px;
+  color: var(--metin-ikincil);
+}
+
+.island-preview-content {
+  flex: 1;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 8px 10px;
+  border-radius: var(--r-md);
+  background: var(--yuzey-2);
+  color: var(--ada-metin);
+}
+
+.island-empty {
+  padding: 24px 12px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--metin-ikincil);
+}
+
+.island-search-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px;
+  border-top: 1px solid var(--cizgi);
+  font-size: 11px;
+  color: var(--metin-ikincil);
+}
+
+/* Sağ tık kısa menüsü */
+.mascot-menu {
+  width: 100%;
+  height: 100%;
+  padding: 6px;
+  border-radius: var(--r-lg);
+  background: var(--ada-zemin);
+  color: var(--ada-metin);
+  border: 1px solid var(--cizgi);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(18px);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  animation: islandMorphIn 200ms ease both;
+}
+
+.mascot-menu-item {
+  all: unset;
+  padding: 8px 12px;
+  border-radius: var(--r-md);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.mascot-menu-item:hover {
+  background: var(--vurgu-zayif);
+  color: var(--vurgu);
+}
+
+.mascot-menu-sep {
+  height: 1px;
+  background: var(--cizgi);
+  margin: 2px 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .island-pill,
+  .island-search-panel,
+  .mascot-menu,
+  .mascot-hit {
+    animation: none !important;
+    transition: opacity 100ms ease !important;
+  }
+}
+
+/* Ekleme adası (§4.4) */
+.island-add-title {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.island-mini-btn {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+.island-add-body {
+  flex: 1;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.island-add-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.island-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--metin-ikincil);
+}
+
+.island-add-actions {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.island-add-actions-right {
+  display: flex;
+  gap: 6px;
+}
+
+.island-inline-new-folder {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.island-inline-new-folder .input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Yazarken öneri adası (M6.7) */
+.island-suggest-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px 6px 6px;
+  border-radius: var(--r-pill);
+  background: var(--ada-zemin);
+  color: var(--ada-metin);
+  border: 1px solid var(--cizgi);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(18px);
+  animation: islandMorphIn 140ms ease both;
+}
+
+.suggest-pills-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.suggest-pill {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--cizgi);
+  background: var(--yuzey);
+  color: var(--metin);
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.suggest-pill.is-primary {
+  border-color: var(--vurgu);
+  background: var(--vurgu-zayif);
+}
+
+.suggest-pill:hover {
+  border-color: var(--vurgu);
+}
+
+.suggest-kbd {
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: var(--r-sm);
+  background: var(--vurgu);
+  color: var(--vurgu-ustu);
+  font-weight: 700;
+}

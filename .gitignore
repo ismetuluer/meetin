@@ -1,14 +1,23 @@
+# Dependencies
 node_modules/
 dist/
+dist-ssr/
+dist-packages/
+
+# Rust / Tauri
+src-tauri/target/
+src-tauri/gen/
+
+# Logs & OS
 *.log
-.vscode/*
-!.vscode/extensions.json
 .DS_Store
-# Yerel veri ve yedekler asla depoya girmez
+Thumbs.db
+.env
+.env.*
+
+# Portable runtime data
 data/
 backups/
 *.db
 *.db-wal
 *.db-shm
-portable.flag
-*.tsbuildinfo
