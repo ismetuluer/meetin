@@ -111,19 +111,13 @@
 ### [x] R2.4 · Portable güncelleme — v1.4.3
 
 - **Karar (Saul, 27.11.2026):** bildir, onayla, kendisi kursun (şartname §9).
-- **Yapılan:** imzalı ZIP eklentinin `download` doğrulamasıyla indirilir; `Meetin.exe` çıkarılır; çalışan EXE `Meetin.old.exe` adını alır, yenisi yerine konur, yeni süreç `--meetin-after-update=<pid>` ile başlar, eski süreç kapanınca `Meetin.old.exe` silinir. Betik ya da yardımcı süreç yok (1.4.1'deki PowerShell betiği bu bilgisayarda hiç çalışmadı). Hata olursa eski EXE geri konur.
-- **Test:** Oto: ZIP'ten çıkarma, EXE değişimi ve geri alma, imza/klasör koşulları (12 güncelleyici testi). Bu bilgisayarda çalışan EXE'nin adının değiştirilebildiği denendi. Elle: R2.5'te (1.4.3 → 1.4.4).
+- **Yapılan:** imzalı ZIP eklentinin `download` doğrulamasıyla indirilir; `Meetin.exe` çıkarılır; çalışan EXE `Meetin.old.exe` adını alır, yenisi yerine konur, yeni süreç `--meetin-after-update=<pid>` ile başlar, eski süreç kapanınca `Meetin.old.exe` silinir. Betik ya da yardımcı süreç yok. Hata olursa eski EXE geri konur.
+- **Test:** Oto: ZIP'ten çıkarma, EXE değişimi ve geri alma, imza/klasör koşulları (12 güncelleyici testi). Bu bilgisayarda çalışan EXE'nin adının değiştirilebildiği denendi. Elle: R2.5'te.
 - **Ajan:** Opus.
 
-### [x] R2.6 · Uygulama içi güncellemenin kaldırılması — v1.4.4
+### [ ] R2.5 · R2 kabul — v1.5.0
 
-- **Karar (Saul, 27.11.2026):** güncelleme modülü şimdilik kaldırılır, yeni sürümler elle kurulur (şartname §9 güncellendi).
-- **Yapılan:** `updater/` modülü, `tauri-plugin-updater` ve `zip` bağımlılıkları, güncelleme komutları ve açılış denetimi, Ayarlar'daki güncelleme paneli, maskot rozeti ve Studio uyarısı kaldırıldı; Ayarlar'da yalnız "Sürüm" kartı kaldı. CI artık `latest.json` yayımlamaz ve paket imzalamaz; böylece 1.4.1–1.4.3 kurulu bilgisayarlar da kendini güncellemeye çalışmaz (bildirim adresi bulunamaz).
-- **Saklanan:** imza anahtarı ve GitHub secrets'ları (`docs/GUNCELLEME_IMZALAMA.md`).
-
-### [—] R2.5 · R2 kabul — iptal (güncelleme kaldırıldı)
-
-- **Test:** Elle: 1.3.1 (elle kurulu) → 1.4.x → 1.5.0 → test amaçlı 1.5.1; kurulumlu ve portable; bozuk imzalı paketin reddi. **Ajan:** Saul · Opus.
+- **Test:** Elle: 1.4.5 (elle kurulu) → test amaçlı 1.4.6; kurulumlu ve portable; bozuk imzalı paketin reddi. Kabulden sonra 1.5.0 aynı yoldan gelir. **Ajan:** Saul · Opus.
 
 ---
 
@@ -208,5 +202,4 @@ Her adımdan önce mevcut ekranın görüntüsü ve önerilen düzen Saul'a gös
 
 ## Açık kararlar (Saul)
 
-- R2.4: portable güncellemesi tam otomatik mi, yalnız bildirim mi?
 - A6: fırlatma/çarpma sesleri varsayılan açık kalsın mı?

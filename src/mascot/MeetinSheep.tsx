@@ -10,6 +10,7 @@ export interface MeetinSheepProps {
   pausedMotion?: boolean;
   showAdminBadge?: boolean;
   adminTooltip?: string;
+  showUpdateDot?: boolean;
   baaText?: string;
 }
 
@@ -27,6 +28,7 @@ export const MeetinSheep = forwardRef<SVGSVGElement, MeetinSheepProps>(
       pausedMotion = false,
       showAdminBadge = false,
       adminTooltip = "",
+      showUpdateDot = false,
       baaText = "Mee!",
     },
     ref,
@@ -468,6 +470,7 @@ export const MeetinSheep = forwardRef<SVGSVGElement, MeetinSheepProps>(
         </svg>
 
         {f.isBaa && <span className="mascot-baa-bubble">{baaText}</span>}
+        {showUpdateDot && <span className="mascot-badge-update" />}
         {showAdminBadge && (
           <span
             className="mascot-badge-admin"

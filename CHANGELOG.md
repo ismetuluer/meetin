@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü (CHANGELOG)
 
+## [1.4.5] - 2026-11-27
+
+### Eklendi
+- **Uygulama içi güncelleme geri geldi:** Meetin açılışta ve günde bir kez yeni sürüme bakar; yeni sürüm maskotta ve Studio'da bildirilir, onaylayınca imzası doğrulanan paket kurulur. Portable sürüm kendi programını yenisiyle değiştirir, verilere dokunmaz.
+
+### Bilinen
+- 1.4.4 kendi kendini güncelleyemez; 1.4.5 bir kez elle kurulmalıdır. Sonraki sürümler otomatik gelir.
+
 ## [1.4.4] - 2026-11-27
 
 ### Kaldırıldı

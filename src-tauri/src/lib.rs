@@ -43,6 +43,7 @@ pub(crate) mod native_dialog {
 }
 pub mod matcher;
 pub mod selection;
+pub mod updater;
 pub mod vars;
 pub mod windows;
 
@@ -73,6 +74,7 @@ use crate::io::formats::{
 use crate::io::mee_archive::export_mee_archive as build_mee_archive;
 use crate::matcher::case::{tr_lower, tr_title, tr_upper};
 use crate::matcher::AppRule;
+use crate::updater::{UpdateCheckResult, UpdateInstallResult};
 use crate::vars::{extract_form_fields, FormField};
 use crate::windows::backdrop::{self, WindowBackdropInfo};
 use crate::windows::bubble::{self, BubbleState, BUBBLE_LABEL};
@@ -171,6 +173,7 @@ pub struct AppSettingsDto {
     pub sound_baa: bool,
     pub sound_throw: bool,
     pub sound_impact: bool,
+    pub auto_check_updates: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -251,6 +254,7 @@ pub struct AppState {
     pub pending_fill: Mutex<Option<PendingFillJob>>,
     pub shortcuts: Mutex<ShortcutConfigDto>,
     pub clipboard_cfg: ClipboardWatcherConfig,
+    pub latest_update_check: Mutex<Option<UpdateCheckResult>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -427,6 +431,14 @@ fn get_app_settings(state: State<'_, AppState>) -> Result<AppSettingsDto, String
         .filter(|m| matches!(m.as_str(), "initials" | "first_word" | "last_word" | "tag"))
         .unwrap_or_else(|| "initials".to_string());
     let shift_f3_enabled = state.hook.is_shift_f3_enabled();
+    let auto_check_updates = state
+        .storage
+        .get_setting("auto_check_updates")
+        .ok()
+        .flatten()
+        .map(|v| v != "false")
+        .unwrap_or(true);
+
     Ok(AppSettingsDto {
         trigger_config: state.hook.get_trigger_config(),
         suggest_enabled: state.hook.is_suggest_enabled(),
@@ -444,6 +456,7 @@ fn get_app_settings(state: State<'_, AppState>) -> Result<AppSettingsDto, String
         sound_baa,
         sound_throw,
         sound_impact,
+        auto_check_updates,
     })
 }
 
@@ -694,24 +707,44 @@ fn set_admin_autostart(enabled: bool) -> Result<StartupStatus, String> {
     Ok(startup::get_startup_status())
 }
 
-/// Ayarlar › Sürüm kartı: sürüm, çalışma biçimi ve WebView2 durumu.
-#[derive(Debug, Clone, Serialize)]
-pub struct AppInfo {
-    pub version: String,
-    pub is_portable: bool,
-    pub webview2_installed: bool,
+#[tauri::command]
+fn set_auto_check_updates(state: State<'_, AppState>, enabled: bool) -> Result<(), String> {
+    state
+        .storage
+        .set_setting("auto_check_updates", if enabled { "true" } else { "false" })
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn get_app_info() -> AppInfo {
-    AppInfo {
-        version: env!("CARGO_PKG_VERSION").to_string(),
-        is_portable: startup::is_portable_mode(),
-        webview2_installed: tauri::webview_version().is_ok(),
+fn get_update_env_info(state: State<'_, AppState>) -> UpdateCheckResult {
+    if let Ok(guard) = state.latest_update_check.lock() {
+        if let Some(cached) = guard.as_ref() {
+            return cached.clone();
+        }
+    }
+    updater::current_env_info(
+        startup::is_portable_mode(),
+        tauri::webview_version().is_ok(),
+    )
+}
+
+/// Güncelleme bildirimi her zaman GitHub'daki en son yayından okunur. Eski sürümlerin
+/// veritabanına yazdığı `update_manifest_url` ayarı (bir sürüme sabitlenmiş adres)
+/// açılışta silinir; arayüzden adres değiştirmek mümkün değildir.
+fn remove_stale_update_source(storage: &Storage) {
+    match storage.delete_setting("update_manifest_url") {
+        Ok(true) => logging::event(logging::Level::Warn, "update.stale_source_removed", &[]),
+        Ok(false) => {}
+        Err(_) => logging::event(
+            logging::Level::Error,
+            "update.stale_source_remove_failed",
+            &[],
+        ),
     }
 }
 
 /// Kapanışta yapılan kayıt işleri: tutarlı yedek (§7.3), kanca istatistiği, çıkış kaydı.
+/// Hem normal çıkışta hem güncelleme kurucusu başlatılmadan hemen önce çağrılır.
 fn record_shutdown(storage: &Storage) {
     if let Err(e) = storage.create_backup_now() {
         logging::error_text(logging::Level::Warn, "db.exit_backup_failed", &e);
@@ -727,6 +760,187 @@ fn record_shutdown(storage: &Storage) {
         ],
     );
     logging::log_exit();
+}
+
+/// Eklentinin güncelleyicisi. Windows'ta kurucu başlatılınca süreç `exit(0)` ile kapanır;
+/// `RunEvent::Exit` gelmeyeceği için kapanış kaydı burada yapılır.
+fn build_updater(app: &AppHandle) -> Result<tauri_plugin_updater::Updater, String> {
+    use tauri_plugin_updater::UpdaterExt;
+    let handle = app.clone();
+    app.updater_builder()
+        .on_before_exit(move || {
+            logging::event(logging::Level::Info, "update.installer_started", &[]);
+            record_shutdown(&handle.state::<AppState>().storage);
+            handle.cleanup_before_exit();
+        })
+        .build()
+        .map_err(|e| e.to_string())
+}
+
+/// Denetimi çalıştırır, sonucu günlüğe yazar, önbelleğe alır ve gerekirse olayı yayar.
+async fn run_update_check(
+    app: &AppHandle,
+    trigger: &'static str,
+) -> Result<UpdateCheckResult, String> {
+    let checked = match build_updater(app) {
+        Ok(u) => u.check().await.map_err(|e| e.to_string()),
+        Err(e) => Err(e),
+    };
+    let found = match checked {
+        Ok(found) => found,
+        Err(e) => {
+            logging::event(
+                logging::Level::Warn,
+                "update.check_failed",
+                &[
+                    ("trigger", logging::Field::Code(trigger)),
+                    ("reason", logging::Field::Sys(e.clone())),
+                ],
+            );
+            return Err(e);
+        }
+    };
+    let res = updater::result_for_check(
+        env!("CARGO_PKG_VERSION"),
+        found.as_ref().map(|u| updater::FoundUpdate {
+            version: &u.version,
+            notes: u.body.as_deref(),
+            raw_json: &u.raw_json,
+        }),
+        startup::is_portable_mode(),
+        portable_dir_writable(),
+        tauri::webview_version().is_ok(),
+    );
+    logging::event(
+        logging::Level::Info,
+        "update.checked",
+        &[
+            ("trigger", logging::Field::Code(trigger)),
+            (
+                "latest",
+                logging::Field::Sys(res.latest_version.clone().unwrap_or_default()),
+            ),
+            ("available", logging::Field::Bool(res.update_available)),
+        ],
+    );
+    if let Ok(mut guard) = app.state::<AppState>().latest_update_check.lock() {
+        *guard = Some(res.clone());
+    }
+    if res.update_available {
+        let _ = app.emit(
+            "update-available",
+            res.latest_version.clone().unwrap_or_default(),
+        );
+    }
+    Ok(res)
+}
+
+#[tauri::command]
+async fn check_for_updates(app: AppHandle) -> Result<UpdateCheckResult, String> {
+    run_update_check(&app, "manual").await
+}
+
+/// İmzası doğrulanan kurulum paketini indirir ve kurar. Başarılı olursa Windows'ta kurucu
+/// başlar ve Meetin kapanır (bu işlev dönmez); hata olursa günlüğe yazılıp arayüze iletilir.
+#[tauri::command]
+async fn install_verified_update(app: AppHandle) -> Result<UpdateInstallResult, String> {
+    let fail = |stage: &'static str, e: String| {
+        logging::event(
+            logging::Level::Warn,
+            "update.install_failed",
+            &[
+                ("stage", logging::Field::Code(stage)),
+                ("reason", logging::Field::Sys(e.clone())),
+            ],
+        );
+        e
+    };
+    let updater = build_updater(&app).map_err(|e| fail("build", e))?;
+    let update = updater
+        .check()
+        .await
+        .map_err(|e| fail("check", e.to_string()))?
+        .ok_or_else(|| "Kurulacak güncelleme bulunamadı.".to_string())?;
+    let version = update.version.clone();
+    // Kurulumdan önce veritabanının güvenlik yedeği
+    if let Err(e) = app.state::<AppState>().storage.create_backup_now() {
+        logging::error_text(logging::Level::Warn, "db.pre_update_backup_failed", &e);
+    }
+    logging::event(
+        logging::Level::Info,
+        "update.install_started",
+        &[
+            ("version", logging::Field::Sys(version.clone())),
+            (
+                "portable",
+                logging::Field::Bool(startup::is_portable_mode()),
+            ),
+        ],
+    );
+    if startup::is_portable_mode() {
+        install_portable_update(&app, update)
+            .await
+            .map_err(|(stage, e)| fail(stage, e))?;
+        return Ok(UpdateInstallResult { version });
+    }
+    update
+        .download_and_install(|_, _| {}, || {})
+        .await
+        .map_err(|e| fail("download_or_verify", e.to_string()))?;
+    Ok(UpdateInstallResult { version })
+}
+
+/// Portable klasörü (EXE'nin yanı) yazılabilir mi? Değilse yalnız indirme bağlantısı verilir.
+fn portable_dir_writable() -> bool {
+    startup::is_portable_mode() && db::ensure_writable_dir(&db::exe_dir()).is_ok()
+}
+
+/// Portable güncelleme (R2.4): imzalı ZIP eklentiyle indirilip doğrulanır, EXE yerinde
+/// değiştirilir, yeni EXE başlatılır ve bu süreç kapanır. Hata olursa eski EXE yerinde kalır.
+async fn install_portable_update(
+    app: &AppHandle,
+    update: tauri_plugin_updater::Update,
+) -> Result<(), (&'static str, String)> {
+    if !portable_dir_writable() {
+        return Err((
+            "portable_readonly",
+            "Meetin klasörü yazılamıyor; yeni ZIP'i indirip elle açın.".to_string(),
+        ));
+    }
+    let (url, signature) = updater::portable_package(&update.raw_json).ok_or((
+        "portable_package",
+        "Bu sürüm için imzalı portable paket yok; yeni ZIP'i indirip elle açın.".to_string(),
+    ))?;
+    let mut portable = update.clone();
+    portable.download_url = url
+        .parse()
+        .map_err(|_| ("portable_package", "Paket adresi geçersiz.".to_string()))?;
+    portable.signature = signature;
+    // `download` imzayı uygulamadaki açık anahtarla doğrular; tutmazsa hata döner.
+    let zip_bytes = portable
+        .download(|_, _| {}, || {})
+        .await
+        .map_err(|e| ("download_or_verify", e.to_string()))?;
+    let new_exe = updater::extract_exe_from_zip(&zip_bytes).map_err(|e| ("extract", e))?;
+    let exe = std::env::current_exe().map_err(|e| ("swap", e.to_string()))?;
+    updater::swap_portable_exe(&exe, &new_exe).map_err(|e| ("swap", e))?;
+    let spawned = std::process::Command::new(&exe)
+        .arg(format!(
+            "{}{}",
+            updater::AFTER_UPDATE_ARG,
+            std::process::id()
+        ))
+        .spawn();
+    if let Err(e) = spawned {
+        // Yeni sürüm başlatılamadıysa eskisini geri koy; kullanıcı Meetin'siz kalmasın.
+        let old = exe.with_file_name("Meetin.old.exe");
+        let _ = std::fs::remove_file(&exe);
+        let _ = std::fs::rename(&old, &exe);
+        return Err(("relaunch", e.to_string()));
+    }
+    logging::event(logging::Level::Info, "update.portable_swapped", &[]);
+    app.exit(0);
+    Ok(())
 }
 
 #[tauri::command]
@@ -1616,6 +1830,24 @@ pub fn run() {
     }
     // Kayıt günlüğü her şeyden önce: açılıştaki hatalar da yakalansın (R1.4)
     logging::init(&data_dir);
+    // Portable güncelleme sonrası: eski süreç kapanmadan tek örnek denetimi yeni süreci
+    // kapatmasın diye önce onu bekle, sonra kenara alınan eski EXE'yi sil (R2.4).
+    if let Some(old_pid) = updater::after_update_pid(std::env::args()) {
+        #[cfg(windows)]
+        updater::wait_for_process_exit(old_pid, 15_000);
+        let _ = old_pid;
+        logging::event(logging::Level::Info, "update.portable_applied", &[]);
+    }
+    if startup::is_portable_mode() {
+        if let Ok(exe) = std::env::current_exe() {
+            match updater::remove_old_exe(&exe) {
+                Ok(_) => {}
+                Err(e) => {
+                    logging::error_text(logging::Level::Warn, "update.old_exe_remove_failed", &e)
+                }
+            }
+        }
+    }
     let portable = startup::is_portable_mode();
     logging::log_startup(portable);
 
@@ -1724,7 +1956,9 @@ pub fn run() {
             pending_fill: Mutex::new(None),
             shortcuts: Mutex::new(shortcuts_init),
             clipboard_cfg,
+            latest_update_check: Mutex::new(None),
         })
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             tray::show_main_window(app);
         }))
@@ -1889,6 +2123,33 @@ pub fn run() {
                 clipboard_cfg_for_setup,
             );
 
+            // Kayıtlı veya varsayılan GitHub güncelleme URL'sinden arka planda otomatik kontrol et
+            let auto_check_updates = storage
+                .get_setting("auto_check_updates")
+                .ok()
+                .flatten()
+                .map(|v| v != "false")
+                .unwrap_or(true);
+            remove_stale_update_source(&storage);
+            if auto_check_updates {
+                let app_upd = app.handle().clone();
+                thread::Builder::new()
+                    .name("meetin-upd-check".to_string())
+                    .spawn(move || {
+                        // Açılışta (kısa beklemeyle) ve sonra 24 saatte bir denetlenir (§9).
+                        // Olayı kaçıran pencere sonucu `get_update_env_info` ile kendisi sorar.
+                        thread::sleep(Duration::from_secs(3));
+                        let mut trigger = "startup";
+                        loop {
+                            let _ =
+                                tauri::async_runtime::block_on(run_update_check(&app_upd, trigger));
+                            trigger = "daily";
+                            thread::sleep(Duration::from_secs(24 * 60 * 60));
+                        }
+                    })
+                    .ok();
+            }
+
             // Varsayılan / kayıtlı kısayollar (§12)
             let _ = apply_global_shortcuts(app.handle(), &shortcuts_for_setup, &storage);
 
@@ -1921,7 +2182,10 @@ pub fn run() {
             get_startup_status,
             set_run_at_login,
             set_admin_autostart,
-            get_app_info,
+            get_update_env_info,
+            check_for_updates,
+            install_verified_update,
+            set_auto_check_updates,
             set_excluded_processes,
             set_mascot_prefs,
             set_shortcuts_config,

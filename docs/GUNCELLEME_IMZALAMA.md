@@ -1,9 +1,5 @@
 # Güncelleme imzalama
 
-> **Durum (27.11.2026): askıda.** Uygulama içi güncelleme 1.4.4'te kaldırıldı (şartname §9). Yayınlar
-> imzalanmıyor ve `latest.json` yayımlanmıyor. Aşağıdaki anahtar ve tasarım, imza sağlanıp güncelleme
-> geri getirilirse kullanılmak üzere saklanıyor; 1.4.2–1.4.3'teki uygulama git geçmişinde (`ccb083b`).
-
 Meetin güncellemeleri `tauri-plugin-updater` ile denetlenir ve kurulur (şartname §9).
 
 ## Nasıl çalışır

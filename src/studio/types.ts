@@ -155,6 +155,7 @@ export interface AppSettingsDto {
   sound_baa: boolean;
   sound_throw: boolean;
   sound_impact: boolean;
+  auto_check_updates: boolean;
 }
 
 export interface BackupFileInfo {
@@ -178,9 +179,20 @@ export interface StartupStatus {
   is_portable: boolean;
 }
 
-/** Ayarlar › Sürüm kartı. */
-export interface AppInfo {
-  version: string;
+/** Güncelleme denetimi sonucu; paket imzası kurulum sırasında eklenti tarafından doğrulanır. */
+export interface UpdateCheckResult {
+  current_version: string;
+  /** Denetim yapılmadıysa null. */
+  latest_version: string | null;
+  update_available: boolean;
+  notes: string;
+  /** Elle indirme adresi (portable ZIP ya da yayın sayfası). */
+  download_url: string;
   is_portable: boolean;
   webview2_installed: boolean;
+  can_auto_install: boolean;
+}
+
+export interface UpdateInstallResult {
+  version: string;
 }
