@@ -1,5 +1,17 @@
 # Değişiklik Günlüğü (CHANGELOG)
 
+## [1.4.0] - 2026-11-27 (Güvenlik ve kararlılık)
+
+1.3.2–1.3.10 arasındaki düzeltmelerin toplu sürümü:
+
+- **Parola kutuları:** Meetin parola alanlarında tuşlara hiç dokunmaz.
+- **Hızlı yazma:** Genişletme sırasında basılan tuşlar sırası bozulmadan yazılır; Backspace ile geri alma yanlış metni silmez.
+- **Pano korunur:** Ekran görüntüsü, Office grafiği, Excel/Word içeriği genişletmeden sonra eksiksiz geri gelir; Win+V geçmişinde çift kayıt oluşmaz.
+- **Kayıt günlüğü:** Çökme ve hatalar `logs\meetin.log`'a yazılır (Ayarlar › Genel'den açılır); kişisel içerik yazılmaz.
+- **Portable:** ZIP tek `Meetin` klasörü açar; veriler kullanıcı klasöründe, yedekler `data\backups`'ta; başka bilgisayarda yedekten geri yükleme önerilir. WebView2 yoksa açılışta kurulması önerilir.
+- **Hafiflik:** Klavye dinleyicisi her tuşta 0,25 ms'nin altında çalışır; pano geçmişi boştayken işlemci kullanmaz.
+- **Güvenlik:** Arayüz için içerik güvenlik politikası (CSP) açıldı.
+
 ## [1.3.10] - 2026-11-27
 
 ### Değişti

@@ -75,7 +75,7 @@
 - **Test:** Oto: mevcut testler · Elle: boşta işlemci ~%0 (Görev Yöneticisi), pano geçmişi, düzenleyicide görsel.
 - **Ajan:** Opus.
 
-### [ ] R1.8 · R1 kabul — v1.4.0
+### [x] R1.8 · R1 kabul — v1.4.0
 
 - **Test:** Elle: Notepad, Word, Outlook, Chrome (WhatsApp Web, Gmail), Windows Terminal, kurum yazılımı; parola alanı; hızlı yazma; pano türleri. **Ajan:** Saul · Opus.
 
