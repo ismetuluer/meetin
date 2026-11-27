@@ -91,9 +91,6 @@ use crate::windows::startup::{self, StartupStatus};
 use crate::windows::theme::{self, SystemThemeInfo};
 use crate::windows::tray;
 
-pub const DEFAULT_UPDATE_MANIFEST_URL: &str =
-    "https://github.com/ismetuluer/meetin/releases/latest/download/latest.json";
-
 #[derive(Debug, Clone)]
 pub struct PendingFillJob {
     pub phrase_id: i64,
@@ -725,7 +722,10 @@ fn get_update_env_info(state: State<'_, AppState>) -> UpdateCheckResult {
             return cached.clone();
         }
     }
-    updater::current_env_info()
+    updater::current_env_info(
+        startup::is_portable_mode(),
+        tauri::webview_version().is_ok(),
+    )
 }
 
 /// Güncelleme bildirimi her zaman GitHub'daki en son yayından okunur. Eski sürümlerin
@@ -743,12 +743,51 @@ fn remove_stale_update_source(storage: &Storage) {
     }
 }
 
+/// Kapanışta yapılan kayıt işleri: tutarlı yedek (§7.3), kanca istatistiği, çıkış kaydı.
+/// Hem normal çıkışta hem güncelleme kurucusu başlatılmadan hemen önce çağrılır.
+fn record_shutdown(storage: &Storage) {
+    if let Err(e) = storage.create_backup_now() {
+        logging::error_text(logging::Level::Warn, "db.exit_backup_failed", &e);
+    }
+    let hs = hook::stats();
+    logging::event(
+        logging::Level::Info,
+        "hook.stats",
+        &[
+            ("calls", logging::Field::Num(hs.calls as i64)),
+            ("slow_over_1ms", logging::Field::Num(hs.slow_calls as i64)),
+            ("max_us", logging::Field::Num(hs.max_micros as i64)),
+        ],
+    );
+    logging::log_exit();
+}
+
+/// Eklentinin güncelleyicisi. Windows'ta kurucu başlatılınca süreç `exit(0)` ile kapanır;
+/// `RunEvent::Exit` gelmeyeceği için kapanış kaydı burada yapılır.
+fn build_updater(app: &AppHandle) -> Result<tauri_plugin_updater::Updater, String> {
+    use tauri_plugin_updater::UpdaterExt;
+    let handle = app.clone();
+    app.updater_builder()
+        .on_before_exit(move || {
+            logging::event(logging::Level::Info, "update.installer_started", &[]);
+            record_shutdown(&handle.state::<AppState>().storage);
+            handle.cleanup_before_exit();
+        })
+        .build()
+        .map_err(|e| e.to_string())
+}
+
 /// Denetimi çalıştırır, sonucu günlüğe yazar, önbelleğe alır ve gerekirse olayı yayar.
-fn run_update_check(app: &AppHandle, trigger: &'static str) -> Result<UpdateCheckResult, String> {
-    let cur = env!("CARGO_PKG_VERSION");
-    let portable = startup::is_portable_mode();
-    let res = match updater::check_manifest_source(DEFAULT_UPDATE_MANIFEST_URL, cur, portable) {
-        Ok(res) => res,
+async fn run_update_check(
+    app: &AppHandle,
+    trigger: &'static str,
+) -> Result<UpdateCheckResult, String> {
+    let checked = match build_updater(app) {
+        Ok(u) => u.check().await.map_err(|e| e.to_string()),
+        Err(e) => Err(e),
+    };
+    let found = match checked {
+        Ok(found) => found,
         Err(e) => {
             logging::event(
                 logging::Level::Warn,
@@ -761,6 +800,16 @@ fn run_update_check(app: &AppHandle, trigger: &'static str) -> Result<UpdateChec
             return Err(e);
         }
     };
+    let res = updater::result_for_check(
+        env!("CARGO_PKG_VERSION"),
+        found.as_ref().map(|u| updater::FoundUpdate {
+            version: &u.version,
+            notes: u.body.as_deref(),
+            raw_json: &u.raw_json,
+        }),
+        startup::is_portable_mode(),
+        tauri::webview_version().is_ok(),
+    );
     logging::event(
         logging::Level::Info,
         "update.checked",
@@ -771,16 +820,12 @@ fn run_update_check(app: &AppHandle, trigger: &'static str) -> Result<UpdateChec
                 logging::Field::Sys(res.latest_version.clone().unwrap_or_default()),
             ),
             ("available", logging::Field::Bool(res.update_available)),
-            (
-                "signature",
-                logging::Field::Sys(res.signature_status.clone()),
-            ),
         ],
     );
     if let Ok(mut guard) = app.state::<AppState>().latest_update_check.lock() {
         *guard = Some(res.clone());
     }
-    if res.update_available && res.signature_status != updater::SIG_STATUS_INVALID {
+    if res.update_available {
         let _ = app.emit(
             "update-available",
             res.latest_version.clone().unwrap_or_default(),
@@ -790,34 +835,49 @@ fn run_update_check(app: &AppHandle, trigger: &'static str) -> Result<UpdateChec
 }
 
 #[tauri::command]
-fn check_for_updates(app: AppHandle) -> Result<UpdateCheckResult, String> {
-    run_update_check(&app, "manual")
+async fn check_for_updates(app: AppHandle) -> Result<UpdateCheckResult, String> {
+    run_update_check(&app, "manual").await
 }
 
+/// İmzası doğrulanan kurulum paketini indirir ve kurar. Başarılı olursa Windows'ta kurucu
+/// başlar ve Meetin kapanır (bu işlev dönmez); hata olursa günlüğe yazılıp arayüze iletilir.
 #[tauri::command]
-fn install_verified_update(
-    app: AppHandle,
-    state: State<'_, AppState>,
-) -> Result<UpdateInstallResult, String> {
-    let effective = DEFAULT_UPDATE_MANIFEST_URL;
-    let cur = env!("CARGO_PKG_VERSION");
-    let portable = startup::is_portable_mode();
-
-    // Güncellemeden önce veritabanının güvenlik yedeğini al
-    let _ = state.storage.create_backup_now();
-
-    let res = updater::install_verified_update_from_source(effective, cur, portable)?;
-    if res.will_restart {
-        let app_exit = app.clone();
-        thread::Builder::new()
-            .name("meetin-upd-exit".to_string())
-            .spawn(move || {
-                thread::sleep(Duration::from_millis(250));
-                app_exit.exit(0);
-            })
-            .ok();
+async fn install_verified_update(app: AppHandle) -> Result<UpdateInstallResult, String> {
+    if startup::is_portable_mode() {
+        return Err("Portable sürüm kendini güncellemez; yeni ZIP'i indirip açın.".to_string());
     }
-    Ok(res)
+    let fail = |stage: &'static str, e: String| {
+        logging::event(
+            logging::Level::Warn,
+            "update.install_failed",
+            &[
+                ("stage", logging::Field::Code(stage)),
+                ("reason", logging::Field::Sys(e.clone())),
+            ],
+        );
+        e
+    };
+    let updater = build_updater(&app).map_err(|e| fail("build", e))?;
+    let update = updater
+        .check()
+        .await
+        .map_err(|e| fail("check", e.to_string()))?
+        .ok_or_else(|| "Kurulacak güncelleme bulunamadı.".to_string())?;
+    let version = update.version.clone();
+    // Kurulumdan önce veritabanının güvenlik yedeği
+    if let Err(e) = app.state::<AppState>().storage.create_backup_now() {
+        logging::error_text(logging::Level::Warn, "db.pre_update_backup_failed", &e);
+    }
+    logging::event(
+        logging::Level::Info,
+        "update.install_started",
+        &[("version", logging::Field::Sys(version.clone()))],
+    );
+    update
+        .download_and_install(|_, _| {}, || {})
+        .await
+        .map_err(|e| fail("download_or_verify", e.to_string()))?;
+    Ok(UpdateInstallResult { version })
 }
 
 #[tauri::command]
@@ -1817,6 +1877,7 @@ pub fn run() {
             clipboard_cfg,
             latest_update_check: Mutex::new(None),
         })
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             tray::show_main_window(app);
         }))
@@ -1994,10 +2055,16 @@ pub fn run() {
                 thread::Builder::new()
                     .name("meetin-upd-check".to_string())
                     .spawn(move || {
-                        // Hızlı açılış için kısa bekleme. Olayı kaçıran pencere sonucu
-                        // `get_update_env_info` ile kendisi sorar.
+                        // Açılışta (kısa beklemeyle) ve sonra 24 saatte bir denetlenir (§9).
+                        // Olayı kaçıran pencere sonucu `get_update_env_info` ile kendisi sorar.
                         thread::sleep(Duration::from_secs(3));
-                        let _ = run_update_check(&app_upd, "startup");
+                        let mut trigger = "startup";
+                        loop {
+                            let _ =
+                                tauri::async_runtime::block_on(run_update_check(&app_upd, trigger));
+                            trigger = "daily";
+                            thread::sleep(Duration::from_secs(24 * 60 * 60));
+                        }
                     })
                     .ok();
             }
@@ -2103,21 +2170,7 @@ pub fn run() {
 
     app.run(move |_app_handle, event| {
         if let RunEvent::Exit = event {
-            // Kapanışta tutarlı yedek (§7.3)
-            if let Err(e) = storage_for_exit.create_backup_now() {
-                logging::error_text(logging::Level::Warn, "db.exit_backup_failed", &e);
-            }
-            let hs = hook::stats();
-            logging::event(
-                logging::Level::Info,
-                "hook.stats",
-                &[
-                    ("calls", logging::Field::Num(hs.calls as i64)),
-                    ("slow_over_1ms", logging::Field::Num(hs.slow_calls as i64)),
-                    ("max_us", logging::Field::Num(hs.max_micros as i64)),
-                ],
-            );
-            logging::log_exit();
+            record_shutdown(&storage_for_exit);
         }
     });
 }

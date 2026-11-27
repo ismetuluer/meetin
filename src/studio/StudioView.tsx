@@ -406,11 +406,7 @@ export function StudioView() {
       .catch(() => {});
     void invoke<import("./types").UpdateCheckResult>("get_update_env_info")
       .then((u) => {
-        if (
-          u.update_available &&
-          u.signature_status !== "invalid" &&
-          u.latest_version
-        ) {
+        if (u.update_available && u.latest_version) {
           setAvailableUpdateVersion(u.latest_version);
         }
       })

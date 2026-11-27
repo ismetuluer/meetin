@@ -61,7 +61,7 @@
 
 - **Kurulumlu (NSIS):** [GitHub Releases](https://github.com/ismetuluer/meetin/releases/latest) üzerinden `Meetin_1.3.1_x64-setup.exe` indirip kurabilirsiniz.
 - **Taşınabilir (Portable):** `Meetin_1.3.1_portable.zip` kurulum gerektirmeden çalışır ve verileri varsayılan olarak `%APPDATA%\Meetin\` altında saklar (yerel `.\data\` klasörüne almak için EXE yanına boş `local-data.flag` dosyası eklenebilir).
-- **Doğrulamalı ve İmzalı Öz-Güncelleme:** Meetin yeni sürümleri doğrudan GitHub Releases (`v*` etiketi iş akışı: [release.yml](.github/workflows/release.yml)) üzerinden SHA-256 ve ECDSA P-256 imza doğrulamasıyla tek tıkla kurabilir ([İmzalama Rehberi](docs/GUNCELLEME_IMZALAMA.md)).
+- **İmzalı güncelleme:** Meetin açılışta ve günde bir kez GitHub'daki son yayına bakar; kurulum paketi imzası doğrulanmadan kurulmaz ([release.yml](.github/workflows/release.yml), [İmzalama](docs/GUNCELLEME_IMZALAMA.md)).
 - **Geliştirme başlatma:** Projeden doğrudan çalıştırmak için [Start.bat](Start.bat) dosyasını kullanabilirsiniz.
 - **Kullanıcı Kılavuzu & Yardım:** Ayrıntılı kullanım rehberi, değişkenler ve SSS için [docs/YARDIM.md](docs/YARDIM.md) dosyasını inceleyebilir veya uygulama içinde `F1` tuşuna basabilirsiniz.
 - **Yol Haritası (Faz A–E):** Tamamlanan özelliklerin teknik özeti [docs/ATLANANLAR_YOL_HARITASI.md](docs/ATLANANLAR_YOL_HARITASI.md) dosyasında yer alır.

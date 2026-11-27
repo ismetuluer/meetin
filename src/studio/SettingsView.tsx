@@ -1126,13 +1126,6 @@ export function SettingsView({
                         ver: updateInfo.latest_version ?? "",
                       })}
                     </strong>
-                    <span
-                      className={`update-sig-badge is-${updateInfo.signature_status}`}
-                    >
-                      {t(
-                        `settings.sigStatus.${updateInfo.signature_status}` as TranslationKey,
-                      )}
-                    </span>
                   </div>
 
                   {updateInfo.notes && (
@@ -1144,34 +1137,18 @@ export function SettingsView({
                     </pre>
                   )}
 
-                  {updateInfo.signature_status === "invalid" && (
-                    <div className="error-banner" style={{ marginTop: 4 }}>
-                      {t("settings.updateInvalidSigWarning")}
-                    </div>
-                  )}
-
-                  {updateInfo.signature_status === "unsigned" && (
+                  {!updateInfo.can_auto_install && (
                     <div className="muted small">
-                      {t("settings.updateUnsignedHint")}
+                      {t("settings.updateNoAutoInstallHint")}
                     </div>
                   )}
-
-                  {updateInfo.signature_status !== "invalid" &&
-                    !updateInfo.can_auto_install && (
-                      <div className="muted small">
-                        {t("settings.updateNoAutoInstallHint")}
-                      </div>
-                    )}
 
                   <div className="row-actions" style={{ marginTop: 8 }}>
+                    {updateInfo.can_auto_install && (
                     <button
                       type="button"
                       className="btn btn-primary btn-sm"
-                      disabled={
-                        installingUpdate ||
-                        !updateInfo.can_auto_install ||
-                        updateInfo.signature_status === "invalid"
-                      }
+                      disabled={installingUpdate}
                       onClick={async () => {
                         setErrMsg(null);
                         setBusyMsg(t("settings.updatingProgress"));
@@ -1196,9 +1173,9 @@ export function SettingsView({
                         ? t("settings.updatingProgress")
                         : t("settings.downloadAndUpdateBtn")}
                     </button>
+                    )}
 
-                    {updateInfo.signature_status !== "invalid" &&
-                      !updateInfo.can_auto_install &&
+                    {!updateInfo.can_auto_install &&
                       updateInfo.download_url && (
                         <a
                           className="btn btn-sm"

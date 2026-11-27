@@ -179,28 +179,20 @@ export interface StartupStatus {
   is_portable: boolean;
 }
 
-export type UpdateSignatureStatus = "verified" | "unsigned" | "invalid";
-
+/** Güncelleme denetimi sonucu; paket imzası kurulum sırasında eklenti tarafından doğrulanır. */
 export interface UpdateCheckResult {
   current_version: string;
+  /** Denetim yapılmadıysa null. */
   latest_version: string | null;
   update_available: boolean;
   notes: string;
+  /** Elle indirme adresi (portable ZIP ya da yayın sayfası). */
   download_url: string;
   is_portable: boolean;
   webview2_installed: boolean;
-  signature_status: UpdateSignatureStatus;
   can_auto_install: boolean;
-  sha256?: string | null;
-  pub_date?: string | null;
-  key_id?: string | null;
 }
 
 export interface UpdateInstallResult {
   version: string;
-  mode: "nsis" | "portable" | string;
-  signature_status: UpdateSignatureStatus;
-  staged_path: string;
-  will_restart: boolean;
-  message: string;
 }

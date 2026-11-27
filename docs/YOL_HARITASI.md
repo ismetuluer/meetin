@@ -88,13 +88,13 @@
 
 ## R2 · Güncelleyici → v1.5.0
 
-### [~] R2.1 · İmza anahtarı (sürüm yok)
+### [x] R2.1 · İmza anahtarı (sürüm yok)
 
 - **Hedef:** `tauri signer generate` ile anahtar çifti; özel anahtar ve parolası GitHub Secrets'a (**Saul elle ekler**), açık anahtar `tauri.conf.json`'a.
 - **Ajan:** Opus (komutlar ve talimat) · Saul.
-- **Durum (27.11.2026):** Anahtar üretildi: `%USERPROFILE%\.tauri\meetin-updater.key` (parolası yanında `meetin-updater.password.txt`; depoda yok). Açık anahtar ve uç nokta `tauri.conf.json` › `plugins.updater`'da. Kalan: Saul secrets'ları ekler (`TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`) ve anahtarı güvenli bir yere yedekler. `createUpdaterArtifacts` R2.3'te açılır.
+- **Durum (27.11.2026):** Anahtar üretildi: `%USERPROFILE%\.tauri\meetin-updater.key` (parolası yanında `meetin-updater.password.txt`; depoda yok). Açık anahtar ve uç nokta `tauri.conf.json` › `plugins.updater`'da. Secrets'lar Saul tarafından eklendi (`TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`).
 
-### [ ] R2.2 · `tauri-plugin-updater` geçişi — v1.4.2
+### [x] R2.2 · `tauri-plugin-updater` geçişi — v1.4.2
 
 - **Hedef:** Kendi yazılmış `updater/` (CNG ECDSA, PowerShell indirme/kurulum) kaldırılır; eklenti ile kontrol (açılışta + 24 saatte bir), maskot rozeti, CHANGELOG notları, "Şimdi kur / Sonra". İmzasız paket asla kurulmaz.
 - **Modüller:** `updater/` (silinir), `lib.rs`, `src/studio/` güncelleme sayfası
@@ -102,13 +102,13 @@
 - **Test:** Oto: sürüm karşılaştırma ve olay akışı · Elle: R2.5'te.
 - **Ajan:** Opus.
 
-### [ ] R2.3 · CI: imzalı yayın + köprü — v1.4.3
+### [x] R2.3 · CI: imzalı yayın + köprü — v1.4.2 (R2.2 ile birlikte; ayrı çıkarsa yeni sürümler bildirimi okuyamazdı)
 
 - **Hedef:** CI imzalı NSIS paketi ve eklentinin manifestini (`updater.json`) yayımlar. Eski istemciler (≤ 1.4.0) için eski biçimdeki `latest.json` bir süre daha yayımlanır ki yeni sürüme geçebilsinler.
 - **Modüller:** `.github/workflows/release.yml`, `scripts/`
 - **Ajan:** Opus.
 
-### [ ] R2.4 · Portable güncelleme — v1.4.4
+### [ ] R2.4 · Portable güncelleme — v1.4.3
 
 - **Hedef:** [A] Eklenti portable'ı kurmaz. Seçenekler: (a) portable sürüm ZIP'i indirip `data\`'ya dokunmadan EXE'yi değiştirir (şartname §9), (b) yalnız bildirim + indirme bağlantısı. Saul karar verir.
 - **Ajan:** Opus.

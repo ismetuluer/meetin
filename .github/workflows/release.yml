@@ -24,8 +24,6 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Bağlılıkları kur ve test et
-        env:
-          MEETIN_UPDATE_PUBLIC_KEY: ${{ secrets.MEETIN_UPDATE_PUBLIC_KEY || vars.MEETIN_UPDATE_PUBLIC_KEY }}
         run: |
           npm ci
           npm test
@@ -33,8 +31,6 @@ jobs:
           cargo test --manifest-path src-tauri/Cargo.toml
 
       - name: NSIS Kurulum ve Release EXE oluştur
-        env:
-          MEETIN_UPDATE_PUBLIC_KEY: ${{ secrets.MEETIN_UPDATE_PUBLIC_KEY || vars.MEETIN_UPDATE_PUBLIC_KEY }}
         run: npx tauri build --bundles nsis
 
       - name: İsteğe bağlı Windows Authenticode kod imzalama
@@ -80,6 +76,23 @@ jobs:
             }
           }
 
+      - name: Güncelleme paketini imzala (minisign, §9)
+        shell: pwsh
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          # Authenticode imzasından SONRA çalışır: imza kurulum dosyasının son baytlarını kapsamalı.
+          if ([string]::IsNullOrWhiteSpace($env:TAURI_SIGNING_PRIVATE_KEY)) {
+            throw "TAURI_SIGNING_PRIVATE_KEY tanımlı değil; imzasız güncelleme yayımlanmaz."
+          }
+          $setup = Get-ChildItem "src-tauri/target/release/bundle/nsis/*-setup.exe" | Select-Object -First 1
+          if (-not $setup) { throw "Kurulum dosyası bulunamadı." }
+          npx tauri signer sign $setup.FullName
+          if ($LASTEXITCODE -ne 0 -or -not (Test-Path "$($setup.FullName).sig")) {
+            throw "Kurulum dosyası imzalanamadı."
+          }
+
       - name: Portable ZIP oluştur
         shell: pwsh
         run: |
@@ -107,46 +120,41 @@ jobs:
           [System.IO.File]::WriteAllText((Join-Path (Resolve-Path "dist-packages").Path "release-notes.md"), $body + "`n", $utf8NoBom)
           Write-Host $body
 
-      - name: latest.json oluştur ve isteğe bağlı imzala
+      - name: latest.json oluştur (eklenti + 1.4.1 köprüsü)
         shell: pwsh
-        env:
-          MEETIN_SIGNING_PRIVATE_KEY: ${{ secrets.MEETIN_SIGNING_PRIVATE_KEY }}
-          MEETIN_SIGNING_KEY_ID: ${{ vars.MEETIN_SIGNING_KEY_ID }}
         run: |
           $tag = "${{ github.ref_name }}".TrimStart("v")
+          $repo = "${{ github.repository }}"
+          $base = "https://github.com/$repo/releases/download/${{ github.ref_name }}"
           $setup = Get-ChildItem "src-tauri/target/release/bundle/nsis/*-setup.exe" | Select-Object -First 1
+          $signature = (Get-Content "$($setup.FullName).sig" -Raw).Trim()
           $hash = (Get-FileHash $setup.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
           $portableZip = Get-ChildItem "dist-packages/Meetin_*_portable.zip" | Select-Object -First 1
-          $portableHash = if ($portableZip) { (Get-FileHash $portableZip.FullName -Algorithm SHA256).Hash.ToLowerInvariant() } else { "" }
-          $repo = "${{ github.repository }}"
 
+          # tauri-plugin-updater: version, notes, pub_date, platforms (imza burada; üst düzey
+          # "signature" alanı KULLANILMAZ, çünkü 1.4.1 onu kendi ECDSA imzası sanıp reddeder).
           $manifest = [ordered]@{
-            version      = $tag
-            pub_date     = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
-            notes        = (Get-Content "dist-packages/release-notes.md" -Raw -Encoding UTF8).Trim()
-            download_url = "https://github.com/$repo/releases/download/${{ github.ref_name }}/$($setup.Name)"
+            version   = $tag
+            notes     = (Get-Content "dist-packages/release-notes.md" -Raw -Encoding UTF8).Trim()
+            pub_date  = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+            platforms = [ordered]@{
+              "windows-x86_64" = [ordered]@{ signature = $signature; url = "$base/$($setup.Name)" }
+            }
+            # Köprü: 1.4.1 ve öncesinin kendi güncelleyicisi bu alanları okur (R2.3).
+            download_url = "$base/$($setup.Name)"
             sha256       = $hash
           }
-          if ($portableZip -and -not [string]::IsNullOrWhiteSpace($portableHash)) {
-            $manifest["portable_url"] = "https://github.com/$repo/releases/download/${{ github.ref_name }}/$($portableZip.Name)"
-            $manifest["portable_sha256"] = $portableHash
+          if ($portableZip) {
+            $manifest["portable_url"] = "$base/$($portableZip.Name)"
+            $manifest["portable_sha256"] = (Get-FileHash $portableZip.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
           }
 
-          New-Item -ItemType Directory -Path "dist-packages" -Force | Out-Null
-          $manifestPath = "dist-packages/latest.json"
           $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
           [System.IO.File]::WriteAllText(
             (Join-Path (Resolve-Path "dist-packages").Path "latest.json"),
-            (($manifest | ConvertTo-Json -Depth 4) + "`n"),
+            (($manifest | ConvertTo-Json -Depth 5) + "`n"),
             $utf8NoBom
           )
-
-          if (-not [string]::IsNullOrWhiteSpace($env:MEETIN_SIGNING_PRIVATE_KEY)) {
-            $keyId = if (-not [string]::IsNullOrWhiteSpace($env:MEETIN_SIGNING_KEY_ID)) { $env:MEETIN_SIGNING_KEY_ID } else { "meetin-release-1" }
-            ./scripts/sign-manifest.ps1 -ManifestPath $manifestPath -KeyId $keyId
-          } else {
-            Write-Host "MEETIN_SIGNING_PRIVATE_KEY tanimli degil; latest.json imzasiz olarak devam ediyor."
-          }
 
       - name: GitHub Release yayımla
         uses: softprops/action-gh-release@v2

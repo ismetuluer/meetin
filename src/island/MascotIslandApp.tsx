@@ -448,11 +448,10 @@ export function MascotIslandApp() {
         invoke<{
           update_available: boolean;
           latest_version: string | null;
-          signature_status: string;
         }>("get_update_env_info"),
       )
       .then((u) => {
-        if (u.update_available && u.signature_status !== "invalid") {
+        if (u.update_available) {
           setUpdateAvailable(u.latest_version || "yeni");
         }
       })

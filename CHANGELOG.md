@@ -1,5 +1,18 @@
 # Değişiklik Günlüğü (CHANGELOG)
 
+## [1.4.2] - 2026-11-27
+
+### Değişti
+- **Güncelleme Tauri'nin resmî güncelleyicisine geçti:** Meetin açılışta ve günde bir kez yeni sürüme bakar. Kurulum dosyası Meetin'in anahtarıyla imzalıdır; imzası doğrulanmayan dosya asla kurulmaz.
+- **Güncelleme paneli sadeleşti:** İmza rozetleri ve teknik uyarılar kalktı; yeni sürüm, notları ve tek bir "İndir ve Güncelle" düğmesi görünür.
+- Kurulumdan hemen önce veritabanı yedeklenir ve kayıt günlüğü düzgün kapatılır.
+
+### Kaldırıldı
+- Eski, elle yazılmış güncelleyici ve imzalama betikleri.
+
+### Bilinen
+- Portable sürüm kendini güncellemez; yeni ZIP'in bağlantısı gösterilir.
+
 ## [1.4.1] - 2026-11-27
 
 ### Düzeltildi
