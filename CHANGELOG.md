@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü (CHANGELOG)
 
+## [1.5.0] - 2026-11-27 (Güncelleyici)
+
+1.4.2–1.4.6 arasındaki güncelleme çalışmasının toplu sürümü:
+
+- **Uygulama içi güncelleme:** Meetin açılışta ve günde bir kez yeni sürüme bakar, maskotta ve Studio'da bildirir; onaylayınca kurar.
+- **İmzalı paketler:** Kurulum dosyası ve portable ZIP Meetin'in anahtarıyla imzalıdır; imzası tutmayan paket indirilse bile kurulmaz.
+- **Portable da güncellenir:** Portable sürüm kendi programını yenisiyle değiştirir ve yeniden açılır; veriler ve `data` klasörü olduğu gibi kalır.
+
 ## [1.4.6] - 2026-11-27
 
 ### Değişti

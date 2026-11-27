@@ -115,9 +115,9 @@
 - **Test:** Oto: ZIP'ten çıkarma, EXE değişimi ve geri alma, imza/klasör koşulları (12 güncelleyici testi). Bu bilgisayarda çalışan EXE'nin adının değiştirilebildiği denendi. Elle: R2.5'te.
 - **Ajan:** Opus.
 
-### [~] R2.5 · R2 kabul — v1.5.0
+### [x] R2.5 · R2 kabul — v1.5.0
 
-- **Durum:** 1.4.5 yayımlandı; test sürümü 1.4.6 hazır.
+- **Sonuç (27.11.2026):** 1.4.5 → 1.4.6 güncellemesi kurulumlu ve portable sürümde çalıştı (Saul). İmzası tutmayan bildirimle (1.4.6 paketleri, 1.4.5 imzaları; yerel bildirim adresi) kurulumlu ve portable kurulum `The signature verification failed` ile reddedildi, EXE değişmedi.
 - **Test:** Elle: 1.4.5 (elle kurulu) → test amaçlı 1.4.6; kurulumlu ve portable; bozuk imzalı paketin reddi. Kabulden sonra 1.5.0 aynı yoldan gelir. **Ajan:** Saul · Opus.
 
 ---
