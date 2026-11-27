@@ -17,10 +17,7 @@ pub fn format_quoted_exe_path(exe: &std::path::Path) -> String {
 }
 
 pub fn is_portable_mode() -> bool {
-    std::env::current_exe()
-        .ok()
-        .and_then(|p| p.parent().map(|d| d.join("local-data.flag").exists()))
-        .unwrap_or_else(|| runtime_data_dir().ends_with("data"))
+    crate::db::has_portable_flag(&crate::db::exe_dir()) || runtime_data_dir().ends_with("data")
 }
 
 #[cfg(windows)]

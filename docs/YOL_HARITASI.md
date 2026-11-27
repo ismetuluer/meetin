@@ -42,7 +42,7 @@
 - **Test:** Oto: biçim sınıflandırma · Elle: üç pano türüyle Word/Chrome'da uzun ifade, sonra `Ctrl+V`.
 - **Ajan:** Opus.
 
-### [~] R1.4 · Kayıt günlüğü ve çökme kaydı — v1.3.5
+### [x] R1.4 · Kayıt günlüğü ve çökme kaydı — v1.3.5
 
 - **Hedef (Saul isteği):** Çökmelerin sebebi bulunabilsin. Veri klasöründe `logs\meetin.log`, boyutla dönen (ör. 5 × 1 MB). Kaydedilenler: açılış bilgisi (sürüm, Windows yapı no., kurulumlu/portable, WebView2 sürümü), hatalar ve uyarılar, Rust panikleri (mesaj + konum + backtrace), arayüzdeki yakalanmamış JS hataları, WebView2 süreç çökmesi, güncelleme/yedek/DB hataları. Ayarlar'da "Günlük klasörünü aç" düğmesi.
 - **Asla kaydedilmez (§7.4 [K]):** tuş, tuş arabelleği, ifade metni, kısaltma, pano içeriği, pencere başlığı. Bunu korumak için günlük çağrıları yalnız sabit mesaj + sayı/kod alan küçük bir arayüzden yapılır; test bu kuralı denetler.
@@ -50,7 +50,7 @@
 - **Test:** Oto: dönme, panik kaydı, yasak içerik denetimi · Elle: bilerek tetiklenen test çöküşü sonrası günlük dosyası.
 - **Ajan:** Opus (Rust tarafı) · Haiku (`tr.json`/`en.json` metinleri).
 
-### [ ] R1.5 · Portable "onedir" paketi — v1.3.6
+### [~] R1.5 · Portable "onedir" paketi — v1.3.6
 
 - **Hedef (Saul isteği):** Portable sürüm tek EXE değil, kendi klasörüyle gelir: `Meetin\Meetin.exe`, `Meetin\local-data.flag`, `Meetin\data\` (veriler, yedekler, günlükler), `CHANGELOG.md`. **Hata düzeltmesi:** bugünkü ZIP'te `local-data.flag` yok; portable sürüm verisini yanlışlıkla `%APPDATA%`'ya yazıyor. Eski kullanıcının `%APPDATA%\Meetin` verisi ilk açılışta (onayla) taşınabilir.
 - **[A] Seçenek:** WebView2 "sabit sürüm" çalışma zamanı klasöre eklenebilir (WebView2'si olmayan/eski bilgisayarlarda da çalışır, paket ~180 MB büyür). Saul karar verir.

@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü (CHANGELOG)
 
+## [1.3.6] - 2026-11-27
+
+### Değişti
+- **Portable sürüm klasörüyle gelir:** ZIP açılınca tek bir `Meetin` klasörü çıkar; içinde `Meetin.exe`, `portable.flag` ve verilerin, yedeklerin, günlüklerin tutulduğu `data` klasörü bulunur. USB bellekte taşınabilir.
+
+### Düzeltildi
+- **Portable sürüm verisini yanlış yere yazıyordu:** Önceki ZIP'lerde bayrak dosyası eksikti ve veriler `%APPDATA%Meetin`'e gidiyordu. Yeni portable sürüm ilk açılışta bu bilgisayardaki eski veriyi bulursa kopyalamayı önerir (asıl veri yerinde kalır).
+- Veri klasörü yazılamıyorsa (salt okunur USB gibi) Meetin çökmek yerine anlaşılır bir uyarı gösterir.
+
 ## [1.3.5] - 2026-11-27
 
 ### Eklendi

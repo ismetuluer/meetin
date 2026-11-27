@@ -5,6 +5,41 @@ pub mod hook;
 pub mod inject;
 pub mod io;
 pub mod logging;
+
+/// Açılışta, arayüz kurulmadan önce gösterilen yerel Windows iletişim kutuları.
+mod native_dialog {
+    #[cfg(windows)]
+    fn show(text: &str, flags: windows::Win32::UI::WindowsAndMessaging::MESSAGEBOX_STYLE) -> i32 {
+        use windows::core::{w, PCWSTR};
+        use windows::Win32::UI::WindowsAndMessaging::MessageBoxW;
+        let wide: Vec<u16> = text.encode_utf16().chain(std::iter::once(0)).collect();
+        unsafe { MessageBoxW(None, PCWSTR(wide.as_ptr()), w!("Meetin"), flags).0 }
+    }
+
+    /// Evet/Hayır sorusu; Evet ise `true`.
+    pub fn ask(text: &str) -> bool {
+        #[cfg(windows)]
+        {
+            use windows::Win32::UI::WindowsAndMessaging::{IDYES, MB_ICONQUESTION, MB_YESNO};
+            show(text, MB_YESNO | MB_ICONQUESTION) == IDYES.0
+        }
+        #[cfg(not(windows))]
+        {
+            let _ = text;
+            false
+        }
+    }
+
+    pub fn error(text: &str) {
+        #[cfg(windows)]
+        {
+            use windows::Win32::UI::WindowsAndMessaging::{MB_ICONERROR, MB_OK};
+            show(text, MB_OK | MB_ICONERROR);
+        }
+        #[cfg(not(windows))]
+        let _ = text;
+    }
+}
 pub mod matcher;
 pub mod selection;
 pub mod updater;
@@ -1638,9 +1673,38 @@ fn paste_phrase_from_island(
 
 pub fn run() {
     let data_dir = db::runtime_data_dir();
+    // Salt okunur USB ya da izinsiz klasör: çökmek yerine anlaşılır uyarı (§14)
+    if db::ensure_writable_dir(&data_dir).is_err() {
+        native_dialog::error(&format!(
+            "Meetin veri klasörüne yazamıyor:\n{}\n\nMeetin klasörünü yazılabilir bir yere \
+             (ör. Masaüstü ya da USB belleğin yazılabilir bir klasörü) taşıyıp yeniden deneyin.",
+            data_dir.display()
+        ));
+        return;
+    }
     // Kayıt günlüğü her şeyden önce: açılıştaki hatalar da yakalansın (R1.4)
     logging::init(&data_dir);
     logging::log_startup(startup::is_portable_mode());
+
+    // Portable ilk açılış: bu bilgisayardaki eski veriyi kopyalamayı öner (R1.5)
+    let appdata = std::env::var_os("APPDATA").map(std::path::PathBuf::from);
+    if let Some(src) = db::portable_migration_source(&db::exe_dir(), &data_dir, appdata.as_deref()) {
+        if native_dialog::ask(
+            "Bu bilgisayarda daha önce kullanılmış Meetin verisi bulundu.\n\n\
+             İfadeleriniz bu taşınabilir klasöre kopyalansın mı?\n\
+             (Asıl veri olduğu yerde kalır.)",
+        ) {
+            match db::copy_database(&src, &data_dir.join("meetin.db")) {
+                Ok(()) => logging::event(logging::Level::Info, "portable.migrated", &[]),
+                Err(e) => {
+                    logging::error_text(logging::Level::Error, "portable.migrate_failed", &e);
+                    native_dialog::error("Veriler kopyalanamadı. Meetin boş bir kütüphaneyle açılacak.");
+                }
+            }
+        } else {
+            logging::event(logging::Level::Info, "portable.migration_declined", &[]);
+        }
+    }
 
     let db_path = data_dir.join("meetin.db");
     let storage = Arc::new(Storage::open(&db_path).expect("Meetin veritabanı açılamadı"));

@@ -402,7 +402,14 @@ mod tests {
                 } else if p.extension().is_some_and(|x| x == "rs") && !p.ends_with("logging.rs") {
                     let text = fs::read_to_string(&p).unwrap();
                     for b in banned {
-                        assert!(!text.contains(b), "{} içinde yasak günlük kanalı: {b}", p.display());
+                        // Yalnız tam ad: önünde harf/rakam/_ olmamalı (ör. `dialog::error` sayılmaz).
+                        let hit = text.match_indices(b).any(|(i, _)| {
+                            !text[..i]
+                                .chars()
+                                .next_back()
+                                .is_some_and(|c| c.is_alphanumeric() || c == '_')
+                        });
+                        assert!(!hit, "{} içinde yasak günlük kanalı: {b}", p.display());
                     }
                 }
             }
