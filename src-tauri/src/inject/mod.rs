@@ -129,6 +129,53 @@ pub fn build_reselect_left_count(text: &str) -> usize {
 
 /// Fiziksel `Shift` tuşları basılıyken `Ctrl+C`/`Ctrl+V` enjeksiyonlarının
 /// `Ctrl+Shift+...` olmaması için geçici key-up olayı gönderir.
+/// Genişletme sırasında kapıda bekletilen kullanıcı tuşlarını aynı sırayla yeniden gönderir
+/// (§1.3). `REPLAYED_EXTRA_INFO` imzası taşırlar: kanca onları normal yazı gibi işler ama
+/// yeniden kuyruğa almaz. Tuş kodu gönderilir, metin değil; klavye düzeni ve ölü tuşlar korunur.
+pub fn replay_keys(keys: &[crate::hook::gate::QueuedKey]) {
+    #[cfg(windows)]
+    {
+        use crate::hook::REPLAYED_EXTRA_INFO;
+        use std::mem::size_of;
+        use windows::Win32::UI::Input::KeyboardAndMouse::{
+            SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYBD_EVENT_FLAGS,
+            KEYEVENTF_EXTENDEDKEY, KEYEVENTF_KEYUP, VIRTUAL_KEY,
+        };
+        if keys.is_empty() {
+            return;
+        }
+        let inputs: Vec<INPUT> = keys
+            .iter()
+            .map(|k| {
+                let mut flags = KEYBD_EVENT_FLAGS(0);
+                if k.up {
+                    flags |= KEYEVENTF_KEYUP;
+                }
+                if k.extended {
+                    flags |= KEYEVENTF_EXTENDEDKEY;
+                }
+                INPUT {
+                    r#type: INPUT_KEYBOARD,
+                    Anonymous: INPUT_0 {
+                        ki: KEYBDINPUT {
+                            wVk: VIRTUAL_KEY(k.vk),
+                            wScan: k.scan,
+                            dwFlags: flags,
+                            time: 0,
+                            dwExtraInfo: REPLAYED_EXTRA_INFO,
+                        },
+                    },
+                }
+            })
+            .collect();
+        unsafe {
+            let _ = SendInput(&inputs, size_of::<INPUT>() as i32);
+        }
+    }
+    #[cfg(not(windows))]
+    let _ = keys;
+}
+
 pub fn release_shift_keys() -> Result<(), InjectError> {
     #[cfg(windows)]
     {

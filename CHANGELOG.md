@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü (CHANGELOG)
 
+## [1.3.3] - 2026-11-27
+
+### Düzeltildi
+- **Hızlı yazarken harf sırası (§1.3):** Genişletme metni yazılırken basılan tuşlar artık araya karışmaz; bekletilir ve genişletme bitince aynı sırayla gönderilir. Tetik tuşuna basıldığı anda bekletme başlar, art arda iki kısaltmada da sıra korunur.
+- Backspace ile geri alma, genişletmeden sonra yazmaya devam edilince artık yanlış metni silmez.
+- Bekletme en fazla 3 saniye ve 256 tuş sürer; bir aksaklıkta klavye kilitlenmez.
+
 ## [1.3.2] - 2026-11-27
 
 ### Düzeltildi

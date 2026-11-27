@@ -8,6 +8,7 @@
 
 pub mod buffer;
 pub mod focus;
+pub mod gate;
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -27,9 +28,14 @@ use crate::vars::{self, FormField, ResolveContext};
 
 use self::buffer::KeyBuffer;
 use self::focus::FocusTracker;
+use self::gate::{InjectGate, QueuedKey};
 
 /// Kendi `SendInput` olaylarımızı tanımak için `dwExtraInfo` imzası.
 pub const INJECTED_EXTRA_INFO: usize = 0x4D45_4554;
+
+/// Genişletme sırasında bekletilip yeniden gönderilen kullanıcı tuşlarının imzası
+/// (bkz. [`gate`]). Kanca bunları normal yazı gibi işler, yeniden kuyruğa almaz.
+pub const REPLAYED_EXTRA_INFO: usize = 0x4D45_5250;
 
 /// Varsayılan dışlanan programlar (boş başlar; parola alanları UIA ile sessizce korunur).
 pub const DEFAULT_EXCLUDED_PROCESSES: &[&str] = &[];
@@ -264,7 +270,8 @@ struct HookShared {
     paused: Arc<AtomicBool>,
     suggest_enabled: Arc<AtomicBool>,
     shift_f3_enabled: Arc<AtomicBool>,
-    injecting: Arc<AtomicBool>,
+    /// Genişletme sürerken kullanıcı tuşlarını sırayla bekleten kapı (§1.3).
+    gate: InjectGate,
     matcher: Arc<RwLock<Matcher>>,
     excluded: Arc<RwLock<Vec<String>>>,
     trigger_config: Arc<RwLock<TriggerConfig>>,
@@ -327,13 +334,11 @@ pub struct HookStarter {
     shared: Arc<HookShared>,
     rx: mpsc::Receiver<WorkerJob>,
     focus_rx: mpsc::Receiver<()>,
-    injecting: Arc<AtomicBool>,
 }
 
 /// Önce `HookController` + `HookStarter` üretir; böylece `AppState` Builder'da `.manage()` edilebilir.
 pub fn create_controller(storage: Arc<Storage>) -> (HookController, HookStarter) {
     let paused = Arc::new(AtomicBool::new(false));
-    let injecting = Arc::new(AtomicBool::new(false));
 
     let fold_dotted_i = storage
         .get_setting("fold_dotted_i")
@@ -393,7 +398,7 @@ pub fn create_controller(storage: Arc<Storage>) -> (HookController, HookStarter)
         paused: Arc::clone(&paused),
         suggest_enabled: Arc::clone(&suggest_enabled),
         shift_f3_enabled: Arc::clone(&shift_f3_enabled),
-        injecting: Arc::clone(&injecting),
+        gate: InjectGate::default(),
         matcher: Arc::clone(&matcher),
         excluded: Arc::clone(&excluded),
         trigger_config: Arc::clone(&trigger_config),
@@ -418,7 +423,6 @@ pub fn create_controller(storage: Arc<Storage>) -> (HookController, HookStarter)
         shared,
         rx,
         focus_rx,
-        injecting,
     };
     (controller, starter)
 }
@@ -426,7 +430,6 @@ pub fn create_controller(storage: Arc<Storage>) -> (HookController, HookStarter)
 impl HookStarter {
     pub fn start(self, callbacks: HookCallbacks) {
         let _ = HOOK_SHARED.set(Arc::clone(&self.shared));
-        let worker_injecting = self.injecting;
         let worker_storage = self.storage;
         let worker_shared = self.shared;
         let rx = self.rx;
@@ -447,6 +450,10 @@ impl HookStarter {
                         hwnd,
                         process_name,
                     } => {
+                        // Kapı, tetiği yutan kancada açıldı; arm bitince (continue dahil)
+                        // bekleyen kullanıcı tuşları sırayla gönderilir (§1.3).
+                        let gate_guard = worker_shared.gate.open(inject::replay_keys);
+
                         // Parola kutusundaysa ASLA genişletme; yutulan tetik tuşunu ilet (§7.4)
                         #[cfg(windows)]
                         if win_impl::is_focused_control_password() {
@@ -459,9 +466,7 @@ impl HookStarter {
                         // Doldurulacak alan ({alan:...}) varsa kısaltmayı silip Alan Adasını aç (§3.3, §5.2)
                         let fields = vars::extract_form_fields(&matched.expanded_text);
                         if !fields.is_empty() {
-                            worker_injecting.store(true, Ordering::SeqCst);
                             let _ = inject::inject_undo(matched.abbr_char_len, "");
-                            worker_injecting.store(false, Ordering::SeqCst);
                             if let Some(cb) = &on_fill_requested {
                                 cb(FillRequest {
                                     matched,
@@ -492,7 +497,6 @@ impl HookStarter {
                             Some(matched.trigger)
                         };
 
-                        worker_injecting.store(true, Ordering::SeqCst);
                         let res = inject::inject_resolved(
                             matched.abbr_char_len,
                             &resolved.text,
@@ -501,20 +505,21 @@ impl HookStarter {
                             resolved.cursor_left_steps,
                             process_name.as_deref(),
                         );
-                        worker_injecting.store(false, Ordering::SeqCst);
+                        // Geri alma kaydı kapı kapanmadan yazılır: bekleyen tuşlar yeniden
+                        // gönderilince kanca bu kaydı doğru biçimde geçersiz kılar (§3.1).
+                        if res.is_ok() && resolved.cursor_left_steps == 0 {
+                            if let Ok(mut st) = worker_shared.state.lock() {
+                                st.last_expansion = Some(LastExpansion {
+                                    hwnd,
+                                    delete_len: resolved.text.chars().count()
+                                        + usize::from(trigger_opt.is_some()),
+                                    original_abbr: matched.abbr.clone(),
+                                });
+                            }
+                        }
+                        drop(gate_guard);
 
                         if res.is_ok() {
-                            // İmleç geriye alınmadıysa Backspace ile geri alma kaydını tut (§3.1)
-                            if resolved.cursor_left_steps == 0 {
-                                if let Ok(mut st) = worker_shared.state.lock() {
-                                    st.last_expansion = Some(LastExpansion {
-                                        hwnd,
-                                        delete_len: resolved.text.chars().count()
-                                            + usize::from(trigger_opt.is_some()),
-                                        original_abbr: matched.abbr.clone(),
-                                    });
-                                }
-                            }
                             let _ = worker_storage
                                 .record_usage(matched.phrase_id, process_name.as_deref());
                             if let Some(cb) = &on_expanded {
@@ -529,9 +534,9 @@ impl HookStarter {
                         delete_len,
                         original_abbr,
                     } => {
-                        worker_injecting.store(true, Ordering::SeqCst);
+                        let gate_guard = worker_shared.gate.open(inject::replay_keys);
                         let _ = inject::inject_undo(delete_len, &original_abbr);
-                        worker_injecting.store(false, Ordering::SeqCst);
+                        drop(gate_guard);
                     }
                     WorkerJob::SelectionCandidate(cand) => {
                         if let Some(cb) = &on_selection_candidate {
@@ -597,10 +602,10 @@ impl HookStarter {
                     WorkerJob::CycleSelectionCase => {
                         #[cfg(windows)]
                         {
+                            let gate_guard = worker_shared.gate.open(inject::replay_keys);
                             if win_impl::is_focused_control_password() {
                                 continue;
                             }
-                            worker_injecting.store(true, Ordering::SeqCst);
                             let _ = inject::release_shift_keys();
                             thread::sleep(std::time::Duration::from_millis(20));
                             if let Some(selected) = selection::read_selected_text() {
@@ -623,7 +628,7 @@ impl HookStarter {
                                     }
                                 }
                             }
-                            worker_injecting.store(false, Ordering::SeqCst);
+                            drop(gate_guard);
                         }
                     }
                 }
@@ -685,7 +690,8 @@ mod win_impl {
         GetWindowThreadProcessId, SetWindowsHookExW, TranslateMessage, UnhookWindowsHookEx,
         EVENT_OBJECT_FOCUS, EVENT_SYSTEM_FOREGROUND, WINEVENT_OUTOFCONTEXT,
         WINEVENT_SKIPOWNPROCESS,
-        KBDLLHOOKSTRUCT, MSG, MSLLHOOKSTRUCT, WH_KEYBOARD_LL, WH_MOUSE_LL, WM_KEYDOWN,
+        KBDLLHOOKSTRUCT, LLKHF_EXTENDED, MSG, MSLLHOOKSTRUCT, WH_KEYBOARD_LL, WH_MOUSE_LL,
+        WM_KEYDOWN, WM_KEYUP, WM_SYSKEYUP,
         WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_SYSKEYDOWN,
     };
 
@@ -964,7 +970,7 @@ mod win_impl {
                         st.last_click_up = Some((now, ms.pt.x, ms.pt.y));
                     }
 
-                    if is_selection_gesture && !shared.injecting.load(Ordering::Relaxed) {
+                    if is_selection_gesture && !shared.gate.is_active() {
                         let (_, ctx) = active_window_info();
                         let hidden = shared
                             .excluded
@@ -993,21 +999,40 @@ mod win_impl {
         }
 
         let msg = wparam.0 as u32;
-        if msg != WM_KEYDOWN && msg != WM_SYSKEYDOWN {
-            return CallNextHookEx(None, code, wparam, lparam);
-        }
-
         let Some(shared) = HOOK_SHARED.get() else {
             return CallNextHookEx(None, code, wparam, lparam);
         };
 
         let kb = &*(lparam.0 as *const KBDLLHOOKSTRUCT);
 
-        // Kendi enjekte ettiğimiz tuşları veya duraklatma durumunu doğrudan geçir
-        if kb.dwExtraInfo == INJECTED_EXTRA_INFO
-            || shared.paused.load(Ordering::Relaxed)
-            || shared.injecting.load(Ordering::Relaxed)
-        {
+        // Kendi enjekte ettiğimiz metin tuşlarını doğrudan geçir
+        if kb.dwExtraInfo == INJECTED_EXTRA_INFO {
+            return CallNextHookEx(None, code, wparam, lparam);
+        }
+
+        // Genişletme sürüyorsa kullanıcının tuşlarını (basma ve bırakma) sıraya al;
+        // worker bitince aynı sırayla yeniden gönderir (§1.3). Yeniden gönderilenler
+        // REPLAYED_EXTRA_INFO taşır ve aşağıda normal yazı gibi işlenir.
+        let queued = QueuedKey {
+            vk: kb.vkCode as u16,
+            scan: kb.scanCode as u16,
+            up: msg == WM_KEYUP || msg == WM_SYSKEYUP,
+            extended: kb.flags.0 & LLKHF_EXTENDED.0 != 0,
+        };
+        let held = if kb.dwExtraInfo == REPLAYED_EXTRA_INFO {
+            shared.gate.admit_replayed(queued)
+        } else {
+            shared.gate.admit(queued, Instant::now())
+        };
+        if held {
+            return LRESULT(1);
+        }
+
+        if msg != WM_KEYDOWN && msg != WM_SYSKEYDOWN {
+            return CallNextHookEx(None, code, wparam, lparam);
+        }
+
+        if shared.paused.load(Ordering::Relaxed) {
             return CallNextHookEx(None, code, wparam, lparam);
         }
 
@@ -1058,6 +1083,7 @@ mod win_impl {
                 st.buffer.clear();
                 st.last_expansion = None;
             }
+            shared.gate.begin(Instant::now());
             let _ = shared.tx.send(WorkerJob::CycleSelectionCase);
             return LRESULT(1);
         }
@@ -1118,6 +1144,7 @@ mod win_impl {
                     }
                 } else if let Some(last) = st.last_expansion.take() {
                     if last.hwnd == hwnd_raw {
+                        shared.gate.begin(Instant::now());
                         let _ = shared.tx.send(WorkerJob::UndoExpansion {
                             delete_len: last.delete_len,
                             original_abbr: last.original_abbr,
@@ -1216,7 +1243,8 @@ mod win_impl {
                             check_password: false,
                         });
                     }
-                    let _ = shared.tx.send(WorkerJob::Expand {
+                    shared.gate.begin(Instant::now());
+let _ = shared.tx.send(WorkerJob::Expand {
                         matched: m,
                         hwnd: hwnd_raw,
                         process_name: ctx.process_name,
@@ -1241,7 +1269,8 @@ mod win_impl {
                             items: Vec::new(),
                             check_password: false,
                         });
-                        let _ = shared.tx.send(WorkerJob::Expand {
+                        shared.gate.begin(Instant::now());
+let _ = shared.tx.send(WorkerJob::Expand {
                             matched: m,
                             hwnd: hwnd_raw,
                             process_name: ctx.process_name,

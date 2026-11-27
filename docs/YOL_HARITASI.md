@@ -18,7 +18,7 @@
 
 ## R1 · Güvenlik ve kararlılık → v1.4.0
 
-### [~] R1.1 · Parola kutusunda tam geçiş — v1.3.2
+### [x] R1.1 · Parola kutusunda tam geçiş — v1.3.2
 
 - **Hedef:** Odak değişimi (`SetWinEventHook`, `EVENT_OBJECT_FOCUS`) worker'da izlenir, parola durumu atomik bayrakta tutulur. Kanca bu bayrak açıkken tuşu arabelleğe almaz, tetiği yutmaz, öneri göstermez (§7.4 [K]).
 - **Modüller:** `hook/`
@@ -26,7 +26,7 @@
 - **Test:** Oto: kanca karar fonksiyonu (parola bayrağı → geçiş) · Elle: Chrome'da parola alanına bir kısaltma + boşluk yaz (genişlememeli, sıra bozulmamalı), KeePass/Bitwarden alanı.
 - **Ajan:** Opus.
 
-### [ ] R1.2 · Genişletme sırasında tuş sırası — v1.3.3
+### [~] R1.2 · Genişletme sırasında tuş sırası — v1.3.3
 
 - **Hedef:** Enjeksiyon sürerken kullanıcının fiziksel tuşları yutulup kuyruğa alınır, enjeksiyon bitince aynı sırayla yeniden gönderilir (üst sınır + zaman aşımı ile kilitlenme önlenir).
 - **Modüller:** `hook/`, `inject/`
