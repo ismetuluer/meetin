@@ -72,13 +72,26 @@ mod win_clip {
     use windows::core::w;
     use windows::Win32::Foundation::{HINSTANCE, HWND, LPARAM, LRESULT, WPARAM};
     use windows::Win32::Graphics::Gdi::{GetEnhMetaFileBits, SetEnhMetaFileBits, HENHMETAFILE};
-    use windows::Win32::System::DataExchange::GetClipboardOwner;
+    use windows::Win32::System::DataExchange::{AddClipboardFormatListener, GetClipboardOwner};
     use windows::Win32::System::LibraryLoader::GetModuleHandleW;
     use windows::Win32::UI::WindowsAndMessaging::{
         CreateWindowExW, DefWindowProcW, DispatchMessageW, GetMessageW, RegisterClassW,
-        HWND_MESSAGE, MSG, WINDOW_EX_STYLE, WINDOW_STYLE, WM_DESTROYCLIPBOARD, WM_RENDERALLFORMATS,
-        WM_RENDERFORMAT, WNDCLASSW,
+        HWND_MESSAGE, MSG, WINDOW_EX_STYLE, WINDOW_STYLE, WM_CLIPBOARDUPDATE, WM_DESTROYCLIPBOARD,
+        WM_RENDERALLFORMATS, WM_RENDERFORMAT, WNDCLASSW,
     };
+
+    /// Pano değişti bildirimi (WM_CLIPBOARDUPDATE) için abone kanalı (R1.7).
+    static UPDATE_TX: Mutex<Option<mpsc::Sender<()>>> = Mutex::new(None);
+
+    /// Pano değişikliklerini olay olarak dinler: gizli sahip penceresi Windows'un pano
+    /// dinleyici listesine eklenir. Kurulamazsa `None` (çağıran yoklamaya döner).
+    pub fn subscribe_updates() -> Option<mpsc::Receiver<()>> {
+        let owner = owner_hwnd()?;
+        let (tx, rx) = mpsc::channel();
+        *UPDATE_TX.lock().unwrap_or_else(|e| e.into_inner()) = Some(tx);
+        unsafe { AddClipboardFormatListener(owner) }.ok()?;
+        Some(rx)
+    }
 
     const CF_UNICODETEXT: u32 = 13;
 
@@ -285,6 +298,12 @@ mod win_clip {
             WM_DESTROYCLIPBOARD => {
                 pending_lock().take();
                 RENDERED.notify_all();
+                LRESULT(0)
+            }
+            WM_CLIPBOARDUPDATE => {
+                if let Some(tx) = UPDATE_TX.lock().unwrap_or_else(|e| e.into_inner()).as_ref() {
+                    let _ = tx.send(());
+                }
                 LRESULT(0)
             }
             _ => DefWindowProcW(hwnd, msg, wparam, lparam),
@@ -830,9 +849,28 @@ pub fn start_clipboard_watcher(
         std::thread::Builder::new()
             .name("meetin-clipboard-watcher".to_string())
             .spawn(move || {
+                // Olay tabanlı (R1.7): pano değişmedikçe bu iş parçacığı hiç uyanmaz.
+                let updates = win_clip::subscribe_updates();
+                if updates.is_none() {
+                    crate::logging::event(
+                        crate::logging::Level::Warn,
+                        "clipboard.listener_unavailable",
+                        &[],
+                    );
+                }
                 let mut last_seq = win_clip::sequence_number();
                 loop {
-                    std::thread::sleep(std::time::Duration::from_millis(900));
+                    match &updates {
+                        Some(rx) => {
+                            if rx.recv().is_err() {
+                                break;
+                            }
+                            // Art arda gelen bildirimleri birleştir, yazan programın bitirmesini bekle
+                            std::thread::sleep(std::time::Duration::from_millis(60));
+                            while rx.try_recv().is_ok() {}
+                        }
+                        None => std::thread::sleep(std::time::Duration::from_millis(900)),
+                    }
                     let seq = win_clip::sequence_number();
                     if seq == 0 || seq == last_seq {
                         continue;

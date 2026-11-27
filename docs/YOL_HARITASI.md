@@ -60,7 +60,7 @@
 - **Test:** Oto: veri yolu seçimi · Elle: ZIP'i USB'ye aç, çalıştır, verinin `data\`'da oluştuğunu gör; salt okunur klasörde anlaşılır hata.
 - **Ajan:** Opus.
 
-### [~] R1.6 · Kanca hızı — v1.3.7
+### [x] R1.6 · Kanca hızı — v1.3.7
 
 - **Hedef:** Etkin pencere bilgisi (işlem adı, başlık) her tuşta değil, pencere değişince (`EVENT_SYSTEM_FOREGROUND`) güncellenir.
 - **Modüller:** `hook/`
@@ -68,7 +68,7 @@
 - **Test:** Oto: geri çağrı süresi ölçümü (< 1 ms) · Elle: genel akıcılık.
 - **Ajan:** Opus.
 
-### [ ] R1.7 · Olay tabanlı pano izleyici ve CSP — v1.3.8
+### [~] R1.7 · Olay tabanlı pano izleyici ve CSP — v1.3.8
 
 - **Hedef:** 900 ms yoklama yerine `AddClipboardFormatListener`; `csp: null` yerine kısıtlı CSP (zengin düzenleyici ve görseller çalışmaya devam eder).
 - **Modüller:** `inject/clipboard.rs`, `tauri.conf.json`

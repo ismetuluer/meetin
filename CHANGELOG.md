@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü (CHANGELOG)
 
+## [1.3.10] - 2026-11-27
+
+### Değişti
+- **Pano geçmişi olay tabanlı:** Meetin panoyu 0,9 saniyede bir yoklamak yerine Windows'un "pano değişti" bildirimini bekler; boştayken işlemciyi hiç uyandırmaz.
+
+### Güvenlik
+- **İçerik güvenlik politikası (CSP) açıldı:** Arayüz yalnız kendi dosyalarını, kendi resim/ses verisini ve Meetin çekirdeğiyle iletişimi kullanabilir; dışarıdan betik, çerçeve ya da bağlantı yüklenemez. Engellenen bir şey olursa kayıt günlüğüne yazılır.
+
 ## [1.3.9] - 2026-11-27
 
 ### Düzeltildi
