@@ -81,6 +81,11 @@
 
 ---
 
+### [x] R1.9 · Acil düzeltme — v1.4.1
+
+- 1.4.0 denemesinde bulunanlar: güncelleme v1.3.0'a sabit adresten okunuyordu; pano izleyicisi ekran görüntüsü yazılırken panoyu açabiliyordu; genişletme hataları günlüğe yazılmıyordu; Windows'un sessizce kaldırdığı kanca fark edilmiyordu.
+- **Test:** Oto: kanca nöbetçisi karar mantığı (6 test) · Elle: Saul (1.4.1 elle kurulur; güncelleme denetimi, ekran görüntüsü, uzun oturumda tetikler).
+
 ## R2 · Güncelleyici → v1.5.0
 
 ### [ ] R2.1 · İmza anahtarı (sürüm yok)
@@ -88,21 +93,21 @@
 - **Hedef:** `tauri signer generate` ile anahtar çifti; özel anahtar ve parolası GitHub Secrets'a (**Saul elle ekler**), açık anahtar `tauri.conf.json`'a.
 - **Ajan:** Opus (komutlar ve talimat) · Saul.
 
-### [ ] R2.2 · `tauri-plugin-updater` geçişi — v1.4.1
+### [ ] R2.2 · `tauri-plugin-updater` geçişi — v1.4.2
 
 - **Hedef:** Kendi yazılmış `updater/` (CNG ECDSA, PowerShell indirme/kurulum) kaldırılır; eklenti ile kontrol (açılışta + 24 saatte bir), maskot rozeti, CHANGELOG notları, "Şimdi kur / Sonra". İmzasız paket asla kurulmaz.
 - **Modüller:** `updater/` (silinir), `lib.rs`, `src/studio/` güncelleme sayfası
-- **Bulunan hatalar (1.3.10 denemesi):** denetim sonucu hiçbir yere yazılmıyor; maskot bildirimi tek seferlik olaya bağlı ve kaçırılabiliyor (durumu sonradan sormuyor). Çözüm: her denetim günlüğe yazılır, arayüz durumu açılışta ve olayda sorar, Studio'da kalıcı bildirim.
+- **Bulunan hatalar (1.3.10 denemesi) — 1.4.1'de düzeltildi:** asıl sebep veritabanında v1.3.0'a sabitlenmiş `update_manifest_url` ayarıydı (silindi, adres artık sabit). Denetim sonucu günlüğe yazılıyor; maskot durumu kendisi soruyor. Eklenti geçişinde bu davranışlar korunur.
 - **Test:** Oto: sürüm karşılaştırma ve olay akışı · Elle: R2.5'te.
 - **Ajan:** Opus.
 
-### [ ] R2.3 · CI: imzalı yayın + köprü — v1.4.1
+### [ ] R2.3 · CI: imzalı yayın + köprü — v1.4.3
 
 - **Hedef:** CI imzalı NSIS paketi ve eklentinin manifestini (`updater.json`) yayımlar. Eski istemciler (≤ 1.4.0) için eski biçimdeki `latest.json` bir süre daha yayımlanır ki yeni sürüme geçebilsinler.
 - **Modüller:** `.github/workflows/release.yml`, `scripts/`
 - **Ajan:** Opus.
 
-### [ ] R2.4 · Portable güncelleme — v1.4.2
+### [ ] R2.4 · Portable güncelleme — v1.4.4
 
 - **Hedef:** [A] Eklenti portable'ı kurmaz. Seçenekler: (a) portable sürüm ZIP'i indirip `data\`'ya dokunmadan EXE'yi değiştirir (şartname §9), (b) yalnız bildirim + indirme bağlantısı. Saul karar verir.
 - **Ajan:** Opus.
