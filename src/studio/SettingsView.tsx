@@ -41,6 +41,7 @@ type SettingsSection =
 
 interface SettingsViewProps {
   status: EngineStatus | null;
+  initialSection?: SettingsSection;
   onRefresh: () => void;
   onExport: (format: "meetin" | "csv" | "ahk") => Promise<void>;
   onReplayOnboarding: () => void;
@@ -71,12 +72,21 @@ const NAV_ITEMS: { id: SettingsSection; labelKey: TranslationKey }[] = [
 
 export function SettingsView({
   status,
+  initialSection,
   onRefresh,
   onExport,
   onReplayOnboarding,
 }: SettingsViewProps) {
   const activeLanguage = useLanguage();
-  const [section, setSection] = useState<SettingsSection>("appearance");
+  const [section, setSection] = useState<SettingsSection>(
+    initialSection ?? "appearance",
+  );
+
+  useEffect(() => {
+    if (initialSection) {
+      setSection(initialSection);
+    }
+  }, [initialSection]);
   const [settings, setSettings] = useState<AppSettingsDto | null>(null);
   const [userNameDraft, setUserNameDraft] = useState("");
   const [shortcutDraft, setShortcutDraft] =
@@ -1012,7 +1022,7 @@ export function SettingsView({
               <div className="settings-row">
                 <div>
                   <div className="card-title">
-                    {t("settings.currentVersionTitle")} v{updateInfo?.current_version ?? "1.3.0"}
+                    {t("settings.currentVersionTitle")} v{updateInfo?.current_version ?? "1.3.1"}
                   </div>
                   <div className="muted small">
                     {updateInfo?.is_portable
@@ -1030,6 +1040,31 @@ export function SettingsView({
                     : t("settings.upToDate")}
                 </span>
               </div>
+
+              <label
+                className="settings-row"
+                style={{ marginTop: 14, cursor: "pointer" }}
+              >
+                <div>
+                  <div className="card-title">
+                    {t("settings.autoCheckUpdateTitle")}
+                  </div>
+                  <div className="muted small">
+                    {t("settings.autoCheckUpdateDesc")}
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={settings?.auto_check_updates ?? true}
+                  onChange={async (e) => {
+                    if (!settings) return;
+                    const enabled = e.target.checked;
+                    setSettings({ ...settings, auto_check_updates: enabled });
+                    await invoke("set_auto_check_updates", { enabled });
+                    setBusyMsg(t("settings.saved"));
+                  }}
+                />
+              </label>
 
               <div className="row-actions" style={{ marginTop: 14 }}>
                 <button

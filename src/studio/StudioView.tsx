@@ -206,6 +206,12 @@ export function StudioView() {
   const lang = useLanguage();
   const initialPrefs = useMemo(() => loadUiPrefs(), []);
   const [pageMode, setPageMode] = useState<PageMode>("studio");
+  const [settingsInitialSection, setSettingsInitialSection] = useState<
+    "appearance" | "update"
+  >("appearance");
+  const [availableUpdateVersion, setAvailableUpdateVersion] = useState<
+    string | null
+  >(null);
   const [phrases, setPhrases] = useState<PhraseRecord[]>([]);
   const [folders, setFolders] = useState<FolderRecord[]>([]);
   const [clipboardItems, setClipboardItems] = useState<ClipboardHistoryRecord[]>([]);
@@ -398,6 +404,22 @@ export function StudioView() {
         }
       })
       .catch(() => {});
+    void invoke<import("./types").UpdateCheckResult>("get_update_env_info")
+      .then((u) => {
+        if (
+          u.update_available &&
+          u.signature_status !== "invalid" &&
+          u.latest_version
+        ) {
+          setAvailableUpdateVersion(u.latest_version);
+        }
+      })
+      .catch(() => {});
+    const unlistenUpdate = listen<string>("update-available", (ev) => {
+      if (ev.payload) {
+        setAvailableUpdateVersion(ev.payload);
+      }
+    });
     const unlistenStatus = listen<boolean>("engine-status-changed", () => {
       void loadAll();
     });
@@ -429,6 +451,7 @@ export function StudioView() {
     });
 
     return () => {
+      void unlistenUpdate.then((f) => f());
       void unlistenStatus.then((f) => f());
       void unlistenExpand.then((f) => f());
       void unlistenRestored.then((f) => f());
@@ -1096,7 +1119,10 @@ export function StudioView() {
       {
         id: "cmd-settings",
         label: t("studio.settingsBtn"),
-        onRun: () => setPageMode("settings"),
+        onRun: () => {
+          setSettingsInitialSection("appearance");
+          setPageMode("settings");
+        },
       },
       {
         id: "cmd-help",
@@ -1278,17 +1304,55 @@ export function StudioView() {
 
       {error && <div className="banner-inline is-error">{error}</div>}
       {notice && <div className="banner-inline is-ok">{notice}</div>}
+      {availableUpdateVersion && pageMode !== "settings" && (
+        <div
+          className="banner-inline is-ok"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+          }}
+        >
+          <span>
+            {t("studio.updateAvailableBanner", { ver: availableUpdateVersion })}
+          </span>
+          <div className="row-actions" style={{ alignItems: "center" }}>
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={() => {
+                setSettingsInitialSection("update");
+                setPageMode("settings");
+              }}
+            >
+              {t("studio.openUpdateBtn")}
+            </button>
+            <button
+              type="button"
+              className="mini-icon-btn"
+              onClick={() => setAvailableUpdateVersion(null)}
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
 
       {pageMode === "settings" ? (
         <SettingsView
           status={status}
+          initialSection={settingsInitialSection}
           onRefresh={() => void loadAll()}
           onExport={handleExport}
           onReplayOnboarding={() => setShowOnboarding(true)}
         />
       ) : pageMode === "help" ? (
         <HelpView
-          onOpenSettings={() => setPageMode("settings")}
+          onOpenSettings={() => {
+            setSettingsInitialSection("appearance");
+            setPageMode("settings");
+          }}
           onReplayOnboarding={() => setShowOnboarding(true)}
           onCreatePhrase={() => openNewDraft()}
         />
@@ -1588,7 +1652,10 @@ export function StudioView() {
                 type="button"
                 className="nav-item"
                 title={t("tip.openSettings")}
-                onClick={() => setPageMode("settings")}
+                onClick={() => {
+                  setSettingsInitialSection("appearance");
+                  setPageMode("settings");
+                }}
               >
                 <span className="nav-label">
                   <svg width="15" height="15" viewBox="0 0 16 16" fill="none">

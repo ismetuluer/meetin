@@ -2,7 +2,7 @@
   <img src="docs/screenshots/meetin-mascot.png" alt="Meetin Maskotu" width="112" />
 </p>
 
-<h1 align="center">Meetin · Akıllı Türkçe Metin Genişletici (<code>v1.3.0</code>)</h1>
+<h1 align="center">Meetin · Akıllı Türkçe Metin Genişletici (<code>v1.3.1</code>)</h1>
 
 <p align="center">
   Windows için tasarlanmış yerel, hızlı, gizlilik odaklı ve Türkçe (<code>tr-TR</code>) uyumlu akıllı metin genişletici ve etkileşimli masaüstü koyun maskotu.
@@ -59,8 +59,8 @@
 
 ## İndirme ve Kurulum
 
-- **Kurulumlu (NSIS):** [GitHub Releases](https://github.com/ismetuluer/meetin/releases/latest) üzerinden `Meetin_1.3.0_x64-setup.exe` indirip kurabilirsiniz.
-- **Taşınabilir (Portable):** `Meetin_1.3.0_portable.zip` kurulum gerektirmeden çalışır ve verileri varsayılan olarak `%APPDATA%\Meetin\` altında saklar (yerel `.\data\` klasörüne almak için EXE yanına boş `local-data.flag` dosyası eklenebilir).
+- **Kurulumlu (NSIS):** [GitHub Releases](https://github.com/ismetuluer/meetin/releases/latest) üzerinden `Meetin_1.3.1_x64-setup.exe` indirip kurabilirsiniz.
+- **Taşınabilir (Portable):** `Meetin_1.3.1_portable.zip` kurulum gerektirmeden çalışır ve verileri varsayılan olarak `%APPDATA%\Meetin\` altında saklar (yerel `.\data\` klasörüne almak için EXE yanına boş `local-data.flag` dosyası eklenebilir).
 - **Doğrulamalı ve İmzalı Öz-Güncelleme:** Meetin yeni sürümleri doğrudan GitHub Releases (`v*` etiketi iş akışı: [release.yml](.github/workflows/release.yml)) üzerinden SHA-256 ve ECDSA P-256 imza doğrulamasıyla tek tıkla kurabilir ([İmzalama Rehberi](docs/GUNCELLEME_IMZALAMA.md)).
 - **Geliştirme başlatma:** Projeden doğrudan çalıştırmak için [Start.bat](Start.bat) dosyasını kullanabilirsiniz.
 - **Kullanıcı Kılavuzu & Yardım:** Ayrıntılı kullanım rehberi, değişkenler ve SSS için [docs/YARDIM.md](docs/YARDIM.md) dosyasını inceleyebilir veya uygulama içinde `F1` tuşuna basabilirsiniz.

@@ -140,6 +140,7 @@ pub struct AppSettingsDto {
     pub sound_baa: bool,
     pub sound_throw: bool,
     pub sound_impact: bool,
+    pub auto_check_updates: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -220,6 +221,7 @@ pub struct AppState {
     pub pending_fill: Mutex<Option<PendingFillJob>>,
     pub shortcuts: Mutex<ShortcutConfigDto>,
     pub clipboard_cfg: ClipboardWatcherConfig,
+    pub latest_update_check: Mutex<Option<UpdateCheckResult>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -403,6 +405,13 @@ fn get_app_settings(state: State<'_, AppState>) -> Result<AppSettingsDto, String
         .filter(|m| matches!(m.as_str(), "initials" | "first_word" | "last_word" | "tag"))
         .unwrap_or_else(|| "initials".to_string());
     let shift_f3_enabled = state.hook.is_shift_f3_enabled();
+    let auto_check_updates = state
+        .storage
+        .get_setting("auto_check_updates")
+        .ok()
+        .flatten()
+        .map(|v| v != "false")
+        .unwrap_or(true);
 
     Ok(AppSettingsDto {
         trigger_config: state.hook.get_trigger_config(),
@@ -422,6 +431,7 @@ fn get_app_settings(state: State<'_, AppState>) -> Result<AppSettingsDto, String
         sound_baa,
         sound_throw,
         sound_impact,
+        auto_check_updates,
     })
 }
 
@@ -639,7 +649,20 @@ fn set_admin_autostart(enabled: bool) -> Result<StartupStatus, String> {
 }
 
 #[tauri::command]
-fn get_update_env_info() -> UpdateCheckResult {
+fn set_auto_check_updates(state: State<'_, AppState>, enabled: bool) -> Result<(), String> {
+    state
+        .storage
+        .set_setting("auto_check_updates", if enabled { "true" } else { "false" })
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn get_update_env_info(state: State<'_, AppState>) -> UpdateCheckResult {
+    if let Ok(guard) = state.latest_update_check.lock() {
+        if let Some(cached) = guard.as_ref() {
+            return cached.clone();
+        }
+    }
     updater::current_env_info()
 }
 
@@ -667,6 +690,9 @@ fn check_for_updates(
     let cur = env!("CARGO_PKG_VERSION");
     let portable = startup::is_portable_mode();
     let res = updater::check_manifest_source(&effective, cur, portable)?;
+    if let Ok(mut guard) = state.latest_update_check.lock() {
+        *guard = Some(res.clone());
+    }
     if res.update_available && res.signature_status != updater::SIG_STATUS_INVALID {
         let _ = app.emit("update-available", res.latest_version.clone().unwrap_or_default());
     }
@@ -1631,6 +1657,7 @@ pub fn run() {
             pending_fill: Mutex::new(None),
             shortcuts: Mutex::new(shortcuts_init),
             clipboard_cfg,
+            latest_update_check: Mutex::new(None),
         })
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             tray::show_main_window(app);
@@ -1793,24 +1820,37 @@ pub fn run() {
             let _ = storage.purge_expired_trash(30);
             inject::clipboard::start_clipboard_watcher(Arc::clone(&storage), clipboard_cfg_for_setup);
 
-            // Kayıtlı veya varsayılan GitHub güncelleme URL'sinden arka planda kontrol et
+            // Kayıtlı veya varsayılan GitHub güncelleme URL'sinden arka planda otomatik kontrol et
+            let auto_check_updates = storage
+                .get_setting("auto_check_updates")
+                .ok()
+                .flatten()
+                .map(|v| v != "false")
+                .unwrap_or(true);
             let upd_url = storage
                 .get_setting("update_manifest_url")
                 .ok()
                 .flatten()
                 .filter(|u| !u.trim().is_empty())
                 .unwrap_or_else(|| DEFAULT_UPDATE_MANIFEST_URL.to_string());
-            {
+            if auto_check_updates {
                 let app_upd = app.handle().clone();
                 thread::Builder::new()
                     .name("meetin-upd-check".to_string())
                     .spawn(move || {
+                        // Arayüz olay dinleyicilerinin bağlanması ve hızlı açılış için kısa bekleme
+                        thread::sleep(Duration::from_secs(3));
                         let portable = startup::is_portable_mode();
                         if let Ok(res) = updater::check_manifest_source(
                             &upd_url,
                             env!("CARGO_PKG_VERSION"),
                             portable,
                         ) {
+                            if let Ok(mut guard) =
+                                app_upd.state::<AppState>().latest_update_check.lock()
+                            {
+                                *guard = Some(res.clone());
+                            }
                             if res.update_available
                                 && res.signature_status != updater::SIG_STATUS_INVALID
                             {
@@ -1859,6 +1899,7 @@ pub fn run() {
             get_update_env_info,
             check_for_updates,
             install_verified_update,
+            set_auto_check_updates,
             set_excluded_processes,
             set_mascot_prefs,
             set_shortcuts_config,

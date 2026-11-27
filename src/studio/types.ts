@@ -156,6 +156,7 @@ export interface AppSettingsDto {
   sound_baa: boolean;
   sound_throw: boolean;
   sound_impact: boolean;
+  auto_check_updates: boolean;
 }
 
 export interface BackupFileInfo {

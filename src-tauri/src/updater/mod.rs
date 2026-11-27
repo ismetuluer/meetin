@@ -335,6 +335,15 @@ pub fn parse_latest_json(
     )
 }
 
+/// İndirilen `latest.json` baytlarını isteğe bağlı UTF-8 BOM'dan arındırarak metne çevirir.
+pub fn decode_manifest_bytes(bytes: &[u8]) -> String {
+    let raw = match std::str::from_utf8(bytes) {
+        Ok(s) => s.to_string(),
+        Err(_) => String::from_utf8_lossy(bytes).into_owned(),
+    };
+    raw.trim_start_matches('\u{FEFF}').to_string()
+}
+
 /// Manifest kaynağından (yerel dosya veya `https://`) ham JSON metnini ve yerel olup olmadığını okur.
 pub fn fetch_manifest_raw(source: &str) -> Result<(String, bool), String> {
     let trimmed = source.trim();
@@ -344,34 +353,54 @@ pub fn fetch_manifest_raw(source: &str) -> Result<(String, bool), String> {
     let local_candidate = strip_file_scheme(trimmed);
     let path = Path::new(local_candidate);
     if path.is_file() {
-        let raw = fs::read_to_string(path).map_err(|e| e.to_string())?;
-        return Ok((raw, true));
+        let bytes = fs::read(path).map_err(|e| e.to_string())?;
+        return Ok((decode_manifest_bytes(&bytes), true));
     }
     if trimmed.len() >= 8 && trimmed.as_bytes()[..8].eq_ignore_ascii_case(b"https://") {
         #[cfg(windows)]
         {
             use std::os::windows::process::CommandExt;
             use std::process::Command;
+            use std::time::{SystemTime, UNIX_EPOCH};
             const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+
+            let nanos = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .map(|d| d.as_nanos())
+                .unwrap_or(0);
+            let tmp_path = std::env::temp_dir().join(format!(
+                "meetin-latest-{}-{}.json",
+                std::process::id(),
+                nanos
+            ));
             let escaped = trimmed.replace('\'', "''");
+            let out_escaped = tmp_path.to_string_lossy().replace('\'', "''");
+            // `-OutFile` doğrudan UTF-8 baytları diske yazar; `.Content` octet-stream yanıtlarında Byte[] (123...) dönebiliyor.
             let script = format!(
-                "$ProgressPreference='SilentlyContinue'; [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; (Invoke-WebRequest -UseBasicParsing -TimeoutSec 15 -Uri '{}').Content",
-                escaped
+                "$ProgressPreference='SilentlyContinue'; [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -UseBasicParsing -TimeoutSec 15 -Uri '{}' -OutFile '{}'",
+                escaped, out_escaped
             );
             let out = Command::new("powershell")
                 .args(["-NoProfile", "-NonInteractive", "-Command", &script])
                 .creation_flags(CREATE_NO_WINDOW)
-                .output()
-                .map_err(|e| format!("Güncelleme denetimi çalıştırılamadı: {e}"))?;
-            if out.status.success() {
-                return Ok((String::from_utf8_lossy(&out.stdout).into_owned(), false));
-            }
-            let err = String::from_utf8_lossy(&out.stderr).trim().to_string();
-            return Err(if err.is_empty() {
-                "Güncelleme adresinden yanıt alınamadı.".to_string()
-            } else {
-                format!("Güncelleme denetimi başarısız: {err}")
-            });
+                .output();
+
+            let result = match out {
+                Ok(out) if out.status.success() => fs::read(&tmp_path)
+                    .map(|bytes| (decode_manifest_bytes(&bytes), false))
+                    .map_err(|e| format!("Güncelleme bildirimi okunamadı: {e}")),
+                Ok(out) => {
+                    let err = String::from_utf8_lossy(&out.stderr).trim().to_string();
+                    Err(if err.is_empty() {
+                        "Güncelleme adresinden yanıt alınamadı.".to_string()
+                    } else {
+                        format!("Güncelleme denetimi başarısız: {err}")
+                    })
+                }
+                Err(e) => Err(format!("Güncelleme denetimi çalıştırılamadı: {e}")),
+            };
+            let _ = fs::remove_file(&tmp_path);
+            return result;
         }
         #[cfg(not(windows))]
         {
@@ -1039,5 +1068,15 @@ mod tests {
             .unwrap_err();
         assert!(err.contains("SHA-256"), "unexpected err: {err}");
         assert!(!staging_bad.join("Meetin_1.3.0.exe").exists());
+    }
+
+    #[test]
+    fn decode_manifest_bytes_strips_bom_and_parses_turkish_json() {
+        let json = "\u{FEFF}{\"version\":\"1.3.0\",\"notes\":\"Türkçe sürüm notu: şğıöçü\",\"download_url\":\"https://example.com/setup.exe\",\"sha256\":\"\"}";
+        let decoded = decode_manifest_bytes(json.as_bytes());
+        assert!(decoded.starts_with('{'));
+        let parsed = parse_manifest_json(&decoded).unwrap();
+        assert_eq!(parsed.version, "1.3.0");
+        assert!(parsed.notes.contains("şğıöçü"));
     }
 }

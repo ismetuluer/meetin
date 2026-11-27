@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü (CHANGELOG)
 
+## [1.3.1] - 2026-11-27 (`latest.json` Ayrıştırma Düzeltmesi · Başlangıçta Otomatik Güncelleme)
+
+### Düzeltmeler ve İyileştirmeler
+- **`latest.json` `Byte[]` (`123`) ayrıştırma hatası giderildi:** GitHub Releases'in `application/octet-stream` yanıtında PowerShell 5.1 `.Content`'in ham baytları tam sayı dizisi olarak yazdırması sorunu `-OutFile` + Rust `decode_manifest_bytes` (UTF-8 & BOM temizliği) akışıyla çözüldü; Türkçe sürüm notları artık kayıpsız okunur.
+- **Başlangıçta otomatik güncelleme denetimi ve bildirim:** Açılış denetimi olay dinleyicilerinin hazır olması için 3 sn gecikmeli çalışır ve sonucu önbellekte saklar; yeni sürüm bulunduğunda ana pencerede tek tıkla **Güncelle** bildirim çubuğu açılır ve **Ayarlar › Güncelleme** içinden **Başlangıçta otomatik güncelleme kontrolü** açılıp kapatılabilir.
+
 ## [1.3.0] - 2026-11-26 (Mica/Acrylic · .mee ZIP Medya · WYSIWYG & İngilizce · İmzalı Güncelleme · Yardım Merkezi · UAT/Kararlılık)
 
 ### Eklenenler ve İyileştirmeler

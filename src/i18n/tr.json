@@ -289,7 +289,7 @@
   "settings.backupDone": "Yedek dosyası indirildi.",
   "settings.info.trigger": "Boşluk, Enter, Tab ve noktalama işaretleri tetik tuşu olarak aktiftir.",
   "settings.info.excluded": "Meetin'in çalışmasını istemediğiniz uygulamaları ekleyin.",
-  "settings.info.update": "Güncel sürüm: 1.3.0.",
+  "settings.info.update": "Güncel sürüm: 1.3.1.",
   "settings.runAtLoginTitle": "Windows ile başlat",
   "settings.runAtLoginDesc": "Oturum açıldığında Meetin otomatik başlar.",
   "settings.adminTaskTitle": "Yönetici olarak başlat (UAC'siz Görev)",
@@ -508,5 +508,9 @@
   "settings.updateInvalidSigWarning": "Güvenlik uyarısı: Güncelleme paketinin kriptografik imzası geçersiz. Kurulum güvenlik nedeniyle engellendi.",
   "settings.updateUnsignedHint": "Bu sürüm dijital imza içermiyor; indirme sırasında SHA-256 bütünlük doğrulaması yapılacaktır.",
   "settings.updateNoAutoInstallHint": "Tek tıkla kurulum için geçerli HTTPS adresi ve SHA-256 özeti gereklidir.",
-  "settings.manualDownloadBtn": "Elle İndir"
+  "settings.manualDownloadBtn": "Elle İndir",
+  "settings.autoCheckUpdateTitle": "Başlangıçta otomatik güncelleme kontrolü",
+  "settings.autoCheckUpdateDesc": "Meetin açıldığında yeni sürümleri arka planda otomatik denetler.",
+  "studio.updateAvailableBanner": "Yeni sürüm mevcut: v{ver}",
+  "studio.openUpdateBtn": "Güncelle"
 }
