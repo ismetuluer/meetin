@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü (CHANGELOG)
 
+## [1.3.8] - 2026-11-27
+
+### Değişti
+- **Daha hafif klavye dinleme:** Etkin programın adı artık her tuşta yeniden sorgulanmaz; yalnız ön plandaki program değişince alınır. Pencere başlığı (sekmeye göre kurallar için) her zaman günceldir.
+- Klavye dinleyicisinin tepki süresi ölçülür; en uzun süre ve 1 ms'yi aşan çağrı sayısı kapanışta kayıt günlüğüne yazılır.
+
 ## [1.3.7] - 2026-11-27
 
 ### Değişti

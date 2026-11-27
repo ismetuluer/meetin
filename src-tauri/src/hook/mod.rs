@@ -9,6 +9,7 @@
 pub mod buffer;
 pub mod focus;
 pub mod gate;
+mod proc_cache;
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -29,6 +30,26 @@ use crate::vars::{self, FormField, ResolveContext};
 use self::buffer::KeyBuffer;
 use self::focus::FocusTracker;
 use self::gate::{InjectGate, QueuedKey};
+
+/// Kanca geri çağrısı süre istatistiği (R1.6).
+#[derive(Debug, Clone, Copy, Default)]
+pub struct HookStats {
+    pub calls: u64,
+    pub slow_calls: u64,
+    pub max_micros: u64,
+}
+
+/// Kapanışta günlüğe yazılmak üzere kanca istatistiği.
+pub fn stats() -> HookStats {
+    #[cfg(windows)]
+    {
+        win_impl::stats()
+    }
+    #[cfg(not(windows))]
+    {
+        HookStats::default()
+    }
+}
 
 /// Kendi `SendInput` olaylarımızı tanımak için `dwExtraInfo` imzası.
 pub const INJECTED_EXTRA_INFO: usize = 0x4D45_4554;
@@ -664,6 +685,7 @@ impl HookStarter {
 mod win_impl {
     use super::focus::FocusState;
     use super::*;
+    use std::sync::atomic::AtomicU64;
     use windows::core::PWSTR;
     use windows::Win32::Foundation::{CloseHandle, HWND, LPARAM, LRESULT, WPARAM};
     use windows::Win32::System::Com::{
@@ -831,6 +853,18 @@ mod win_impl {
 
             let mut pid: u32 = 0;
             GetWindowThreadProcessId(hwnd, Some(&mut pid));
+            // İşlem adı PID'e göre önbellekten (R1.6): OpenProcess + QueryFullProcessImageNameW
+            // yalnız ön plandaki işlem değişince çalışır. Başlık her seferinde okunur (ucuz,
+            // başka süreçte ileti göndermez) çünkü sekme değişince değişir (§3.5).
+            if let Some(name) = PROCESS_NAME_CACHE.lookup(pid) {
+                return (
+                    raw,
+                    ActiveContext {
+                        process_name: name,
+                        window_title,
+                    },
+                );
+            }
             let process_name = if pid != 0 {
                 if let Ok(handle) = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid) {
                     let mut path_buf = [0u16; 512];
@@ -855,6 +889,7 @@ mod win_impl {
                 None
             };
 
+            PROCESS_NAME_CACHE.store(pid, process_name.clone());
             (
                 raw,
                 ActiveContext {
@@ -863,6 +898,35 @@ mod win_impl {
                 },
             )
         }
+    }
+
+    static PROCESS_NAME_CACHE: super::proc_cache::ProcessNameCache =
+        super::proc_cache::ProcessNameCache::new();
+
+    /// Kanca geri çağrısı süre istatistiği (yalnız sayılar; tuş bilgisi yok).
+    static CALLS: AtomicU64 = AtomicU64::new(0);
+    static SLOW_CALLS: AtomicU64 = AtomicU64::new(0);
+    static MAX_MICROS: AtomicU64 = AtomicU64::new(0);
+
+    pub fn stats() -> super::HookStats {
+        super::HookStats {
+            calls: CALLS.load(Ordering::Relaxed),
+            slow_calls: SLOW_CALLS.load(Ordering::Relaxed),
+            max_micros: MAX_MICROS.load(Ordering::Relaxed),
+        }
+    }
+
+    /// Kanca geri çağrısı: asıl işi yapar ve süresini ölçer (hedef < 1 ms, §10).
+    unsafe extern "system" fn keyboard_proc(code: i32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
+        let start = Instant::now();
+        let result = keyboard_proc_inner(code, wparam, lparam);
+        let micros = start.elapsed().as_micros() as u64;
+        CALLS.fetch_add(1, Ordering::Relaxed);
+        if micros > 1_000 {
+            SLOW_CALLS.fetch_add(1, Ordering::Relaxed);
+        }
+        MAX_MICROS.fetch_max(micros, Ordering::Relaxed);
+        result
     }
 
     /// Odaklanılan denetimin parola kutusu olup olmadığını UI Automation ile kontrol eder (§7.4).
@@ -1005,7 +1069,7 @@ mod win_impl {
         CallNextHookEx(None, code, wparam, lparam)
     }
 
-    unsafe extern "system" fn keyboard_proc(code: i32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
+    unsafe fn keyboard_proc_inner(code: i32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
         if code < 0 {
             return CallNextHookEx(None, code, wparam, lparam);
         }

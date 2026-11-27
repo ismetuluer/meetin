@@ -50,7 +50,7 @@
 - **Test:** Oto: dönme, panik kaydı, yasak içerik denetimi · Elle: bilerek tetiklenen test çöküşü sonrası günlük dosyası.
 - **Ajan:** Opus (Rust tarafı) · Haiku (`tr.json`/`en.json` metinleri).
 
-### [~] R1.5 · Portable "onedir" paketi — v1.3.6 · v1.3.7
+### [x] R1.5 · Portable "onedir" paketi — v1.3.6 · v1.3.7
 
 - **Güncelleme (Saul kararı, v1.3.7):** Veri `%APPDATA%\Meetin`'de, portable yedekleri `data\backups`'ta; başka bilgisayarda yedekten geri yükleme önerisi. WebView2 gömülmez (aşağıdaki [A] kapandı); yoksa açılışta sorulup Microsoft'tan indirilir.
 
@@ -60,7 +60,7 @@
 - **Test:** Oto: veri yolu seçimi · Elle: ZIP'i USB'ye aç, çalıştır, verinin `data\`'da oluştuğunu gör; salt okunur klasörde anlaşılır hata.
 - **Ajan:** Opus.
 
-### [ ] R1.6 · Kanca hızı — v1.3.7
+### [~] R1.6 · Kanca hızı — v1.3.7
 
 - **Hedef:** Etkin pencere bilgisi (işlem adı, başlık) her tuşta değil, pencere değişince (`EVENT_SYSTEM_FOREGROUND`) güncellenir.
 - **Modüller:** `hook/`

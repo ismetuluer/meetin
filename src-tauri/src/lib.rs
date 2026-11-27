@@ -2110,6 +2110,16 @@ pub fn run() {
             if let Err(e) = storage_for_exit.create_backup_now() {
                 logging::error_text(logging::Level::Warn, "db.exit_backup_failed", &e);
             }
+            let hs = hook::stats();
+            logging::event(
+                logging::Level::Info,
+                "hook.stats",
+                &[
+                    ("calls", logging::Field::Num(hs.calls as i64)),
+                    ("slow_over_1ms", logging::Field::Num(hs.slow_calls as i64)),
+                    ("max_us", logging::Field::Num(hs.max_micros as i64)),
+                ],
+            );
             logging::log_exit();
         }
     });
