@@ -10,6 +10,7 @@ pub mod buffer;
 pub mod focus;
 pub mod gate;
 mod proc_cache;
+pub mod watchdog;
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -479,7 +480,10 @@ impl HookStarter {
                             #[cfg(windows)]
                             if win_impl::is_focused_control_password() {
                                 if matched.trigger != '\0' {
-                                    let _ = inject::send_single_trigger(matched.trigger);
+                                    let _ = inject::logged(
+                                        inject::send_single_trigger(matched.trigger),
+                                        "password_trigger",
+                                    );
                                 }
                                 continue;
                             }
@@ -487,7 +491,10 @@ impl HookStarter {
                             // Doldurulacak alan ({alan:...}) varsa kısaltmayı silip Alan Adasını aç (§3.3, §5.2)
                             let fields = vars::extract_form_fields(&matched.expanded_text);
                             if !fields.is_empty() {
-                                let _ = inject::inject_undo(matched.abbr_char_len, "");
+                                let _ = inject::logged(
+                                    inject::inject_undo(matched.abbr_char_len, ""),
+                                    "fill_erase",
+                                );
                                 if let Some(cb) = &on_fill_requested {
                                     cb(FillRequest {
                                         matched,
@@ -518,13 +525,16 @@ impl HookStarter {
                                 Some(matched.trigger)
                             };
 
-                            let res = inject::inject_resolved(
-                                matched.abbr_char_len,
-                                &resolved.text,
-                                resolved_html.as_deref(),
-                                trigger_opt,
-                                resolved.cursor_left_steps,
-                                process_name.as_deref(),
+                            let res = inject::logged(
+                                inject::inject_resolved(
+                                    matched.abbr_char_len,
+                                    &resolved.text,
+                                    resolved_html.as_deref(),
+                                    trigger_opt,
+                                    resolved.cursor_left_steps,
+                                    process_name.as_deref(),
+                                ),
+                                "expand",
                             );
                             // Geri alma kaydı kapı kapanmadan yazılır: bekleyen tuşlar yeniden
                             // gönderilince kanca bu kaydı doğru biçimde geçersiz kılar (§3.1).
@@ -556,7 +566,10 @@ impl HookStarter {
                             original_abbr,
                         } => {
                             let gate_guard = worker_shared.gate.open(inject::replay_keys);
-                            let _ = inject::inject_undo(delete_len, &original_abbr);
+                            let _ = inject::logged(
+                                inject::inject_undo(delete_len, &original_abbr),
+                                "undo",
+                            );
                             drop(gate_guard);
                         }
                         WorkerJob::SelectionCandidate(cand) => {
@@ -636,8 +649,11 @@ impl HookStarter {
                                         let shortcut = inject::paste_shortcut_for_process(
                                             ctx.process_name.as_deref(),
                                         );
-                                        if inject::clipboard::paste_rich_preserving_clipboard(
-                                            &cycled, None, shortcut,
+                                        if inject::logged(
+                                            inject::clipboard::paste_rich_preserving_clipboard(
+                                                &cycled, None, shortcut,
+                                            ),
+                                            "cycle_case",
                                         )
                                         .is_ok()
                                         {
@@ -685,12 +701,14 @@ impl HookStarter {
 mod win_impl {
     use super::focus::FocusState;
     use super::*;
-    use std::sync::atomic::AtomicU64;
+    use std::sync::atomic::{AtomicU32, AtomicU64};
     use windows::core::PWSTR;
     use windows::Win32::Foundation::{CloseHandle, HWND, LPARAM, LRESULT, WPARAM};
     use windows::Win32::System::Com::{
         CoCreateInstance, CoInitializeEx, CLSCTX_INPROC_SERVER, COINIT_MULTITHREADED,
     };
+    use windows::Win32::System::SystemInformation::GetTickCount;
+    use windows::Win32::System::Threading::GetCurrentThreadId;
     use windows::Win32::System::Threading::{
         OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_WIN32,
         PROCESS_QUERY_LIMITED_INFORMATION,
@@ -700,38 +718,105 @@ mod win_impl {
         HWINEVENTHOOK,
     };
     use windows::Win32::UI::Input::KeyboardAndMouse::{
-        GetAsyncKeyState, GetKeyState, GetKeyboardLayout, ToUnicodeEx, VK_BACK, VK_CAPITAL,
-        VK_CONTROL, VK_DELETE, VK_DOWN, VK_END, VK_ESCAPE, VK_F3, VK_HOME, VK_LEFT, VK_LSHIFT,
-        VK_LWIN, VK_MENU, VK_NEXT, VK_PRIOR, VK_RETURN, VK_RIGHT, VK_RSHIFT, VK_RWIN, VK_SHIFT,
-        VK_SPACE, VK_TAB, VK_UP,
+        GetAsyncKeyState, GetKeyState, GetKeyboardLayout, GetLastInputInfo, ToUnicodeEx,
+        LASTINPUTINFO, VK_BACK, VK_CAPITAL, VK_CONTROL, VK_DELETE, VK_DOWN, VK_END, VK_ESCAPE,
+        VK_F3, VK_HOME, VK_LEFT, VK_LSHIFT, VK_LWIN, VK_MENU, VK_NEXT, VK_PRIOR, VK_RETURN,
+        VK_RIGHT, VK_RSHIFT, VK_RWIN, VK_SHIFT, VK_SPACE, VK_TAB, VK_UP,
     };
     use windows::Win32::UI::WindowsAndMessaging::{
         CallNextHookEx, DispatchMessageW, GetForegroundWindow, GetMessageW,
-        GetWindowThreadProcessId, InternalGetWindowText, SetWindowsHookExW, TranslateMessage,
-        UnhookWindowsHookEx, EVENT_OBJECT_FOCUS, EVENT_SYSTEM_FOREGROUND, KBDLLHOOKSTRUCT,
-        LLKHF_EXTENDED, MSG, MSLLHOOKSTRUCT, WH_KEYBOARD_LL, WH_MOUSE_LL, WINEVENT_OUTOFCONTEXT,
-        WINEVENT_SKIPOWNPROCESS, WM_KEYDOWN, WM_KEYUP, WM_LBUTTONDOWN, WM_LBUTTONUP,
-        WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_SYSKEYDOWN, WM_SYSKEYUP,
+        GetWindowThreadProcessId, InternalGetWindowText, PostThreadMessageW, SetWindowsHookExW,
+        TranslateMessage, UnhookWindowsHookEx, EVENT_OBJECT_FOCUS, EVENT_SYSTEM_FOREGROUND, HHOOK,
+        KBDLLHOOKSTRUCT, LLKHF_EXTENDED, MSG, MSLLHOOKSTRUCT, WH_KEYBOARD_LL, WH_MOUSE_LL,
+        WINEVENT_OUTOFCONTEXT, WINEVENT_SKIPOWNPROCESS, WM_APP, WM_KEYDOWN, WM_KEYUP,
+        WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_SYSKEYDOWN, WM_SYSKEYUP,
     };
+
+    /// Kancanın son çağrıldığı an (`GetTickCount`); nöbetçi bunu sistemin son girişiyle karşılaştırır.
+    static LAST_HOOK_TICK: AtomicU32 = AtomicU32::new(0);
+    /// Kanca iş parçacığının kimliği (yeniden kurulum iletisi buna gönderilir).
+    static HOOK_THREAD_ID: AtomicU32 = AtomicU32::new(0);
+    const WM_MEETIN_REINSTALL_HOOKS: u32 = WM_APP + 0x31;
+
+    #[inline]
+    fn mark_hook_alive() {
+        LAST_HOOK_TICK.store(unsafe { GetTickCount() }, Ordering::Relaxed);
+    }
+
+    unsafe fn install_input_hooks() -> (Option<HHOOK>, Option<HHOOK>) {
+        let kb = SetWindowsHookExW(WH_KEYBOARD_LL, Some(keyboard_proc), None, 0).ok();
+        let mouse = SetWindowsHookExW(WH_MOUSE_LL, Some(mouse_proc), None, 0).ok();
+        if kb.is_none() {
+            crate::logging::event(
+                crate::logging::Level::Error,
+                "hook.keyboard_install_failed",
+                &[],
+            );
+        }
+        if mouse.is_none() {
+            crate::logging::event(
+                crate::logging::Level::Error,
+                "hook.mouse_install_failed",
+                &[],
+            );
+        }
+        mark_hook_alive();
+        (kb, mouse)
+    }
+
+    unsafe fn remove_input_hooks(hooks: (Option<HHOOK>, Option<HHOOK>)) {
+        for h in [hooks.0, hooks.1].into_iter().flatten() {
+            let _ = UnhookWindowsHookEx(h);
+        }
+    }
+
+    /// Kanca nöbetçisi (`watchdog`): giriş olduğu halde kanca çağrılmıyorsa yeniden kurdurur.
+    fn run_hook_watchdog() {
+        let own_elevated = crate::windows::startup::is_current_process_elevated();
+        let mut detector = super::watchdog::StallDetector::new();
+        loop {
+            thread::sleep(std::time::Duration::from_secs(2));
+            let mut info = LASTINPUTINFO {
+                cbSize: size_of::<LASTINPUTINFO>() as u32,
+                dwTime: 0,
+            };
+            if !unsafe { GetLastInputInfo(&mut info) }.as_bool() {
+                continue;
+            }
+            let last_hook = LAST_HOOK_TICK.load(Ordering::Relaxed);
+            let now = unsafe { GetTickCount() };
+            let gap = info.dwTime.wrapping_sub(last_hook) as i32;
+            // Yönetici yetkili pencereye giden girişi Windows kancamıza hiç göstermez (UIPI);
+            // o durum düşme sayılmaz. Yetki denetimi yalnız şüphe varken yapılır.
+            let observable = gap <= super::watchdog::STALL_GAP_MS as i32
+                || own_elevated
+                || !crate::windows::mascot::foreground_is_elevated();
+            if detector.observe(info.dwTime, last_hook, now, observable) {
+                let tid = HOOK_THREAD_ID.load(Ordering::Relaxed);
+                let posted = tid != 0
+                    && unsafe {
+                        PostThreadMessageW(tid, WM_MEETIN_REINSTALL_HOOKS, WPARAM(0), LPARAM(0))
+                    }
+                    .is_ok();
+                crate::logging::event(
+                    crate::logging::Level::Warn,
+                    "hook.stalled",
+                    &[
+                        ("unseen_ms", crate::logging::Field::Num(i64::from(gap))),
+                        ("reinstall_posted", crate::logging::Field::Bool(posted)),
+                    ],
+                );
+            }
+        }
+    }
 
     pub fn run_hook_loop() {
         unsafe {
-            let kb_hook = SetWindowsHookExW(WH_KEYBOARD_LL, Some(keyboard_proc), None, 0);
-            let mouse_hook = SetWindowsHookExW(WH_MOUSE_LL, Some(mouse_proc), None, 0);
-            if kb_hook.is_err() {
-                crate::logging::event(
-                    crate::logging::Level::Error,
-                    "hook.keyboard_install_failed",
-                    &[],
-                );
-            }
-            if mouse_hook.is_err() {
-                crate::logging::event(
-                    crate::logging::Level::Error,
-                    "hook.mouse_install_failed",
-                    &[],
-                );
-            }
+            HOOK_THREAD_ID.store(GetCurrentThreadId(), Ordering::Relaxed);
+            let mut input_hooks = install_input_hooks();
+            let _ = thread::Builder::new()
+                .name("meetin-hook-watchdog".to_string())
+                .spawn(run_hook_watchdog);
 
             // Odak ve ön plan değişimleri (bu iş parçacığının mesaj döngüsünde teslim edilir)
             let flags = WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS;
@@ -757,16 +842,21 @@ mod win_impl {
 
             let mut msg = MSG::default();
             while GetMessageW(&mut msg, None, 0, 0).as_bool() {
+                if msg.hwnd.0.is_null() && msg.message == WM_MEETIN_REINSTALL_HOOKS {
+                    remove_input_hooks(input_hooks);
+                    input_hooks = install_input_hooks();
+                    crate::logging::event(
+                        crate::logging::Level::Info,
+                        "hook.reinstalled",
+                        &[("ok", crate::logging::Field::Bool(input_hooks.0.is_some()))],
+                    );
+                    continue;
+                }
                 let _ = TranslateMessage(&msg);
                 DispatchMessageW(&msg);
             }
 
-            if let Ok(h) = kb_hook {
-                let _ = UnhookWindowsHookEx(h);
-            }
-            if let Ok(h) = mouse_hook {
-                let _ = UnhookWindowsHookEx(h);
-            }
+            remove_input_hooks(input_hooks);
             for h in [focus_hook, fg_hook] {
                 if !h.is_invalid() {
                     let _ = UnhookWinEvent(h);
@@ -926,6 +1016,7 @@ mod win_impl {
         // Yalnız Meetin'in kendi işi ölçülür; zincirdeki diğer programların kancaları
         // (CallNextHookEx) ölçüme girmez.
         let start = Instant::now();
+        mark_hook_alive();
         let result = keyboard_proc_inner(code, wparam, lparam);
         let micros = start.elapsed().as_micros() as u64;
         CALLS.fetch_add(1, Ordering::Relaxed);
@@ -1008,6 +1099,7 @@ mod win_impl {
     }
 
     unsafe extern "system" fn mouse_proc(code: i32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
+        mark_hook_alive();
         if code >= 0 {
             let msg = wparam.0 as u32;
             let ms = &*(lparam.0 as *const MSLLHOOKSTRUCT);

@@ -1,5 +1,17 @@
 # Değişiklik Günlüğü (CHANGELOG)
 
+## [1.4.1] - 2026-11-27
+
+### Düzeltildi
+- **Güncelleme görünmüyordu:** Eski bir sürümden kalan ayar, güncelleme denetimini hep 1.3.0'a bakmaya zorluyordu. Bu ayar açılışta silinir; denetim her zaman GitHub'daki en son sürüme bakar. 1.4.0 ve öncesi bu sürümü göremeyeceği için 1.4.1 bir kez elle kurulmalıdır.
+- **Maskot güncellemeyi kaçırıyordu:** Açılış denetimi maskot hazır olmadan biterse bildirim kayboluyordu; maskot artık sonucu kendisi sorar.
+- **"Güncel" rozeti:** Hiç denetim yapılmadan "Güncel" yazmıyor.
+- **Ekran görüntüsü panoya düşmeyebiliyordu:** Pano geçmişi metin içermeyen içerikte (ekran görüntüsü, resim) panoyu hiç açmaz ve yazan programın bitirmesini bekler.
+- **Tetikler bir süre çalışmayabiliyordu:** Windows klavye dinleyicisini haber vermeden kaldırırsa Meetin bunu birkaç saniyede fark edip yeniden kurar.
+
+### Değişti
+- Güncelleme denetimi, genişletme hataları ve klavye dinleyicisinin yeniden kurulması kayıt günlüğüne yazılır (yalnız hata türü; yazılan metin asla yazılmaz).
+
 ## [1.4.0] - 2026-11-27 (Güvenlik ve kararlılık)
 
 1.3.2–1.3.10 arasındaki düzeltmelerin toplu sürümü:

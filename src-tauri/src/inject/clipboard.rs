@@ -773,6 +773,12 @@ mod win_clip {
         Ok(())
     }
 
+    /// Panoyu açmadan metin olup olmadığına bakar. Resim (ekran görüntüsü) gibi metinsiz
+    /// içerikte izleyici panoyu hiç açmaz; böylece yazmakta olan programla çakışmaz.
+    pub fn has_unicode_text() -> bool {
+        unsafe { IsClipboardFormatAvailable(CF_UNICODETEXT) }.is_ok()
+    }
+
     pub fn sequence_number() -> u32 {
         unsafe { GetClipboardSequenceNumber() }
     }
@@ -865,8 +871,9 @@ pub fn start_clipboard_watcher(
                             if rx.recv().is_err() {
                                 break;
                             }
-                            // Art arda gelen bildirimleri birleştir, yazan programın bitirmesini bekle
-                            std::thread::sleep(std::time::Duration::from_millis(60));
+                            // Art arda gelen bildirimleri birleştir; yazan program (ör. ekran
+                            // alıntısı aracı) birkaç adımda yazıyorsa bitirmesini bekle.
+                            std::thread::sleep(std::time::Duration::from_millis(250));
                             while rx.try_recv().is_ok() {}
                         }
                         None => std::thread::sleep(std::time::Duration::from_millis(900)),
@@ -877,6 +884,9 @@ pub fn start_clipboard_watcher(
                     }
                     last_seq = seq;
                     if !cfg.enabled.load(Ordering::Relaxed) {
+                        continue;
+                    }
+                    if !win_clip::has_unicode_text() {
                         continue;
                     }
                     if win_clip::is_clipboard_sensitive() {

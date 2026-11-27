@@ -305,6 +305,12 @@ pub fn ensure_mascot_shown(app: &AppHandle, state: &MascotWindowState) {
     let _ = app.emit("mascot-visibility-changed", true);
 }
 
+/// Ön plandaki pencere yönetici yetkili bir sürece mi ait? (Yetkisi okunamıyorsa da `true`.)
+#[cfg(windows)]
+pub fn foreground_is_elevated() -> bool {
+    win_impl::is_foreground_elevated(0, 0)
+}
+
 /// `WS_EX_NOACTIVATE` bayrağını uygular veya kaldırır.
 #[cfg(windows)]
 pub fn apply_no_activate(window: &WebviewWindow, no_activate: bool) {

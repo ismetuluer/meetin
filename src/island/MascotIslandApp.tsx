@@ -442,6 +442,21 @@ export function MascotIslandApp() {
         setUpdateAvailable(ev.payload || "yeni");
       }),
     ];
+    // Açılış denetimi dinleyici bağlanmadan bitmiş olabilir: sonucu ayrıca sor.
+    void Promise.all(unlisteners)
+      .then(() =>
+        invoke<{
+          update_available: boolean;
+          latest_version: string | null;
+          signature_status: string;
+        }>("get_update_env_info"),
+      )
+      .then((u) => {
+        if (u.update_available && u.signature_status !== "invalid") {
+          setUpdateAvailable(u.latest_version || "yeni");
+        }
+      })
+      .catch((err) => console.error("get_update_env_info", err));
 
     return () => {
       cancelThrow();

@@ -148,7 +148,6 @@ export interface AppSettingsDto {
   onboarding_done: boolean;
   shortcuts: ShortcutConfigDto;
   language: string;
-  update_manifest_url: string;
   clipboard_enabled: boolean;
   clipboard_limit: number;
   abbr_suggest_mode: AbbrSuggestMode;

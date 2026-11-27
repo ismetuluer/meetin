@@ -175,6 +175,12 @@ mod win_startup {
     }
 }
 
+/// Meetin yönetici yetkisiyle mi çalışıyor?
+#[cfg(windows)]
+pub fn is_current_process_elevated() -> bool {
+    win_startup::is_process_elevated()
+}
+
 pub fn get_startup_status() -> StartupStatus {
     #[cfg(windows)]
     {

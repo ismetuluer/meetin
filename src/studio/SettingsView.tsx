@@ -1039,7 +1039,7 @@ export function SettingsView({
               <div className="settings-row">
                 <div>
                   <div className="card-title">
-                    {t("settings.currentVersionTitle")} v{updateInfo?.current_version ?? "1.3.1"}
+                    {t("settings.currentVersionTitle")} {updateInfo ? `v${updateInfo.current_version}` : ""}
                   </div>
                   <div className="muted small">
                     {updateInfo?.is_portable
@@ -1051,11 +1051,13 @@ export function SettingsView({
                       : t("settings.webviewMissing")}
                   </div>
                 </div>
-                <span className="badge">
-                  {updateInfo?.update_available
-                    ? `v${updateInfo.latest_version}`
-                    : t("settings.upToDate")}
-                </span>
+                {updateInfo?.latest_version && (
+                  <span className="badge">
+                    {updateInfo.update_available
+                      ? `v${updateInfo.latest_version}`
+                      : t("settings.upToDate")}
+                  </span>
+                )}
               </div>
 
               <label
@@ -1093,10 +1095,8 @@ export function SettingsView({
                     setBusyMsg(null);
                     setCheckingUpdate(true);
                     try {
-                      const res = await invoke<UpdateCheckResult>(
-                        "check_for_updates",
-                        { manifestSource: null },
-                      );
+                      const res =
+                        await invoke<UpdateCheckResult>("check_for_updates");
                       setUpdateInfo(res);
                       setBusyMsg(
                         res.update_available
@@ -1179,7 +1179,6 @@ export function SettingsView({
                         try {
                           const res = await invoke<UpdateInstallResult>(
                             "install_verified_update",
-                            { manifestSource: null },
                           );
                           setBusyMsg(
                             t("settings.updateRestarting", {

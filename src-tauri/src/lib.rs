@@ -169,7 +169,6 @@ pub struct AppSettingsDto {
     pub onboarding_done: bool,
     pub shortcuts: ShortcutConfigDto,
     pub language: String,
-    pub update_manifest_url: String,
     pub clipboard_enabled: bool,
     pub clipboard_limit: usize,
     pub abbr_suggest_mode: String,
@@ -425,13 +424,6 @@ fn get_app_settings(state: State<'_, AppState>) -> Result<AppSettingsDto, String
         .flatten()
         .map(|v| normalize_language_code(&v).to_string())
         .unwrap_or_else(|| "tr".to_string());
-    let update_manifest_url = state
-        .storage
-        .get_setting("update_manifest_url")
-        .ok()
-        .flatten()
-        .filter(|u| !u.trim().is_empty())
-        .unwrap_or_else(|| DEFAULT_UPDATE_MANIFEST_URL.to_string());
     let clipboard_enabled = state.clipboard_cfg.enabled.load(AtomicOrdering::Relaxed);
     let clipboard_limit = state.clipboard_cfg.limit.load(AtomicOrdering::Relaxed);
     let abbr_suggest_mode = state
@@ -460,7 +452,6 @@ fn get_app_settings(state: State<'_, AppState>) -> Result<AppSettingsDto, String
         onboarding_done,
         shortcuts,
         language,
-        update_manifest_url,
         clipboard_enabled,
         clipboard_limit,
         abbr_suggest_mode,
@@ -737,31 +728,56 @@ fn get_update_env_info(state: State<'_, AppState>) -> UpdateCheckResult {
     updater::current_env_info()
 }
 
-fn resolve_manifest_source(storage: &Storage, manifest_source: Option<String>) -> String {
-    let raw = manifest_source.unwrap_or_default();
-    if raw.trim().is_empty() {
-        storage
-            .get_setting("update_manifest_url")
-            .ok()
-            .flatten()
-            .filter(|u| !u.trim().is_empty())
-            .unwrap_or_else(|| DEFAULT_UPDATE_MANIFEST_URL.to_string())
-    } else {
-        raw.trim().to_string()
+/// Güncelleme bildirimi her zaman GitHub'daki en son yayından okunur. Eski sürümlerin
+/// veritabanına yazdığı `update_manifest_url` ayarı (bir sürüme sabitlenmiş adres)
+/// açılışta silinir; arayüzden adres değiştirmek mümkün değildir.
+fn remove_stale_update_source(storage: &Storage) {
+    match storage.delete_setting("update_manifest_url") {
+        Ok(true) => logging::event(logging::Level::Warn, "update.stale_source_removed", &[]),
+        Ok(false) => {}
+        Err(_) => logging::event(
+            logging::Level::Error,
+            "update.stale_source_remove_failed",
+            &[],
+        ),
     }
 }
 
-#[tauri::command]
-fn check_for_updates(
-    app: AppHandle,
-    state: State<'_, AppState>,
-    manifest_source: Option<String>,
-) -> Result<UpdateCheckResult, String> {
-    let effective = resolve_manifest_source(&state.storage, manifest_source);
+/// Denetimi çalıştırır, sonucu günlüğe yazar, önbelleğe alır ve gerekirse olayı yayar.
+fn run_update_check(app: &AppHandle, trigger: &'static str) -> Result<UpdateCheckResult, String> {
     let cur = env!("CARGO_PKG_VERSION");
     let portable = startup::is_portable_mode();
-    let res = updater::check_manifest_source(&effective, cur, portable)?;
-    if let Ok(mut guard) = state.latest_update_check.lock() {
+    let res = match updater::check_manifest_source(DEFAULT_UPDATE_MANIFEST_URL, cur, portable) {
+        Ok(res) => res,
+        Err(e) => {
+            logging::event(
+                logging::Level::Warn,
+                "update.check_failed",
+                &[
+                    ("trigger", logging::Field::Code(trigger)),
+                    ("reason", logging::Field::Sys(e.clone())),
+                ],
+            );
+            return Err(e);
+        }
+    };
+    logging::event(
+        logging::Level::Info,
+        "update.checked",
+        &[
+            ("trigger", logging::Field::Code(trigger)),
+            (
+                "latest",
+                logging::Field::Sys(res.latest_version.clone().unwrap_or_default()),
+            ),
+            ("available", logging::Field::Bool(res.update_available)),
+            (
+                "signature",
+                logging::Field::Sys(res.signature_status.clone()),
+            ),
+        ],
+    );
+    if let Ok(mut guard) = app.state::<AppState>().latest_update_check.lock() {
         *guard = Some(res.clone());
     }
     if res.update_available && res.signature_status != updater::SIG_STATUS_INVALID {
@@ -774,19 +790,23 @@ fn check_for_updates(
 }
 
 #[tauri::command]
+fn check_for_updates(app: AppHandle) -> Result<UpdateCheckResult, String> {
+    run_update_check(&app, "manual")
+}
+
+#[tauri::command]
 fn install_verified_update(
     app: AppHandle,
     state: State<'_, AppState>,
-    manifest_source: Option<String>,
 ) -> Result<UpdateInstallResult, String> {
-    let effective = resolve_manifest_source(&state.storage, manifest_source);
+    let effective = DEFAULT_UPDATE_MANIFEST_URL;
     let cur = env!("CARGO_PKG_VERSION");
     let portable = startup::is_portable_mode();
 
     // Güncellemeden önce veritabanının güvenlik yedeğini al
     let _ = state.storage.create_backup_now();
 
-    let res = updater::install_verified_update_from_source(&effective, cur, portable)?;
+    let res = updater::install_verified_update_from_source(effective, cur, portable)?;
     if res.will_restart {
         let app_exit = app.clone();
         thread::Builder::new()
@@ -1968,39 +1988,16 @@ pub fn run() {
                 .flatten()
                 .map(|v| v != "false")
                 .unwrap_or(true);
-            let upd_url = storage
-                .get_setting("update_manifest_url")
-                .ok()
-                .flatten()
-                .filter(|u| !u.trim().is_empty())
-                .unwrap_or_else(|| DEFAULT_UPDATE_MANIFEST_URL.to_string());
+            remove_stale_update_source(&storage);
             if auto_check_updates {
                 let app_upd = app.handle().clone();
                 thread::Builder::new()
                     .name("meetin-upd-check".to_string())
                     .spawn(move || {
-                        // Arayüz olay dinleyicilerinin bağlanması ve hızlı açılış için kısa bekleme
+                        // Hızlı açılış için kısa bekleme. Olayı kaçıran pencere sonucu
+                        // `get_update_env_info` ile kendisi sorar.
                         thread::sleep(Duration::from_secs(3));
-                        let portable = startup::is_portable_mode();
-                        if let Ok(res) = updater::check_manifest_source(
-                            &upd_url,
-                            env!("CARGO_PKG_VERSION"),
-                            portable,
-                        ) {
-                            if let Ok(mut guard) =
-                                app_upd.state::<AppState>().latest_update_check.lock()
-                            {
-                                *guard = Some(res.clone());
-                            }
-                            if res.update_available
-                                && res.signature_status != updater::SIG_STATUS_INVALID
-                            {
-                                let _ = app_upd.emit(
-                                    "update-available",
-                                    res.latest_version.unwrap_or_default(),
-                                );
-                            }
-                        }
+                        let _ = run_update_check(&app_upd, "startup");
                     })
                     .ok();
             }

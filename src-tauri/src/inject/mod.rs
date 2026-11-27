@@ -62,6 +62,41 @@ pub enum InjectError {
     Win32(String),
 }
 
+impl InjectError {
+    /// Hatayı günlüğe yazar. Yalnız hata türü ve Windows'un kendi iletisi yazılır; genişletilen
+    /// metin ya da tuş vuruşu asla yazılmaz.
+    pub fn log(&self, op: &'static str) {
+        use crate::logging::{event, Field, Level};
+        match self {
+            InjectError::ClipboardBusy => event(
+                Level::Warn,
+                "inject.failed",
+                &[
+                    ("op", Field::Code(op)),
+                    ("kind", Field::Code("clipboard_busy")),
+                ],
+            ),
+            InjectError::Win32(msg) => event(
+                Level::Warn,
+                "inject.failed",
+                &[
+                    ("op", Field::Code(op)),
+                    ("kind", Field::Code("win32")),
+                    ("detail", Field::Sys(msg.clone())),
+                ],
+            ),
+        }
+    }
+}
+
+/// `Result` hatasını günlüğe yazıp aynen geri verir.
+pub fn logged<T>(res: Result<T, InjectError>, op: &'static str) -> Result<T, InjectError> {
+    if let Err(e) = &res {
+        e.log(op);
+    }
+    res
+}
+
 /// Saf ve test edilebilir enjeksiyon adımı.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum InjectStep {

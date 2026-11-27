@@ -909,6 +909,13 @@ impl Storage {
         Ok(val)
     }
 
+    /// Ayarı siler; silinecek kayıt varsa `true` döner.
+    pub fn delete_setting(&self, key: &str) -> Result<bool, DbError> {
+        let conn = self.conn.lock().map_err(|_| DbError::LockPoisoned)?;
+        let n = conn.execute("DELETE FROM settings WHERE key = ?1", params![key])?;
+        Ok(n > 0)
+    }
+
     pub fn set_setting(&self, key: &str, value: &str) -> Result<(), DbError> {
         let mut conn = self.conn.lock().map_err(|_| DbError::LockPoisoned)?;
         let tx = conn.transaction()?;
