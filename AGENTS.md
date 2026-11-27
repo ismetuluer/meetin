@@ -39,6 +39,7 @@ CHANGELOG.md    AGENTS.md
 - Teknik borç yok: sahte veri, ölü kod, çalışmayan düğme, sessizce yutulan hata, açıklamasız TODO olmaz. Bitmeyen iş `docs/HANDOFF.md`'ye yazılır.
 - **Gizlilik:** Tuş vuruşu hiçbir zaman diske, loga ya da ağa yazılmaz. Arabellek yalnız bellekte, ≤ 64 karakter. Ağ yalnız GitHub güncelleme kontrolü için.
 - Kanca geri çağrısı < 1 ms, asla bloklamaz. Çekirdekte `to_uppercase()`/`to_lowercase()` yerine tr-TR fonksiyonları kullanılır.
+- Arayüzde uzun yazı yerine simge + ipucu (tooltip) ve `aria-label` (şartname §6 [K]). Yazı kısa ve yalnız gerektiğinde.
 - Bileşenlerde sabit renk yok; yalnız §11.4 rolleri. Maskot renkleri (`--koyun-*`) sabit.
 - Yeni bağımlılık için §10'daki liste dışındaysa gerekçe yazılır.
 - Test edilmeyen şey "test edildi" diye raporlanmaz. Elle testler Saul'a açık adımlarla verilir.

@@ -34,7 +34,7 @@
 - **Test:** Oto: kuyruk/sıralama saf fonksiyonu · Elle: Notepad ve Word'de hızlı yazma.
 - **Ajan:** Opus.
 
-### [~] R1.3 · Pano yedek ve geri yükleme — v1.3.4
+### [x] R1.3 · Pano yedek ve geri yükleme — v1.3.4
 
 - **Hedef:** GDI tutamaçlı biçimler (bitmap, metafile, palet) doğru yedeklenir ya da sentez biçimleri (DIB) üzerinden korunur; Windows'un türettiği biçimler çift yazılmaz. Geri yükleme sabit 95 ms yerine hedefin okumasını bekleyen uyarlanır gecikmeyle yapılır. Meetin'in kendi geri yüklemesi pano geçmişine düşmez.
 - **Modüller:** `inject/clipboard.rs`
@@ -144,6 +144,11 @@ Her adımdan önce mevcut ekranın görüntüsü ve önerilen düzen Saul'a gös
 
 - **Hedef:** Onay kutuları kaldırılır; `Ctrl`/`Shift` + tık çoklu seçim; ifadeler klasörlere sürükle-bırak; anlamsız simgeler çıkar; toplu işlemler sağ tık menüsünde.
 - **Ajan:** Sonnet · Opus denetim. **Test:** Oto: seçim mantığı · Elle.
+
+### [ ] R3.1a · Kaydet sonrası boş form ve ifade kopyalama — Saul isteği
+
+- **Hedef:** "Yeni ifade" kaydedilince form boşalır, sıradaki ifade hemen yazılabilir (kaydedilen listede seçili görünür). İfade formunda "Kopyasını oluştur" simge düğmesi (ipuçlu): içerik, etiketler, klasör ve kurallar kopyalanır, kısaltma boş ya da çakışmasız öneriyle gelir.
+- **Ajan:** Sonnet · Opus denetim (kısaltma çakışması, DB). **Test:** Oto: kopya oluşturma · Elle.
 
 ### [ ] R3.2 · Düzenleyici başlığı ve alan düzeni — v1.5.3
 

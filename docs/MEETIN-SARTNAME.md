@@ -244,6 +244,7 @@ PhraseExpress düzeninden esinlenilir ama kalabalık şerit menü kullanılmaz. 
   - Satır yalnızca gerekli bilgiyi taşır; anlamı açık olmayan süs simgesi kullanılmaz.
   - Bir ifade seçilince üstte yer kaplayan bilgi yazıları çıkmaz; düzenleyici doğrudan içerikle başlar.
   - Bağlam menüsünde tek bir "Dışa aktar…" girişi bulunur; biçim seçimi açılan pencerede yapılır.
+  - **Simge + ipucu önceliği [K]:** Arayüzde uzun yazı yerine mümkün olan her yerde anlamı açık bir simge ve üzerine gelince çıkan ipucu (tooltip) kullanılır. Yazı yalnız simgenin yetmediği yerde ve kısa tutulur. Her simgeli düğmenin ipucu ve erişilebilir adı (`aria-label`) bulunur.
   - Genel ilke: Windows 11'in kendi uygulamaları kadar sade; "yapay zekâ şablonu" görünümünden kaçınılır.
 - **Ayarlar:** Genel · Tetikleme · Harf uyumu · **Görünüm** (mod, palet kaynağı, ana renk, önerilen palet, tek tek düzenleme, ada yüzeyi, saydamlık; bkz. §11.2) · Maskot (hareketler, sesler, boyut, opaklık) · Kısayollar · Dışlanan programlar · Yedek · Güncelleme · Dil.
 
