@@ -88,10 +88,11 @@
 
 ## R2 · Güncelleyici → v1.5.0
 
-### [ ] R2.1 · İmza anahtarı (sürüm yok)
+### [~] R2.1 · İmza anahtarı (sürüm yok)
 
 - **Hedef:** `tauri signer generate` ile anahtar çifti; özel anahtar ve parolası GitHub Secrets'a (**Saul elle ekler**), açık anahtar `tauri.conf.json`'a.
 - **Ajan:** Opus (komutlar ve talimat) · Saul.
+- **Durum (27.11.2026):** Anahtar üretildi: `%USERPROFILE%\.tauri\meetin-updater.key` (parolası yanında `meetin-updater.password.txt`; depoda yok). Açık anahtar ve uç nokta `tauri.conf.json` › `plugins.updater`'da. Kalan: Saul secrets'ları ekler (`TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`) ve anahtarı güvenli bir yere yedekler. `createUpdaterArtifacts` R2.3'te açılır.
 
 ### [ ] R2.2 · `tauri-plugin-updater` geçişi — v1.4.2
 
