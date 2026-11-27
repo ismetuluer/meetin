@@ -1,0 +1,94 @@
+/* Aç/kapa anahtarı (R3.0a): Windows 11 görünümü, §11.4 renk rolleri, §11.5 ortak yay. */
+
+.meetin-toggle {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  flex: none;
+  width: 40px;
+  height: 20px;
+  margin: 0;
+  border: 1px solid var(--metin-ikincil);
+  border-radius: var(--r-pill);
+  background: transparent;
+  cursor: pointer;
+  transition: background-color var(--yay-sure-kisa) ease, border-color var(--yay-sure-kisa) ease;
+}
+
+.meetin-toggle::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 3px;
+  width: 12px;
+  height: 12px;
+  border-radius: var(--r-pill);
+  background: var(--metin-ikincil);
+  transform: translate(0, -50%);
+  transition:
+    transform var(--yay-sure-kisa) var(--yay-egri),
+    width var(--yay-sure-kisa) var(--yay-egri),
+    background-color var(--yay-sure-kisa) ease;
+}
+
+.meetin-toggle:hover:not(:disabled)::after {
+  width: 14px;
+}
+
+/* Basılı tutunca top uzar (Windows 11 davranışı) */
+.meetin-toggle:active:not(:disabled)::after {
+  width: 16px;
+}
+
+.meetin-toggle:checked {
+  background: var(--vurgu);
+  border-color: var(--vurgu);
+}
+
+.meetin-toggle:checked:hover:not(:disabled) {
+  background: var(--vurgu-hover);
+  border-color: var(--vurgu-hover);
+}
+
+.meetin-toggle:checked::after {
+  background: var(--vurgu-ustu);
+  transform: translate(20px, -50%);
+}
+
+/* Top uzarken sağa yaslı kalsın: 20px + 12px = 32px sağ kenar sabit */
+.meetin-toggle:checked:hover:not(:disabled)::after {
+  transform: translate(18px, -50%);
+}
+
+.meetin-toggle:checked:active:not(:disabled)::after {
+  transform: translate(16px, -50%);
+}
+
+.meetin-toggle:focus-visible {
+  outline: 2px solid var(--vurgu);
+  outline-offset: 2px;
+}
+
+.meetin-toggle:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+@media (forced-colors: active) {
+  .meetin-toggle {
+    border-color: ButtonText;
+  }
+
+  .meetin-toggle::after {
+    background: ButtonText;
+  }
+
+  .meetin-toggle:checked {
+    background: Highlight;
+    border-color: Highlight;
+  }
+
+  .meetin-toggle:checked::after {
+    background: HighlightText;
+  }
+}

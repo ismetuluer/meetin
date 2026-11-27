@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü (CHANGELOG)
 
+## [1.5.2] - 2026-11-27
+
+### Değişti
+- **Ayarlar'da aç/kapa anahtarları:** Onay kutuları yerine Windows 11 tarzı anahtarlar; yaylı hareketle kayar, basılı tutunca hafifçe uzar. Klavye (Boşluk) ve ekran okuyucu desteği aynen sürer.
+
 ## [1.5.1] - 2026-11-27
 
 ### Değişti

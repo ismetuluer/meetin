@@ -12,6 +12,7 @@ import {
   playThrowSound,
   playWallImpactSound,
 } from "../mascot/mascotMachine";
+import { Toggle } from "../design/Toggle";
 import { AppearanceSettings } from "./AppearanceSettings";
 import { captureShortcutCombo } from "./shortcutCapture";
 import type {
@@ -374,8 +375,7 @@ export function SettingsView({
                   <div className="card-title">{t("settings.clipboardRememberTitle")}</div>
                   <div className="muted small">{t("settings.clipboardRememberDesc")}</div>
                 </div>
-                <input
-                  type="checkbox"
+                <Toggle
                   checked={settings?.clipboard_enabled ?? true}
                   onChange={async (e) => {
                     if (!settings) return;
@@ -448,8 +448,7 @@ export function SettingsView({
                   <div className="card-title">{t("settings.runAtLoginTitle")}</div>
                   <div className="muted small">{t("settings.runAtLoginDesc")}</div>
                 </div>
-                <input
-                  type="checkbox"
+                <Toggle
                   checked={Boolean(startup?.run_at_login)}
                   onChange={async (e) => {
                     setErrMsg(null);
@@ -481,8 +480,7 @@ export function SettingsView({
                   </div>
                   <div className="muted small">{t("settings.adminTaskDesc")}</div>
                 </div>
-                <input
-                  type="checkbox"
+                <Toggle
                   checked={Boolean(startup?.admin_task_enabled)}
                   onChange={async (e) => {
                     setErrMsg(null);
@@ -534,8 +532,7 @@ export function SettingsView({
                   style={{ cursor: "pointer" }}
                 >
                   <span>{t(labelKey)}</span>
-                  <input
-                    type="checkbox"
+                  <Toggle
                     checked={settings?.trigger_config[key] ?? true}
                     onChange={(e) =>
                       void updateTriggers({ [key]: e.target.checked })
@@ -551,8 +548,7 @@ export function SettingsView({
                   <div className="card-title">{t("settings.suggestEnabledTitle")}</div>
                   <div className="muted small">{t("settings.suggestEnabledDesc")}</div>
                 </div>
-                <input
-                  type="checkbox"
+                <Toggle
                   checked={settings?.suggest_enabled ?? true}
                   onChange={async (e) => {
                     if (!settings) return;
@@ -574,8 +570,7 @@ export function SettingsView({
                   <div className="card-title">{t("status.foldDottedI")}</div>
                   <div className="muted small">{t("settings.foldIDesc")}</div>
                 </div>
-                <input
-                  type="checkbox"
+                <Toggle
                   checked={Boolean(status?.fold_dotted_i)}
                   onChange={(e) => void toggleFoldI(e.target.checked)}
                 />
@@ -589,8 +584,7 @@ export function SettingsView({
                   <div className="card-title">{t("settings.shiftF3Title")}</div>
                   <div className="muted small">{t("settings.shiftF3Desc")}</div>
                 </div>
-                <input
-                  type="checkbox"
+                <Toggle
                   checked={settings?.shift_f3_enabled ?? true}
                   onChange={async (e) => {
                     if (!settings) return;
@@ -663,8 +657,7 @@ export function SettingsView({
                   <div className="card-title">{t("settings.mascotMasterSoundTitle")}</div>
                   <div className="muted small">{t("settings.mascotMasterSoundDesc")}</div>
                 </div>
-                <input
-                  type="checkbox"
+                <Toggle
                   checked={settings?.mascot_sound ?? true}
                   onChange={(e) =>
                     void updateMascotPrefs({ sound: e.target.checked })
@@ -692,8 +685,7 @@ export function SettingsView({
                   >
                     {t("settings.testBaaBtn")}
                   </button>
-                  <input
-                    type="checkbox"
+                  <Toggle
                     disabled={!(settings?.mascot_sound ?? true)}
                     checked={settings?.sound_baa ?? false}
                     onChange={(e) =>
@@ -723,8 +715,7 @@ export function SettingsView({
                   >
                     {t("settings.testThrowBtn")}
                   </button>
-                  <input
-                    type="checkbox"
+                  <Toggle
                     disabled={!(settings?.mascot_sound ?? true)}
                     checked={settings?.sound_throw ?? true}
                     onChange={(e) =>
@@ -754,8 +745,7 @@ export function SettingsView({
                   >
                     {t("settings.testImpactBtn")}
                   </button>
-                  <input
-                    type="checkbox"
+                  <Toggle
                     disabled={!(settings?.mascot_sound ?? true)}
                     checked={settings?.sound_impact ?? true}
                     onChange={(e) =>
@@ -1072,8 +1062,7 @@ export function SettingsView({
                     {t("settings.autoCheckUpdateDesc")}
                   </div>
                 </div>
-                <input
-                  type="checkbox"
+                <Toggle
                   checked={settings?.auto_check_updates ?? true}
                   onChange={async (e) => {
                     if (!settings) return;

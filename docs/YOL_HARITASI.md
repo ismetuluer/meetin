@@ -134,7 +134,9 @@ Her adımdan önce mevcut ekranın görüntüsü ve önerilen düzen Saul'a gös
 - **Ajan:** Opus (altyapı) · **Test:** Oto: yay çözücü birim testi.
 - **Yapılan:** `src/design/motion.ts` yayı (380/28) kapalı çözümle hesaplar ve CSS `linear()` eğrisine çevirir; `tokens.css`'te `--yay-egri`, `--yay-sure` (340 ms, %1 bandına oturma), `--yay-sure-kisa` (220 ms, aynı eğri). `prefers-reduced-motion`'da 120 ms `ease-out`. Ada, arama paneli ve baloncuk taşındı (Saul onayı); maskota dokunulmadı. Şablon değerleri kullanılmadı, şartnamedeki 380/28 esas alındı. Testler: çözücü, `tokens.css` ↔ `motion.ts` eşitliği, maskot dışında `cubic-bezier` kalmaması.
 
-### [ ] R3.0a · Aç/kapa anahtarı (Toggle switch) — Ayarlar'daki 15 onay kutusu yerine. **Ajan:** Sonnet · Opus denetim.
+### [x] R3.0a · Aç/kapa anahtarı (Toggle switch) — v1.5.2
+
+- **Yapılan:** `src/design/Toggle.tsx` + `toggle.css`: yerel onay kutusu (`role="switch"`), §11.4 rolleri, ortak yay, yüksek karşıtlık kipi. Ayarlar'daki 15 onay kutusu (12 öğe, biri 4 tetikle tekrarlanır) anahtar oldu. Studio listesi ve CSV penceresindeki seçim kutuları R3.1'e kaldı. **Ajan:** Opus (Saul kararı). **Test:** Oto: bileşen çıktısı, renk rolleri, Ayarlar'da düz onay kutusu kalmaması · tarayıcıda görsel kontrol (koyu tema, pasif durum, azaltılmış hareket).
 
 ### [ ] R3.0b · Etiket girişi (Tag input) — düzenleyicideki etiket hapları. **Ajan:** Sonnet · Opus denetim.
 
