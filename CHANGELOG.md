@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü (CHANGELOG)
 
+## [1.3.9] - 2026-11-27
+
+### Düzeltildi
+- **Meetin'in kendi penceresinde yazarken gecikme:** Klavye dinleyicisi pencere başlığını okurken, pencere Meetin'e aitse onun yanıtını bekliyordu (ölçümde 31 ms'ye kadar). Başlık artık beklemeden okunur.
+- Program değişince ilk tuştaki gecikme kaldırıldı; program adı arka planda önceden alınır.
+- Tepki süresi ölçümüne artık yalnız Meetin'in kendi işi girer; bilgisayardaki diğer programların klavye kancaları sayılmaz.
+
+### Değişti
+- Kayıt günlüğünde tarih ve saat Türkçe biçimde: `27.11.2026 11:03:03.908`.
+
 ## [1.3.8] - 2026-11-27
 
 ### Değişti

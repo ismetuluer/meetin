@@ -706,10 +706,10 @@ mod win_impl {
         VK_SPACE, VK_TAB, VK_UP,
     };
     use windows::Win32::UI::WindowsAndMessaging::{
-        CallNextHookEx, DispatchMessageW, GetForegroundWindow, GetMessageW, GetWindowTextW,
-        GetWindowThreadProcessId, SetWindowsHookExW, TranslateMessage, UnhookWindowsHookEx,
-        EVENT_OBJECT_FOCUS, EVENT_SYSTEM_FOREGROUND, KBDLLHOOKSTRUCT, LLKHF_EXTENDED, MSG,
-        MSLLHOOKSTRUCT, WH_KEYBOARD_LL, WH_MOUSE_LL, WINEVENT_OUTOFCONTEXT,
+        CallNextHookEx, DispatchMessageW, GetForegroundWindow, GetMessageW,
+        GetWindowThreadProcessId, InternalGetWindowText, SetWindowsHookExW, TranslateMessage,
+        UnhookWindowsHookEx, EVENT_OBJECT_FOCUS, EVENT_SYSTEM_FOREGROUND, KBDLLHOOKSTRUCT,
+        LLKHF_EXTENDED, MSG, MSLLHOOKSTRUCT, WH_KEYBOARD_LL, WH_MOUSE_LL, WINEVENT_OUTOFCONTEXT,
         WINEVENT_SKIPOWNPROCESS, WM_KEYDOWN, WM_KEYUP, WM_LBUTTONDOWN, WM_LBUTTONUP,
         WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_SYSKEYDOWN, WM_SYSKEYUP,
     };
@@ -847,7 +847,9 @@ mod win_impl {
             }
 
             let mut title_buf = [0u16; 256];
-            let title_len = GetWindowTextW(hwnd, &mut title_buf);
+            // InternalGetWindowText pencereye ileti göndermez; GetWindowTextW, pencere
+            // Meetin'in kendi arayüzüne aitse onun yanıtını beklerdi (R1.6 ölçümü: 31 ms).
+            let title_len = InternalGetWindowText(hwnd, &mut title_buf);
             let window_title = if title_len > 0 {
                 Some(String::from_utf16_lossy(&title_buf[..title_len as usize]))
             } else {
@@ -921,6 +923,8 @@ mod win_impl {
 
     /// Kanca geri çağrısı: asıl işi yapar ve süresini ölçer (hedef < 1 ms, §10).
     unsafe extern "system" fn keyboard_proc(code: i32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
+        // Yalnız Meetin'in kendi işi ölçülür; zincirdeki diğer programların kancaları
+        // (CallNextHookEx) ölçüme girmez.
         let start = Instant::now();
         let result = keyboard_proc_inner(code, wparam, lparam);
         let micros = start.elapsed().as_micros() as u64;
@@ -929,8 +933,15 @@ mod win_impl {
             SLOW_CALLS.fetch_add(1, Ordering::Relaxed);
         }
         MAX_MICROS.fetch_max(micros, Ordering::Relaxed);
-        result
+        if result == PASS {
+            CallNextHookEx(None, code, wparam, lparam)
+        } else {
+            result
+        }
     }
+
+    /// `keyboard_proc_inner` sonucu: tuş değiştirilmeden zincire iletilecek.
+    const PASS: LRESULT = LRESULT(isize::MIN);
 
     /// Odaklanılan denetimin parola kutusu olup olmadığını UI Automation ile kontrol eder (§7.4).
     pub fn is_focused_control_password() -> bool {
@@ -1074,19 +1085,19 @@ mod win_impl {
 
     unsafe fn keyboard_proc_inner(code: i32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
         if code < 0 {
-            return CallNextHookEx(None, code, wparam, lparam);
+            return PASS;
         }
 
         let msg = wparam.0 as u32;
         let Some(shared) = HOOK_SHARED.get() else {
-            return CallNextHookEx(None, code, wparam, lparam);
+            return PASS;
         };
 
         let kb = &*(lparam.0 as *const KBDLLHOOKSTRUCT);
 
         // Kendi enjekte ettiğimiz metin tuşlarını doğrudan geçir
         if kb.dwExtraInfo == INJECTED_EXTRA_INFO {
-            return CallNextHookEx(None, code, wparam, lparam);
+            return PASS;
         }
 
         // Genişletme sürüyorsa kullanıcının tuşlarını (basma ve bırakma) sıraya al;
@@ -1108,11 +1119,11 @@ mod win_impl {
         }
 
         if msg != WM_KEYDOWN && msg != WM_SYSKEYDOWN {
-            return CallNextHookEx(None, code, wparam, lparam);
+            return PASS;
         }
 
         if shared.paused.load(Ordering::Relaxed) {
-            return CallNextHookEx(None, code, wparam, lparam);
+            return PASS;
         }
 
         // Kullanıcı yazmaya devam ediyorsa açık seçim balonunu gizle (§4.1)
@@ -1125,7 +1136,7 @@ mod win_impl {
                 st.buffer.clear();
                 st.last_expansion = None;
             }
-            return CallNextHookEx(None, code, wparam, lparam);
+            return PASS;
         }
 
         let (hwnd_raw, ctx) = active_window_info();
@@ -1137,7 +1148,7 @@ mod win_impl {
                     st.buffer.clear();
                     st.last_hwnd = hwnd_raw;
                 }
-                return CallNextHookEx(None, code, wparam, lparam);
+                return PASS;
             }
         }
 
@@ -1174,7 +1185,7 @@ mod win_impl {
                 st.buffer.clear();
                 st.last_expansion = None;
             }
-            return CallNextHookEx(None, code, wparam, lparam);
+            return PASS;
         }
 
         // Yön ve temizleme tuşları
@@ -1203,7 +1214,7 @@ mod win_impl {
                     });
                 }
             }
-            return CallNextHookEx(None, code, wparam, lparam);
+            return PASS;
         }
 
         if vk == VK_BACK.0 {
@@ -1269,17 +1280,17 @@ mod win_impl {
             if undo_swallow {
                 return LRESULT(1);
             }
-            return CallNextHookEx(None, code, wparam, lparam);
+            return PASS;
         }
 
         let hwnd = HWND(hwnd_raw as *mut _);
         let Some(ch) = vk_to_char(kb.vkCode, kb.scanCode, hwnd) else {
-            return CallNextHookEx(None, code, wparam, lparam);
+            return PASS;
         };
 
         // Kontrol karakterlerini (Enter ve Tab hariç) yok say
         if ch.is_control() && ch != '\n' && ch != '\t' {
-            return CallNextHookEx(None, code, wparam, lparam);
+            return PASS;
         }
 
         let mut swallow = false;
@@ -1411,7 +1422,7 @@ mod win_impl {
         if swallow {
             LRESULT(1)
         } else {
-            CallNextHookEx(None, code, wparam, lparam)
+            PASS
         }
     }
 }

@@ -189,7 +189,7 @@ fn crash_event(code: &'static str, fields: &[(&'static str, Field)]) {
 fn write_event(level: Level, code: &'static str, fields: &[(&'static str, Field)], wait: bool) {
     let Some(logger) = LOGGER.get() else { return };
     let ts = chrono::Local::now()
-        .format("%Y-%m-%dT%H:%M:%S%.3f%:z")
+        .format("%d.%m.%Y %H:%M:%S%.3f")
         .to_string();
     let line = format_line(&ts, level, code, fields);
     let mut guard = if wait {
@@ -345,7 +345,7 @@ mod tests {
     #[test]
     fn satir_bicimi() {
         let line = format_line(
-            "2026-11-27T10:00:00.000+03:00",
+            "27.11.2026 10:00:00.000",
             Level::Error,
             "db.backup",
             &[
@@ -356,7 +356,7 @@ mod tests {
         );
         assert_eq!(
             line,
-            "2026-11-27T10:00:00.000+03:00 ERROR db.backup n=3 ok=false kind=io\n"
+            "27.11.2026 10:00:00.000 ERROR db.backup n=3 ok=false kind=io\n"
         );
     }
 
