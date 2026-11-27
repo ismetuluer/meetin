@@ -249,6 +249,7 @@
   "settings.engineStateTitle": "Genişletme Motoru",
   "settings.dataDirTitle": "Veri Klasörü",
   "settings.openDataDirBtn": "Klasörü Aç",
+  "settings.openLogDir": "Kayıt günlüğü klasörünü aç",
   "settings.clipboardRememberTitle": "Pano geçmişini hatırla",
   "settings.clipboardRememberDesc": "Kopyalanan metinleri Pano Geçmişi sekmesinde saklar.",
   "settings.clipboardLimitTitle": "Saklanan son kopya sayısı",

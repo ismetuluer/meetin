@@ -21,3 +21,6 @@ backups/
 *.db
 *.db-wal
 *.db-shm
+
+# Saul'in görsel referansları (depoya girmez)
+gif/

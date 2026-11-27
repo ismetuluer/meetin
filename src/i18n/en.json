@@ -249,6 +249,7 @@
   "settings.engineStateTitle": "Expansion Engine",
   "settings.dataDirTitle": "Data Folder",
   "settings.openDataDirBtn": "Open Folder",
+  "settings.openLogDir": "Open log folder",
   "settings.clipboardRememberTitle": "Remember clipboard history",
   "settings.clipboardRememberDesc": "Saves copied text items in the Clipboard History tab.",
   "settings.clipboardLimitTitle": "Recent copies kept",

@@ -699,6 +699,12 @@ mod win_impl {
         unsafe {
             let kb_hook = SetWindowsHookExW(WH_KEYBOARD_LL, Some(keyboard_proc), None, 0);
             let mouse_hook = SetWindowsHookExW(WH_MOUSE_LL, Some(mouse_proc), None, 0);
+            if kb_hook.is_err() {
+                crate::logging::event(crate::logging::Level::Error, "hook.keyboard_install_failed", &[]);
+            }
+            if mouse_hook.is_err() {
+                crate::logging::event(crate::logging::Level::Error, "hook.mouse_install_failed", &[]);
+            }
 
             // Odak ve ön plan değişimleri (bu iş parçacığının mesaj döngüsünde teslim edilir)
             let flags = WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS;

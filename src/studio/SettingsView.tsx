@@ -346,6 +346,23 @@ export function SettingsView({
                   >
                     {t("settings.openDataDirBtn")}
                   </button>
+                  <button
+                    type="button"
+                    className="icon-btn"
+                    title={t("settings.openLogDir")}
+                    aria-label={t("settings.openLogDir")}
+                    onClick={() => void invoke("open_log_dir")}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                      <path
+                        d="M4 1.75h5.5L12.25 4.5v9.75H4z M9.25 1.75V4.75h3 M6 7.5h4.5 M6 9.75h4.5 M6 12h2.5"
+                        stroke="currentColor"
+                        strokeWidth="1.25"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
                 </div>
               </div>
 

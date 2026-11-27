@@ -42,7 +42,7 @@
 - **Test:** Oto: biçim sınıflandırma · Elle: üç pano türüyle Word/Chrome'da uzun ifade, sonra `Ctrl+V`.
 - **Ajan:** Opus.
 
-### [ ] R1.4 · Kayıt günlüğü ve çökme kaydı — v1.3.5
+### [~] R1.4 · Kayıt günlüğü ve çökme kaydı — v1.3.5
 
 - **Hedef (Saul isteği):** Çökmelerin sebebi bulunabilsin. Veri klasöründe `logs\meetin.log`, boyutla dönen (ör. 5 × 1 MB). Kaydedilenler: açılış bilgisi (sürüm, Windows yapı no., kurulumlu/portable, WebView2 sürümü), hatalar ve uyarılar, Rust panikleri (mesaj + konum + backtrace), arayüzdeki yakalanmamış JS hataları, WebView2 süreç çökmesi, güncelleme/yedek/DB hataları. Ayarlar'da "Günlük klasörünü aç" düğmesi.
 - **Asla kaydedilmez (§7.4 [K]):** tuş, tuş arabelleği, ifade metni, kısaltma, pano içeriği, pencere başlığı. Bunu korumak için günlük çağrıları yalnız sabit mesaj + sayı/kod alan küçük bir arayüzden yapılır; test bu kuralı denetler.

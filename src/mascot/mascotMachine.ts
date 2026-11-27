@@ -7,7 +7,6 @@ import baaMp3Url from "../assets/sounds/baaa.mp3";
 import whooshMp3Url from "../assets/sounds/dragon-studio-simple-whoosh-382724.mp3";
 import punchClassicMp3Url from "../assets/sounds/universfield-classic-punch-impact-352711.mp3";
 import thudImpactMp3Url from "../assets/sounds/universfield-impact-thud-291047.mp3";
-import punchPowerMp3Url from "../assets/sounds/universfield-power-punch-192118.mp3";
 
 export type MascotAnim =
   | "idle"
@@ -135,7 +134,6 @@ export function playThrowSound(): void {
 const WALL_IMPACT_SOUNDS = [
   punchClassicMp3Url,
   thudImpactMp3Url,
-  punchPowerMp3Url,
 ];
 
 /**

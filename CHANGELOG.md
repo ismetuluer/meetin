@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü (CHANGELOG)
 
+## [1.3.5] - 2026-11-27
+
+### Eklendi
+- **Kayıt günlüğü (çökme tanısı):** Veri klasöründe `logsmeetin.log` (1 MB'da döner, son 5 dosya). Açılış bilgisi (sürüm, Windows yapı numarası, kurulumlu/portable, WebView2 sürümü), hatalar, program çökmeleri (Rust panikleri ve Windows istisnaları), arayüz hataları ve önceki oturumun düzgün kapanmadığı kaydedilir.
+- Ayarlar › Genel: veri klasörünün yanında "Kayıt günlüğü klasörünü aç" simge düğmesi.
+- **Gizlilik:** Günlüğe tuş, ifade metni, kısaltma, pano içeriği, pencere başlığı ya da kullanıcı klasör yolu yazılmaz; otomatik test bu kuralı denetler.
+
+### Kaldırıldı
+- Duvara çarpma seslerinden "power punch" sesi.
+
 ## [1.3.4] - 2026-11-27
 
 ### Düzeltildi

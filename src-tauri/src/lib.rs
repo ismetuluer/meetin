@@ -4,6 +4,7 @@ pub mod db;
 pub mod hook;
 pub mod inject;
 pub mod io;
+pub mod logging;
 pub mod matcher;
 pub mod selection;
 pub mod updater;
@@ -433,6 +434,37 @@ fn get_app_settings(state: State<'_, AppState>) -> Result<AppSettingsDto, String
         sound_impact,
         auto_check_updates,
     })
+}
+
+/// Kayıt günlüğü klasörünü Dosya Gezgini'nde açar (R1.4).
+#[tauri::command]
+fn open_log_dir() -> Result<(), String> {
+    let dir = logging::log_dir().ok_or_else(|| "Günlük klasörü yok".to_string())?;
+    #[cfg(windows)]
+    {
+        std::process::Command::new("explorer.exe")
+            .arg(&dir)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    #[cfg(not(windows))]
+    let _ = dir;
+    Ok(())
+}
+
+/// Arayüzdeki yakalanmamış JS hatalarını günlüğe yazar (ileti kırpılır, tek satır).
+#[tauri::command]
+fn log_frontend_error(window: String, kind: String, message: String, source: Option<String>) {
+    logging::event(
+        logging::Level::Error,
+        "ui.error",
+        &[
+            ("window", logging::Field::Sys(window)),
+            ("kind", logging::Field::Sys(kind)),
+            ("msg", logging::Field::Sys(message)),
+            ("src", logging::Field::Sys(source.unwrap_or_default())),
+        ],
+    );
 }
 
 #[tauri::command]
@@ -1606,11 +1638,17 @@ fn paste_phrase_from_island(
 
 pub fn run() {
     let data_dir = db::runtime_data_dir();
+    // Kayıt günlüğü her şeyden önce: açılıştaki hatalar da yakalansın (R1.4)
+    logging::init(&data_dir);
+    logging::log_startup(startup::is_portable_mode());
+
     let db_path = data_dir.join("meetin.db");
     let storage = Arc::new(Storage::open(&db_path).expect("Meetin veritabanı açılamadı"));
 
     // Günün ilk açılışında otomatik yedek (§7.3)
-    let _ = storage.ensure_daily_backup_today();
+    if let Err(e) = storage.ensure_daily_backup_today() {
+        logging::error_text(logging::Level::Warn, "db.daily_backup_failed", &e);
+    }
 
     let storage_for_exit = Arc::clone(&storage);
     let (hook_controller, hook_starter) = hook::create_controller(Arc::clone(&storage));
@@ -1906,6 +1944,8 @@ pub fn run() {
             set_user_profile,
             set_language,
             open_data_dir,
+            open_log_dir,
+            log_frontend_error,
             complete_onboarding,
             list_backups,
             create_backup_now,
@@ -1964,7 +2004,10 @@ pub fn run() {
     app.run(move |_app_handle, event| {
         if let RunEvent::Exit = event {
             // Kapanışta tutarlı yedek (§7.3)
-            let _ = storage_for_exit.create_backup_now();
+            if let Err(e) = storage_for_exit.create_backup_now() {
+                logging::error_text(logging::Level::Warn, "db.exit_backup_failed", &e);
+            }
+            logging::log_exit();
         }
     });
 }

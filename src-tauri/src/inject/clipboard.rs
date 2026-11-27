@@ -340,7 +340,15 @@ mod win_clip {
             if spawned.is_err() {
                 return None;
             }
-            rx.recv_timeout(Duration::from_secs(2)).ok().flatten()
+            let hwnd = rx.recv_timeout(Duration::from_secs(2)).ok().flatten();
+            if hwnd.is_none() {
+                crate::logging::event(
+                    crate::logging::Level::Warn,
+                    "clipboard.owner_unavailable",
+                    &[],
+                );
+            }
+            hwnd
         });
         raw.map(|r| HWND(r as *mut c_void))
     }
