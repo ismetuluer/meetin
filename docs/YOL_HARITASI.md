@@ -50,7 +50,9 @@
 - **Test:** Oto: dönme, panik kaydı, yasak içerik denetimi · Elle: bilerek tetiklenen test çöküşü sonrası günlük dosyası.
 - **Ajan:** Opus (Rust tarafı) · Haiku (`tr.json`/`en.json` metinleri).
 
-### [~] R1.5 · Portable "onedir" paketi — v1.3.6
+### [~] R1.5 · Portable "onedir" paketi — v1.3.6 · v1.3.7
+
+- **Güncelleme (Saul kararı, v1.3.7):** Veri `%APPDATA%\Meetin`'de, portable yedekleri `data\backups`'ta; başka bilgisayarda yedekten geri yükleme önerisi. WebView2 gömülmez (aşağıdaki [A] kapandı); yoksa açılışta sorulup Microsoft'tan indirilir.
 
 - **Hedef (Saul isteği):** Portable sürüm tek EXE değil, kendi klasörüyle gelir: `Meetin\Meetin.exe`, `Meetin\local-data.flag`, `Meetin\data\` (veriler, yedekler, günlükler), `CHANGELOG.md`. **Hata düzeltmesi:** bugünkü ZIP'te `local-data.flag` yok; portable sürüm verisini yanlışlıkla `%APPDATA%`'ya yazıyor. Eski kullanıcının `%APPDATA%\Meetin` verisi ilk açılışta (onayla) taşınabilir.
 - **[A] Seçenek:** WebView2 "sabit sürüm" çalışma zamanı klasöre eklenebilir (WebView2'si olmayan/eski bilgisayarlarda da çalışır, paket ~180 MB büyür). Saul karar verir.

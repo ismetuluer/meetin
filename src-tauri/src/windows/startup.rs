@@ -2,8 +2,6 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::db::runtime_data_dir;
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StartupStatus {
     pub run_at_login: bool,
@@ -17,7 +15,7 @@ pub fn format_quoted_exe_path(exe: &std::path::Path) -> String {
 }
 
 pub fn is_portable_mode() -> bool {
-    crate::db::has_portable_flag(&crate::db::exe_dir()) || runtime_data_dir().ends_with("data")
+    crate::db::has_portable_flag(&crate::db::exe_dir())
 }
 
 #[cfg(windows)]

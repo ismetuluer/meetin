@@ -261,7 +261,8 @@ PhraseExpress düzeninden esinlenilir ama kalabalık şerit menü kullanılmaz. 
 ### 7.2 Konumlar
 
 - **Kurulumlu:** `%APPDATA%\Meetin\`
-- **Portable:** EXE'nin yanında `portable.flag` dosyası varsa veriler `.\data\` klasöründe tutulur. Program USB'den başka bilgisayarda aynen çalışır **[K]**.
+- **Portable [K, 27.11.2026]:** EXE'nin yanında `portable.flag` dosyası varsa portable moddur. Veriler kurulumlu sürümdeki gibi `%APPDATA%\Meetin\` içinde tutulur (güncellemede ya da klasör silinince kaybolmasın diye); **yedekler EXE'nin yanındaki `data\backups\` klasörüne** yazılır. Program USB'den başka bilgisayarda açılınca, orada veri yoksa en son yedekten geri yüklemeyi önerir; böylece başka bilgisayarda da aynı kütüphaneyle çalışır **[K]**.
+- **WebView2 [K, 27.11.2026]:** Çalışma zamanı pakete gömülmez. Açılışta yoksa kullanıcıya sorulur; onaylanırsa Microsoft'un resmî önyükleyicisi indirilir, imzası doğrulanır ve kurulur.
 
 ### 7.3 Yedek **[K]**
 
@@ -272,7 +273,7 @@ Her gün ilk açılışta ve kapanışta veritabanının tutarlı kopyası alın
 - **Parola kutularında** (UI Automation `IsPassword`) hiçbir tuş işlenmez, öneri gösterilmez.
 - **Dışlanan programlar** listesi: o program etkinken klavye dinleyicisi tuşları sadece iletir, hiçbir şey tutmaz. Varsayılan liste: parola yöneticileri, uzak masaüstü **[Ö]**.
 - Tuş arabelleği yalnızca bellekte tutulur, en fazla 64 karakterdir. Pencere değişince, fare tıklanınca ya da ok tuşlarına basılınca temizlenir. **Asla diske ya da loga yazılmaz.**
-- Ağ erişimi **sadece** GitHub güncelleme kontrolü içindir. Telemetri yoktur.
+- Ağ erişimi **sadece** GitHub güncelleme kontrolü ve kullanıcı onayıyla WebView2 kurulumu (§7.2) içindir. Telemetri yoktur.
 - Şifreli veritabanı bu sürümde yoktur **[K]**.
 
 ---

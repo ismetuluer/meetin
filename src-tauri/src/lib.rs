@@ -5,9 +5,10 @@ pub mod hook;
 pub mod inject;
 pub mod io;
 pub mod logging;
+mod webview2;
 
 /// Açılışta, arayüz kurulmadan önce gösterilen yerel Windows iletişim kutuları.
-mod native_dialog {
+pub(crate) mod native_dialog {
     #[cfg(windows)]
     fn show(text: &str, flags: windows::Win32::UI::WindowsAndMessaging::MESSAGEBOX_STYLE) -> i32 {
         use windows::core::{w, PCWSTR};
@@ -1686,33 +1687,63 @@ pub fn run() {
     }
     // Kayıt günlüğü her şeyden önce: açılıştaki hatalar da yakalansın (R1.4)
     logging::init(&data_dir);
-    logging::log_startup(startup::is_portable_mode());
+    let portable = startup::is_portable_mode();
+    logging::log_startup(portable);
 
-    // Portable ilk açılış: bu bilgisayardaki eski veriyi kopyalamayı öner (R1.5)
-    let appdata = std::env::var_os("APPDATA").map(std::path::PathBuf::from);
-    if let Some(src) = db::portable_migration_source(&db::exe_dir(), &data_dir, appdata.as_deref())
+    // WebView2 yoksa arayüz açılamaz: kullanıcıya sorup Microsoft'tan kur (R1.5)
+    if !webview2::ensure_installed() {
+        logging::event(logging::Level::Error, "webview2.missing_exit", &[]);
+        return;
+    }
+
+    // Portable: veri kullanıcı klasöründe, yedekler EXE yanındaki data\backups'ta (R1.5)
+    let portable_backups = if portable {
+        let dir = db::portable_backups_dir(&db::exe_dir());
+        match db::ensure_writable_dir(&dir) {
+            Ok(()) => Some(dir),
+            Err(e) => {
+                logging::error_text(logging::Level::Warn, "portable.backups_not_writable", &e);
+                None
+            }
+        }
+    } else {
+        None
+    };
+
+    // Portable başka bir bilgisayarda: kullanıcı klasöründe veri yoksa en son yedeği öner
+    if let Some(cand) = portable_backups
+        .as_deref()
+        .and_then(|dir| db::portable_restore_candidate(&data_dir, dir))
     {
-        if native_dialog::ask(
-            "Bu bilgisayarda daha önce kullanılmış Meetin verisi bulundu.\n\n\
-             İfadeleriniz bu taşınabilir klasöre kopyalansın mı?\n\
-             (Asıl veri olduğu yerde kalır.)",
-        ) {
-            match db::copy_database(&src, &data_dir.join("meetin.db")) {
-                Ok(()) => logging::event(logging::Level::Info, "portable.migrated", &[]),
+        let text = format!(
+            "Bu bilgisayarda Meetin verisi yok.\n\nTaşınabilir klasördeki en son yedek \
+             ({}) geri yüklensin mi?",
+            cand.filename
+        );
+        if native_dialog::ask(&text) {
+            match db::copy_database(
+                std::path::Path::new(&cand.path),
+                &data_dir.join("meetin.db"),
+            ) {
+                Ok(()) => {
+                    logging::event(logging::Level::Info, "portable.restored_from_backup", &[])
+                }
                 Err(e) => {
-                    logging::error_text(logging::Level::Error, "portable.migrate_failed", &e);
+                    logging::error_text(logging::Level::Error, "portable.restore_failed", &e);
                     native_dialog::error(
-                        "Veriler kopyalanamadı. Meetin boş bir kütüphaneyle açılacak.",
+                        "Yedek geri yüklenemedi. Meetin boş bir kütüphaneyle açılacak.",
                     );
                 }
             }
-        } else {
-            logging::event(logging::Level::Info, "portable.migration_declined", &[]);
         }
     }
 
     let db_path = data_dir.join("meetin.db");
-    let storage = Arc::new(Storage::open(&db_path).expect("Meetin veritabanı açılamadı"));
+    let storage = Arc::new(
+        Storage::open(&db_path)
+            .expect("Meetin veritabanı açılamadı")
+            .with_backups_dir(portable_backups),
+    );
 
     // Günün ilk açılışında otomatik yedek (§7.3)
     if let Err(e) = storage.ensure_daily_backup_today() {

@@ -28,9 +28,9 @@ if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
 
 New-Item -ItemType Directory -Path $stage -Force | Out-Null
 Copy-Item $ExePath (Join-Path $stage "Meetin.exe")
-# Bayrak: veriler EXE'nin yanındaki data\ klasöründe tutulur (§7.2)
+# Bayrak: portable mod. Veriler kullanıcı klasöründe (%APPDATA%\Meetin), yedekler data\backups'ta.
 $utf8 = New-Object System.Text.UTF8Encoding($false)
-[System.IO.File]::WriteAllText((Join-Path (Resolve-Path $stage).Path "portable.flag"), "Meetin bu klasördeki data\ altında çalışır. Bu dosyayı silmeyin.`r`n", $utf8)
+[System.IO.File]::WriteAllText((Join-Path (Resolve-Path $stage).Path "portable.flag"), "Meetin taşınabilir mod: yedekler bu klasördeki data\backups altına yazılır. Bu dosyayı silmeyin.`r`n", $utf8)
 New-Item -ItemType Directory -Path (Join-Path $stage "data") -Force | Out-Null
 if (Test-Path "CHANGELOG.md") {
   Copy-Item "CHANGELOG.md" (Join-Path $stage "CHANGELOG.md")

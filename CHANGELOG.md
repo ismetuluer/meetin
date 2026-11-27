@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü (CHANGELOG)
 
+## [1.3.7] - 2026-11-27
+
+### Değişti
+- **Portable veri yeri:** Portable sürüm de verisini kullanıcı klasöründe (`%APPDATA%\Meetin`) tutar; güncellemede ya da klasör silinince veri kaybolmaz. Yedekler portable klasördeki `data\backups` altına yazılır.
+- Portable sürüm başka bir bilgisayarda ilk kez açılınca, orada veri yoksa klasördeki en son yedekten geri yüklemeyi önerir.
+
+### Eklendi
+- **WebView2 denetimi:** Bilgisayarda WebView2 yoksa Meetin açılışta sorar; onay verilirse Microsoft'un resmî kurulum dosyasını indirir, imzasını doğrular ve kurar.
+
 ## [1.3.6] - 2026-11-27
 
 ### Değişti

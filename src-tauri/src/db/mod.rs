@@ -165,18 +165,21 @@ pub fn ensure_writable_dir(dir: &Path) -> std::io::Result<()> {
     std::fs::remove_file(&probe)
 }
 
-/// Portable ilk açılış: yerel veritabanı yoksa ve bu bilgisayarda kurulumlu (ya da bayraksız
-/// eski portable) sürümün `%APPDATA%\Meetin\meetin.db`'si varsa onu taşıma adayı olarak döndürür.
-pub fn portable_migration_source(
-    exe_dir: &Path,
+/// Portable sürümün yedek klasörü: EXE'nin yanındaki `data\backups` (Saul kararı, R1.5).
+pub fn portable_backups_dir(exe_dir: &Path) -> PathBuf {
+    exe_dir.join("data").join("backups")
+}
+
+/// Portable başka bir bilgisayarda ilk kez açıldı: kullanıcı klasöründe veritabanı yoksa ve
+/// portable klasörde yedek varsa en yenisini geri yükleme adayı olarak döndürür.
+pub fn portable_restore_candidate(
     data_dir: &Path,
-    appdata_dir: Option<&Path>,
-) -> Option<PathBuf> {
-    if !has_portable_flag(exe_dir) || data_dir.join("meetin.db").exists() {
+    backups_dir: &Path,
+) -> Option<backup::BackupFileInfo> {
+    if data_dir.join("meetin.db").exists() {
         return None;
     }
-    let src = appdata_dir?.join("Meetin").join("meetin.db");
-    src.is_file().then_some(src)
+    backup::list_backups(backups_dir).ok()?.into_iter().next()
 }
 
 /// Veritabanının tutarlı bir kopyasını alır (kaynak salt okunur açılır, `VACUUM INTO`).
@@ -190,12 +193,11 @@ pub fn copy_database(src: &Path, dst: &Path) -> Result<(), DbError> {
     Ok(())
 }
 
-/// Veri dizinini belirler (§7.2):
-/// EXE'nin yanında portable bayrağı varsa `.\data\`, aksi hâlde `%APPDATA%\Meetin\`.
+/// Veri dizinini belirler (§7.2, Saul kararı R1.5): kurulumlu ve portable sürüm verisini
+/// `%APPDATA%\Meetin\` içinde tutar; güncellemede ya da klasör silinince veri kaybolmaz.
+/// Portable sürümün yedekleri ayrıca EXE yanındaki `data\backups` klasörüne yazılır.
+/// `%APPDATA%` yoksa (çok nadir) EXE yanındaki `data` kullanılır.
 pub fn resolve_data_dir(exe_dir: &Path, appdata_dir: Option<&Path>) -> PathBuf {
-    if has_portable_flag(exe_dir) {
-        return exe_dir.join("data");
-    }
     if let Some(appdata) = appdata_dir {
         return appdata.join("Meetin");
     }
@@ -211,6 +213,8 @@ pub fn runtime_data_dir() -> PathBuf {
 pub struct Storage {
     conn: Mutex<Connection>,
     db_path: PathBuf,
+    /// Yedek klasörü; verilmezse veritabanının yanındaki `backups`.
+    backups_dir: Option<PathBuf>,
 }
 
 impl Storage {
@@ -223,6 +227,7 @@ impl Storage {
                 Ok(_) => Ok(Self {
                     conn: Mutex::new(conn),
                     db_path: db_path.to_path_buf(),
+                    backups_dir: None,
                 }),
                 Err(err) if db_path.exists() => {
                     let ro = Connection::open_with_flags(
@@ -234,6 +239,7 @@ impl Storage {
                     Ok(Self {
                         conn: Mutex::new(ro),
                         db_path: db_path.to_path_buf(),
+                        backups_dir: None,
                     })
                 }
                 Err(err) => Err(err),
@@ -248,6 +254,7 @@ impl Storage {
                 Ok(Self {
                     conn: Mutex::new(ro),
                     db_path: db_path.to_path_buf(),
+                    backups_dir: None,
                 })
             }
             Err(err) => Err(err.into()),
@@ -259,10 +266,18 @@ impl Storage {
     }
 
     pub fn backups_dir(&self) -> PathBuf {
-        self.db_path
-            .parent()
-            .unwrap_or_else(|| Path::new("."))
-            .join("backups")
+        self.backups_dir.clone().unwrap_or_else(|| {
+            self.db_path
+                .parent()
+                .unwrap_or_else(|| Path::new("."))
+                .join("backups")
+        })
+    }
+
+    /// Yedeklerin yazılacağı klasörü belirler (portable: EXE yanındaki `data\backups`).
+    pub fn with_backups_dir(mut self, dir: Option<PathBuf>) -> Self {
+        self.backups_dir = dir;
+        self
     }
 
     pub fn ensure_daily_backup_today(&self) -> Result<Option<PathBuf>, DbError> {
@@ -1441,50 +1456,55 @@ mod tests {
     }
 
     #[test]
-    fn portable_flag_selects_local_data_dir() {
+    fn veri_her_zaman_kullanici_klasorunde() {
         let dir = TempDir::new().unwrap();
         let appdata = TempDir::new().unwrap();
+        let expected = appdata.path().join("Meetin");
 
-        // local-data.flag yokken %APPDATA%\Meetin
-        let installed = resolve_data_dir(dir.path(), Some(appdata.path()));
-        assert_eq!(installed, appdata.path().join("Meetin"));
+        assert_eq!(resolve_data_dir(dir.path(), Some(appdata.path())), expected);
+        assert!(!has_portable_flag(dir.path()));
 
-        // local-data.flag varken .\data
-        std::fs::write(dir.path().join("local-data.flag"), "").unwrap();
-        let portable = resolve_data_dir(dir.path(), Some(appdata.path()));
-        assert_eq!(portable, dir.path().join("data"));
+        // Portable bayrağı (yeni ve eski adıyla) veri yerini değiştirmez
+        for flag in PORTABLE_FLAGS {
+            std::fs::write(dir.path().join(flag), "").unwrap();
+            assert!(has_portable_flag(dir.path()));
+            assert_eq!(resolve_data_dir(dir.path(), Some(appdata.path())), expected);
+            std::fs::remove_file(dir.path().join(flag)).unwrap();
+        }
 
-        // Şartnamedeki portable.flag da tanınır
-        std::fs::remove_file(dir.path().join("local-data.flag")).unwrap();
-        std::fs::write(dir.path().join("portable.flag"), "").unwrap();
-        assert_eq!(
-            resolve_data_dir(dir.path(), Some(appdata.path())),
-            dir.path().join("data")
-        );
+        // %APPDATA% yoksa EXE yanındaki data
+        assert_eq!(resolve_data_dir(dir.path(), None), dir.path().join("data"));
     }
 
     #[test]
-    fn portable_ilk_acilista_eski_veri_tasima_adayi() {
+    fn portable_yedekleri_exe_yaninda() {
         let exe = TempDir::new().unwrap();
         let appdata = TempDir::new().unwrap();
-        let data = exe.path().join("data");
-        let old_db = appdata.path().join("Meetin").join("meetin.db");
+        let db_path = appdata.path().join("Meetin").join("meetin.db");
+        let backups = portable_backups_dir(exe.path());
+        let storage = Storage::open(&db_path)
+            .unwrap()
+            .with_backups_dir(Some(backups.clone()));
+        assert_eq!(storage.backups_dir(), backups);
+        storage.create_backup_now().unwrap();
+        assert_eq!(storage.list_backups().unwrap().len(), 1);
+        assert!(!appdata.path().join("Meetin").join("backups").exists());
+    }
 
-        // Bayrak yokken (kurulumlu sürüm) taşıma sorulmaz
-        assert_eq!(
-            portable_migration_source(exe.path(), &data, Some(appdata.path())),
-            None
-        );
+    #[test]
+    fn yeni_bilgisayarda_portable_yedekten_geri_yukleme() {
+        let exe = TempDir::new().unwrap();
+        let pc1 = TempDir::new().unwrap();
+        let pc2 = TempDir::new().unwrap();
+        let backups = portable_backups_dir(exe.path());
 
-        std::fs::write(exe.path().join("portable.flag"), "").unwrap();
-        // Eski veri yoksa aday yok
-        assert_eq!(
-            portable_migration_source(exe.path(), &data, Some(appdata.path())),
-            None
-        );
+        // Yedek yoksa aday yok
+        assert!(portable_restore_candidate(pc2.path(), &backups).is_none());
 
-        // Eski veri varsa aday; kopyalanınca içerik aynı
-        let old = Storage::open(&old_db).unwrap();
+        // 1. bilgisayarda ifade eklenir, yedek portable klasöre yazılır
+        let old = Storage::open(&pc1.path().join("meetin.db"))
+            .unwrap()
+            .with_backups_dir(Some(backups.clone()));
         old.create_phrase(&NewPhrase {
             abbr: "tsk".to_string(),
             content: "Teşekkürler".to_string(),
@@ -1497,17 +1517,17 @@ mod tests {
             tags: vec![],
         })
         .unwrap();
+        old.create_backup_now().unwrap();
         drop(old);
-        let src = portable_migration_source(exe.path(), &data, Some(appdata.path())).unwrap();
-        copy_database(&src, &data.join("meetin.db")).unwrap();
-        let copied = Storage::open(&data.join("meetin.db")).unwrap();
+
+        // 2. bilgisayar: veri yok, yedek var -> geri yüklenir
+        let cand = portable_restore_candidate(pc2.path(), &backups).unwrap();
+        copy_database(Path::new(&cand.path), &pc2.path().join("meetin.db")).unwrap();
+        let copied = Storage::open(&pc2.path().join("meetin.db")).unwrap();
         assert_eq!(copied.list_phrases(false).unwrap().len(), 1);
 
-        // Yerel veri oluştuktan sonra bir daha sorulmaz
-        assert_eq!(
-            portable_migration_source(exe.path(), &data, Some(appdata.path())),
-            None
-        );
+        // Veri oluştuktan sonra bir daha sorulmaz
+        assert!(portable_restore_candidate(pc2.path(), &backups).is_none());
     }
 
     #[test]
