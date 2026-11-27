@@ -68,7 +68,7 @@
 - **Test:** Oto: geri çağrı süresi ölçümü (< 1 ms) · Elle: genel akıcılık.
 - **Ajan:** Opus.
 
-### [~] R1.7 · Olay tabanlı pano izleyici ve CSP — v1.3.8
+### [x] R1.7 · Olay tabanlı pano izleyici ve CSP — v1.3.8
 
 - **Hedef:** 900 ms yoklama yerine `AddClipboardFormatListener`; `csp: null` yerine kısıtlı CSP (zengin düzenleyici ve görseller çalışmaya devam eder).
 - **Modüller:** `inject/clipboard.rs`, `tauri.conf.json`
