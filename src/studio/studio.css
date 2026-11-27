@@ -134,7 +134,7 @@ html.has-mica-backdrop .fluent-detail-col {
   display: grid;
   grid-template-columns: 224px 360px minmax(0, 1fr);
   min-height: 0;
-  transition: grid-template-columns 160ms ease;
+  transition: grid-template-columns var(--yay-sure-kisa) var(--yay-egri);
 }
 
 .fluent-workspace.is-sidebar-collapsed {
@@ -144,21 +144,58 @@ html.has-mica-backdrop .fluent-detail-col {
 .sidebar-collapse-row {
   display: flex;
   justify-content: flex-end;
-  padding: 0 4px;
+  padding: 0 6px;
 }
 
-.fluent-sidebar.is-collapsed .sidebar-collapse-row {
+/* Daraltma düğmesi: dar çubukta (40 px iç genişlik) tam ortaya oturur */
+.sidebar-toggle-btn {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--metin-ikincil);
+  cursor: pointer;
 }
 
-.fluent-sidebar.is-collapsed .nav-item {
-  justify-content: center;
-  padding: 8px 4px;
+.sidebar-toggle-btn:hover {
+  background: var(--yuzey-2);
+  color: var(--metin);
 }
 
-.fluent-sidebar.is-collapsed .folder-main-btn {
-  justify-content: center;
-  padding: 8px 4px;
+.sidebar-toggle-btn:focus-visible {
+  outline: 2px solid var(--vurgu);
+  outline-offset: 1px;
+}
+
+.sidebar-toggle-btn svg {
+  transition: transform var(--yay-sure-kisa) var(--yay-egri);
+}
+
+.fluent-sidebar.is-collapsed .sidebar-toggle-btn svg {
+  transform: rotate(180deg);
+}
+
+/* Daralınca simgeler yerinde kalır; yazı ve sayılar solar (DOM'da kalır, ekran okuyucu adı korunur) */
+.fluent-sidebar .nav-item,
+.fluent-sidebar .folder-main-btn {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.nav-text,
+.nav-count {
+  transition: opacity var(--yay-sure-kisa) ease, transform var(--yay-sure-kisa) var(--yay-egri);
+}
+
+.fluent-sidebar.is-collapsed .nav-text,
+.fluent-sidebar.is-collapsed .nav-count {
+  opacity: 0;
+  transform: translateX(-6px);
 }
 
 .folder-item.is-drop-target {
@@ -219,7 +256,8 @@ html.has-mica-backdrop .fluent-detail-col {
   border-radius: var(--r-sm);
   background: transparent;
   color: var(--metin);
-  padding: 6px 10px;
+  /* 12 px sol boşluk: 15 px simge, dar çubuktaki 40 px genişlikte ortalanır */
+  padding: 6px 10px 6px 12px;
   font-size: 13px;
   cursor: pointer;
   text-align: left;
@@ -252,6 +290,10 @@ html.has-mica-backdrop .fluent-detail-col {
   min-width: 0;
 }
 
+.nav-label > svg {
+  flex: none;
+}
+
 .nav-count {
   font-size: 11px;
   color: var(--metin-ikincil);
@@ -268,7 +310,7 @@ html.has-mica-backdrop .fluent-detail-col {
   justify-content: space-between;
   border: none;
   background: transparent;
-  padding: 6px 6px 6px 10px;
+  padding: 6px 6px 6px 12px;
   cursor: pointer;
   text-align: left;
 }

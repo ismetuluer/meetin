@@ -142,7 +142,9 @@ Her adımdan önce mevcut ekranın görüntüsü ve önerilen düzen Saul'a gös
 
 - **Yapılan:** `src/design/TagInput.tsx` + `tagInput.css` + saf `tagLogic.ts` (tr-TR'ye duyarsız tekrar denetimi). Enter/virgül/odaktan çıkınca ekleme, virgüllü yapıştırma, Backspace ile işaretle-sil, yaylı açılış/kapanış (yalnız yeni eklenenler), adlandırılmış kaldırma düğmesi. Eski `tag-chips-bar`/`inline-tag-input` stilleri kaldırıldı. **Ajan:** Opus (Saul kararı). **Test:** Oto: etiket mantığı (5), bileşen çıktısı (4) · tarayıcıda etkileşim denemesi (ekleme, tekrar, odaktan çıkma, Backspace, ×, yapıştırma).
 
-### [ ] R3.0c · Kenar çubuğu daraltma (Sidebar collapse) — uzman arayüzünün sol çubuğu (bugün animasyonsuz). **Ajan:** Sonnet · Opus denetim.
+### [x] R3.0c · Kenar çubuğu daraltma (Sidebar collapse) — v1.5.4
+
+- **Yapılan:** Genişlik ve ok ortak yayla; yazı/sayılar DOM'da kalıp solar (`nav-text`, `nav-count`); simgeler 12 px sol boşlukla iki durumda da aynı yerde (ölçüldü: 20 px); daraltma düğmesi `aria-label` + `aria-expanded`, dar çubukta ortalı. Klasör başlığı, klasör ekleme kutusu, klasör silme düğmesi ve haftalık kart daralınca eskisi gibi gizlenir. Genişlik geçişi §11.5'teki transform/opacity kuralının istisnasıdır (önceden de vardı; Saul onayı). **Ajan:** Opus (Saul kararı). **Test:** Oto: 3 gerileme testi · tarayıcıda gerçek `studio.css` ile ölçüm ve görsel kontrol.
 
 ### [ ] R3.0d · Yığın panel (Stack panel) — [A] yeri Saul'la belirlenecek (öneri: ifade sürüm geçmişi). **Ajan:** Sonnet · Opus denetim.
 

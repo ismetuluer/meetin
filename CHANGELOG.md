@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü (CHANGELOG)
 
+## [1.5.4] - 2026-11-28
+
+### Değişti
+- **Kenar çubuğu daraltma:** Uzman arayüzündeki sol çubuk yaylı daralır ve açılır; simgeler yerinde kalır, yazılar solarak kaybolur. « » yerine dönen ok simgesi.
+
+### Düzeltildi
+- Daraltılmış çubukta düğmeler ekran okuyucuda adsız kalmıyor; daraltma düğmesi açık/kapalı durumunu bildiriyor.
+
 ## [1.5.3] - 2026-11-28
 
 ### Değişti

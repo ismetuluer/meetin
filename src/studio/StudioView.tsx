@@ -1359,11 +1359,15 @@ export function StudioView() {
               <div className="sidebar-collapse-row">
                 <button
                   type="button"
-                  className="mini-icon-btn sidebar-toggle-btn"
+                  className="sidebar-toggle-btn"
+                  aria-expanded={!sidebarCollapsed}
+                  aria-label={sidebarCollapsed ? t("studio.expandSidebar") : t("studio.collapseSidebar")}
                   title={sidebarCollapsed ? t("studio.expandSidebar") : t("studio.collapseSidebar")}
                   onClick={() => setSidebarCollapsed((c) => !c)}
                 >
-                  {sidebarCollapsed ? "»" : "«"}
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path d="M10 3.5L5.5 8L10 12.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
                 </button>
               </div>
               <div className="sidebar-group">
@@ -1378,7 +1382,7 @@ export function StudioView() {
                       <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.4" />
                       <path d="M8 4.8V8.2L10.4 9.6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
                     </svg>
-                    {!sidebarCollapsed && <span>{t("studio.viewRecent")}</span>}
+                    <span className="nav-text">{t("studio.viewRecent")}</span>
                   </span>
                 </button>
 
@@ -1393,11 +1397,9 @@ export function StudioView() {
                       <rect x="4" y="3" width="8" height="10.5" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
                       <path d="M6 2.5H10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
                     </svg>
-                    {!sidebarCollapsed && <span>{t("studio.viewClipboard")}</span>}
+                    <span className="nav-text">{t("studio.viewClipboard")}</span>
                   </span>
-                  {!sidebarCollapsed && (
-                    <span className="nav-count">{clipboardItems.length}</span>
-                  )}
+                  <span className="nav-count">{clipboardItems.length}</span>
                 </button>
               </div>
 
@@ -1438,11 +1440,9 @@ export function StudioView() {
                     <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
                       <path d="M2 4.5C2 3.7 2.7 3 3.5 3H6.4L7.7 4.5H12.5C13.3 4.5 14 5.2 14 6V11.5C14 12.3 13.3 13 12.5 13H3.5C2.7 13 2 12.3 2 11.5V4.5Z" stroke="currentColor" strokeWidth="1.4" />
                     </svg>
-                    {!sidebarCollapsed && <span>{t("studio.viewAll")}</span>}
+                    <span className="nav-text">{t("studio.viewAll")}</span>
                   </span>
-                  {!sidebarCollapsed && (
-                    <span className="nav-count">{activePhrases.length}</span>
-                  )}
+                  <span className="nav-count">{activePhrases.length}</span>
                 </button>
 
                 {folders.map((folder) => {
@@ -1535,9 +1535,9 @@ export function StudioView() {
                                   strokeWidth="1.4"
                                 />
                               </svg>
-                              {!sidebarCollapsed && <span>{folder.name}</span>}
+                              <span className="nav-text">{folder.name}</span>
                             </span>
-                            {!sidebarCollapsed && <span className="nav-count">{count}</span>}
+                            <span className="nav-count">{count}</span>
                           </button>
                           {!sidebarCollapsed && (
                             <button
@@ -1584,11 +1584,9 @@ export function StudioView() {
                     <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
                       <path d="M3 4.5H13M6 4.5V3H10V4.5M5 4.5V12.5H11V4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
-                    {!sidebarCollapsed && <span>{t("studio.viewTrash")}</span>}
+                    <span className="nav-text">{t("studio.viewTrash")}</span>
                   </span>
-                  {!sidebarCollapsed && (
-                    <span className="nav-count">{trashPhrases.length}</span>
-                  )}
+                  <span className="nav-count">{trashPhrases.length}</span>
                 </button>
               </div>
             </div>
@@ -1640,7 +1638,7 @@ export function StudioView() {
                     <path d="M6.4 6.2C6.6 5.3 7.2 4.8 8 4.8C8.9 4.8 9.5 5.4 9.5 6.2C9.5 6.9 9 7.3 8.4 7.7C8 8 7.9 8.3 7.9 8.9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
                     <circle cx="8" cy="11.2" r="0.8" fill="currentColor" />
                   </svg>
-                  {!sidebarCollapsed && <span>{t("studio.helpBtn")}</span>}
+                  <span className="nav-text">{t("studio.helpBtn")}</span>
                 </span>
               </button>
 
@@ -1658,7 +1656,7 @@ export function StudioView() {
                     <circle cx="8" cy="8" r="2.2" stroke="currentColor" strokeWidth="1.4" />
                     <path d="M8 2V3.4M8 12.6V14M2 8H3.4M12.6 8H14M3.8 3.8L4.8 4.8M11.2 11.2L12.2 12.2M12.2 3.8L11.2 4.8M4.8 11.2L3.8 12.2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
                   </svg>
-                  {!sidebarCollapsed && <span>{t("studio.settingsBtn")}</span>}
+                  <span className="nav-text">{t("studio.settingsBtn")}</span>
                 </span>
               </button>
             </div>
