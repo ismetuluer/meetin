@@ -115,7 +115,13 @@
 - **Test:** Oto: ZIP'ten çıkarma, EXE değişimi ve geri alma, imza/klasör koşulları (12 güncelleyici testi). Bu bilgisayarda çalışan EXE'nin adının değiştirilebildiği denendi. Elle: R2.5'te (1.4.3 → 1.4.4).
 - **Ajan:** Opus.
 
-### [ ] R2.5 · R2 kabul — v1.5.0
+### [x] R2.6 · Uygulama içi güncellemenin kaldırılması — v1.4.4
+
+- **Karar (Saul, 27.11.2026):** güncelleme modülü şimdilik kaldırılır, yeni sürümler elle kurulur (şartname §9 güncellendi).
+- **Yapılan:** `updater/` modülü, `tauri-plugin-updater` ve `zip` bağımlılıkları, güncelleme komutları ve açılış denetimi, Ayarlar'daki güncelleme paneli, maskot rozeti ve Studio uyarısı kaldırıldı; Ayarlar'da yalnız "Sürüm" kartı kaldı. CI artık `latest.json` yayımlamaz ve paket imzalamaz; böylece 1.4.1–1.4.3 kurulu bilgisayarlar da kendini güncellemeye çalışmaz (bildirim adresi bulunamaz).
+- **Saklanan:** imza anahtarı ve GitHub secrets'ları (`docs/GUNCELLEME_IMZALAMA.md`).
+
+### [—] R2.5 · R2 kabul — iptal (güncelleme kaldırıldı)
 
 - **Test:** Elle: 1.3.1 (elle kurulu) → 1.4.x → 1.5.0 → test amaçlı 1.5.1; kurulumlu ve portable; bozuk imzalı paketin reddi. **Ajan:** Saul · Opus.
 

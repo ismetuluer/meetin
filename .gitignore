@@ -24,3 +24,7 @@ backups/
 
 # Saul'in görsel referansları (depoya girmez)
 gif/
+
+# Depo kökünde elle bırakılan çalıştırılabilir dosyalar commit edilmez
+/Meetin.exe
+/portable.flag

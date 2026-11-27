@@ -82,25 +82,6 @@ jobs:
           $tag = "${{ github.ref_name }}".TrimStart("v")
           ./scripts/package-portable.ps1 -Version $tag -SkipBuild
 
-      - name: Güncelleme paketlerini imzala (minisign, §9)
-        shell: pwsh
-        env:
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-        run: |
-          # Authenticode imzasından ve ZIP'ten SONRA çalışır: imza dosyaların son baytlarını kapsamalı.
-          if ([string]::IsNullOrWhiteSpace($env:TAURI_SIGNING_PRIVATE_KEY)) {
-            throw "TAURI_SIGNING_PRIVATE_KEY tanımlı değil; imzasız güncelleme yayımlanmaz."
-          }
-          $setup = Get-ChildItem "src-tauri/target/release/bundle/nsis/*-setup.exe" | Select-Object -First 1
-          $portableZip = Get-ChildItem "dist-packages/Meetin_*_portable.zip" | Select-Object -First 1
-          if (-not $setup) { throw "Kurulum dosyası bulunamadı." }
-          if (-not $portableZip) { throw "Portable ZIP bulunamadı." }
-          foreach ($f in @($setup.FullName, $portableZip.FullName)) {
-            npx tauri signer sign $f
-            if ($LASTEXITCODE -ne 0 -or -not (Test-Path "$f.sig")) { throw "İmzalanamadı: $f" }
-          }
-
       - name: Sürüm notlarını CHANGELOG.md'den çıkar
         shell: pwsh
         run: |
@@ -122,51 +103,12 @@ jobs:
           [System.IO.File]::WriteAllText((Join-Path (Resolve-Path "dist-packages").Path "release-notes.md"), $body + "`n", $utf8NoBom)
           Write-Host $body
 
-      - name: latest.json oluştur (eklenti + 1.4.1 köprüsü)
-        shell: pwsh
-        run: |
-          $tag = "${{ github.ref_name }}".TrimStart("v")
-          $repo = "${{ github.repository }}"
-          $base = "https://github.com/$repo/releases/download/${{ github.ref_name }}"
-          $setup = Get-ChildItem "src-tauri/target/release/bundle/nsis/*-setup.exe" | Select-Object -First 1
-          $signature = (Get-Content "$($setup.FullName).sig" -Raw).Trim()
-          $hash = (Get-FileHash $setup.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-          $portableZip = Get-ChildItem "dist-packages/Meetin_*_portable.zip" | Select-Object -First 1
-
-          # tauri-plugin-updater: version, notes, pub_date, platforms (imza burada; üst düzey
-          # "signature" alanı KULLANILMAZ, çünkü 1.4.1 onu kendi ECDSA imzası sanıp reddeder).
-          $manifest = [ordered]@{
-            version   = $tag
-            notes     = (Get-Content "dist-packages/release-notes.md" -Raw -Encoding UTF8).Trim()
-            pub_date  = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
-            platforms = [ordered]@{
-              "windows-x86_64" = [ordered]@{ signature = $signature; url = "$base/$($setup.Name)" }
-            }
-            # Köprü: 1.4.1 ve öncesinin kendi güncelleyicisi bu alanları okur (R2.3).
-            download_url = "$base/$($setup.Name)"
-            sha256       = $hash
-          }
-          if ($portableZip) {
-            $manifest["portable_url"] = "$base/$($portableZip.Name)"
-            $manifest["portable_sha256"] = (Get-FileHash $portableZip.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-            # 1.4.3+ portable bu imzayla ZIP'i doğrulayıp kendini günceller (R2.4)
-            $manifest["portable_signature"] = (Get-Content "$($portableZip.FullName).sig" -Raw).Trim()
-          }
-
-          $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
-          [System.IO.File]::WriteAllText(
-            (Join-Path (Resolve-Path "dist-packages").Path "latest.json"),
-            (($manifest | ConvertTo-Json -Depth 5) + "`n"),
-            $utf8NoBom
-          )
-
       - name: GitHub Release yayımla
         uses: softprops/action-gh-release@v2
         with:
           files: |
             src-tauri/target/release/bundle/nsis/*-setup.exe
             dist-packages/Meetin_*_portable.zip
-            dist-packages/latest.json
           name: Meetin ${{ github.ref_name }}
           body_path: dist-packages/release-notes.md
           generate_release_notes: false

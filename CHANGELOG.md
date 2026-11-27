@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü (CHANGELOG)
 
+## [1.4.4] - 2026-11-27
+
+### Kaldırıldı
+- **Uygulama içi güncelleme:** Meetin artık kendi kendine güncellenmez. Yeni sürümler GitHub'daki yayın sayfasından indirilip elle kurulur.
+- Maskottaki ve Studio'daki "yeni sürüm" uyarıları.
+
+### Değişti
+- Ayarlar'daki "Güncelleme" bölümü "Sürüm" oldu: yalnız sürüm, çalışma biçimi (kurulu/portable) ve WebView2 durumu gösterilir.
+
 ## [1.4.3] - 2026-11-27
 
 ### Eklendi

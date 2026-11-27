@@ -79,7 +79,6 @@ export function MascotIslandApp() {
   const [basketballMode, setBasketballMode] = useState(false);
   const [pillNotice, setPillNotice] = useState<PillNotice | null>(null);
   const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
-  const [updateAvailable, setUpdateAvailable] = useState<string | null>(null);
   const modeRef = useRef<IslandMode>("mascot");
   useEffect(() => {
     modeRef.current = mode;
@@ -438,25 +437,7 @@ export function MascotIslandApp() {
           void invoke("set_mascot_mode", { mode: "mascot" });
         }
       }),
-      listen<string>("update-available", (ev) => {
-        setUpdateAvailable(ev.payload || "yeni");
-      }),
     ];
-    // Açılış denetimi dinleyici bağlanmadan bitmiş olabilir: sonucu ayrıca sor.
-    void Promise.all(unlisteners)
-      .then(() =>
-        invoke<{
-          update_available: boolean;
-          latest_version: string | null;
-        }>("get_update_env_info"),
-      )
-      .then((u) => {
-        if (u.update_available) {
-          setUpdateAvailable(u.latest_version || "yeni");
-        }
-      })
-      .catch((err) => console.error("get_update_env_info", err));
-
     return () => {
       cancelThrow();
       clearAnimTimer();
@@ -1172,7 +1153,6 @@ export function MascotIslandApp() {
             size={42}
             pupilOffset={pupilOffset}
             pausedMotion={!isVisible}
-            showUpdateDot={Boolean(updateAvailable)}
           />
           <div className="suggest-pills-row">
             {suggestions.map((item, idx) => (
@@ -1705,7 +1685,6 @@ export function MascotIslandApp() {
           pausedMotion={!isVisible}
           showAdminBadge={isAdminWindow}
           adminTooltip={t("mascot.adminTooltip")}
-          showUpdateDot={Boolean(updateAvailable)}
         />
       </button>
     </div>

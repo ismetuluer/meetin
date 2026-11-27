@@ -22,8 +22,7 @@ import type {
   RunningAppInfo,
   ShortcutConfigDto,
   StartupStatus,
-  UpdateCheckResult,
-  UpdateInstallResult,
+  AppInfo,
 } from "./types";
 import "./settings.css";
 
@@ -95,9 +94,7 @@ export function SettingsView({
   const [runningApps, setRunningApps] = useState<RunningAppInfo[]>([]);
   const [backups, setBackups] = useState<BackupFileInfo[]>([]);
   const [startup, setStartup] = useState<StartupStatus | null>(null);
-  const [updateInfo, setUpdateInfo] = useState<UpdateCheckResult | null>(null);
-  const [checkingUpdate, setCheckingUpdate] = useState(false);
-  const [installingUpdate, setInstallingUpdate] = useState(false);
+  const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
   const [confirmRestore, setConfirmRestore] = useState<string | null>(null);
   const [busyMsg, setBusyMsg] = useState<string | null>(null);
   const [errMsg, setErrMsg] = useState<string | null>(null);
@@ -108,14 +105,14 @@ export function SettingsView({
         invoke<AppSettingsDto>("get_app_settings"),
         invoke<BackupFileInfo[]>("list_backups"),
         invoke<StartupStatus>("get_startup_status"),
-        invoke<UpdateCheckResult>("get_update_env_info"),
+        invoke<AppInfo>("get_app_info"),
       ]);
       setSettings(s);
       setUserNameDraft(s.user_name);
       setShortcutDraft(s.shortcuts);
       setBackups(list);
       setStartup(stp);
-      setUpdateInfo(upd);
+      setAppInfo(upd);
     } catch (e) {
       setErrMsg(String(e));
     }
@@ -1039,170 +1036,20 @@ export function SettingsView({
               <div className="settings-row">
                 <div>
                   <div className="card-title">
-                    {t("settings.currentVersionTitle")} {updateInfo ? `v${updateInfo.current_version}` : ""}
+                    {t("settings.currentVersionTitle")}{" "}
+                    {appInfo ? `v${appInfo.version}` : ""}
                   </div>
                   <div className="muted small">
-                    {updateInfo?.is_portable
+                    {appInfo?.is_portable
                       ? t("settings.modePortable")
                       : t("settings.modeInstalled")}{" "}
                     · WebView2:{" "}
-                    {updateInfo?.webview2_installed
+                    {appInfo?.webview2_installed
                       ? t("settings.webviewOk")
                       : t("settings.webviewMissing")}
                   </div>
                 </div>
-                {updateInfo?.latest_version && (
-                  <span className="badge">
-                    {updateInfo.update_available
-                      ? `v${updateInfo.latest_version}`
-                      : t("settings.upToDate")}
-                  </span>
-                )}
               </div>
-
-              <label
-                className="settings-row"
-                style={{ marginTop: 14, cursor: "pointer" }}
-              >
-                <div>
-                  <div className="card-title">
-                    {t("settings.autoCheckUpdateTitle")}
-                  </div>
-                  <div className="muted small">
-                    {t("settings.autoCheckUpdateDesc")}
-                  </div>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={settings?.auto_check_updates ?? true}
-                  onChange={async (e) => {
-                    if (!settings) return;
-                    const enabled = e.target.checked;
-                    setSettings({ ...settings, auto_check_updates: enabled });
-                    await invoke("set_auto_check_updates", { enabled });
-                    setBusyMsg(t("settings.saved"));
-                  }}
-                />
-              </label>
-
-              <div className="row-actions" style={{ marginTop: 14 }}>
-                <button
-                  type="button"
-                  className="btn btn-primary btn-sm"
-                  disabled={checkingUpdate || installingUpdate}
-                  onClick={async () => {
-                    setErrMsg(null);
-                    setBusyMsg(null);
-                    setCheckingUpdate(true);
-                    try {
-                      const res =
-                        await invoke<UpdateCheckResult>("check_for_updates");
-                      setUpdateInfo(res);
-                      setBusyMsg(
-                        res.update_available
-                          ? t("settings.updateFound", {
-                              ver: res.latest_version ?? "",
-                            })
-                          : t("settings.upToDate"),
-                      );
-                    } catch (err) {
-                      setErrMsg(String(err));
-                    } finally {
-                      setCheckingUpdate(false);
-                    }
-                  }}
-                >
-                  {checkingUpdate
-                    ? t("settings.checkingUpdate")
-                    : t("settings.checkUpdateBtn")}
-                </button>
-              </div>
-
-              {updateInfo?.update_available && (
-                <div className="case-examples-grid">
-                  <div className="update-header-row">
-                    <strong>
-                      {t("settings.updateFound", {
-                        ver: updateInfo.latest_version ?? "",
-                      })}
-                    </strong>
-                  </div>
-
-                  {updateInfo.notes && (
-                    <pre
-                      className="muted small"
-                      style={{ whiteSpace: "pre-wrap", margin: 0 }}
-                    >
-                      {updateInfo.notes}
-                    </pre>
-                  )}
-
-                  {!updateInfo.can_auto_install && (
-                    <div className="muted small">
-                      {t("settings.updateNoAutoInstallHint")}
-                    </div>
-                  )}
-
-                  <div className="row-actions" style={{ marginTop: 8 }}>
-                    {updateInfo.can_auto_install && (
-                    <button
-                      type="button"
-                      className="btn btn-primary btn-sm"
-                      disabled={installingUpdate}
-                      onClick={async () => {
-                        setErrMsg(null);
-                        setBusyMsg(t("settings.updatingProgress"));
-                        setInstallingUpdate(true);
-                        try {
-                          const res = await invoke<UpdateInstallResult>(
-                            "install_verified_update",
-                          );
-                          setBusyMsg(
-                            t("settings.updateRestarting", {
-                              ver: res.version,
-                            }),
-                          );
-                        } catch (err) {
-                          setBusyMsg(null);
-                          setErrMsg(String(err));
-                          setInstallingUpdate(false);
-                        }
-                      }}
-                    >
-                      {installingUpdate
-                        ? t("settings.updatingProgress")
-                        : t("settings.downloadAndUpdateBtn")}
-                    </button>
-                    )}
-
-                    {!updateInfo.can_auto_install &&
-                      updateInfo.download_url && (
-                        <a
-                          className="btn btn-sm"
-                          href={updateInfo.download_url}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          {t("settings.manualDownloadBtn")}
-                        </a>
-                      )}
-
-                    <button
-                      type="button"
-                      className="btn btn-sm"
-                      disabled={installingUpdate}
-                      onClick={() =>
-                        setUpdateInfo({
-                          ...updateInfo,
-                          update_available: false,
-                        })
-                      }
-                    >
-                      {t("settings.laterBtn")}
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         ) : section === "language" ? (

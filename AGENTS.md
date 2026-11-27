@@ -12,7 +12,7 @@
 ## Klasör yapısı
 
 ```
-src-tauri/src/  hook/ matcher/ inject/ selection/ vars/ db/ io/ updater/ windows/  (windows crate için `::windows::` yolu kullanılır)
+src-tauri/src/  hook/ matcher/ inject/ selection/ vars/ db/ io/ windows/  (windows crate için `::windows::` yolu kullanılır)
 src/            mascot/ island/ bubble/ studio/ design/ i18n/ games/
 docs/           MEETIN-SARTNAME.md YOL_HARITASI.md HANDOFF.md DENETIM_GEMINI.md
 CHANGELOG.md    AGENTS.md

@@ -298,8 +298,7 @@ Her gün ilk açılışta ve kapanışta veritabanının tutarlı kopyası alın
 
 - **Kurulumlu:** NSIS kurulum (`Meetin_x.y.z_x64-setup.exe`). Windows ile başlama seçeneği bulunur (varsayılan açık).
 - **Portable:** `Meetin_x.y.z_portable.zip` (EXE + `portable.flag`).
-- **Güncelleme:** Tauri Updater + **GitHub Releases** (`latest.json`, imzalı paketler). Açılışta ve 24 saatte bir kontrol edilir. Yeni sürüm varsa maskotta rozet görünür. Tıklanınca yenilikler listesi (CHANGELOG'dan) açılır, **"Şimdi kur"** ya da "Sonra" seçilir **[K: bildir, onayla kur]**.
-- Portable sürüm güncellemesi: yeni EXE indirilir, eskisi `Meetin.old.exe` olur, yeniden başlatılır. `data\` klasörüne dokunulmaz.
+- **Güncelleme [K 27.11.2026, Saul kararı]:** Uygulama içi güncelleme **kaldırıldı**. Yeni sürümler GitHub Releases'tan tarayıcıyla indirilip elle kurulur. İmza anahtarı ve önceki tasarım `docs/GUNCELLEME_IMZALAMA.md`'de.
 - **[A]** WebView2: Windows 10/11'de normalde yüklüdür. Kurulumda yoksa çevrimdışı yükleyici eklenir. Portable sürümde yoksa açılışta uyarı verilir.
 - **[A]** İmza: kod imzalama sertifikası yoksa SmartScreen uyarısı çıkar. README'de not olarak belirtilir.
 
