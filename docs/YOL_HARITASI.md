@@ -146,7 +146,9 @@ Her adımdan önce mevcut ekranın görüntüsü ve önerilen düzen Saul'a gös
 
 - **Yapılan:** Genişlik ve ok ortak yayla; yazı/sayılar DOM'da kalıp solar (`nav-text`, `nav-count`); simgeler 12 px sol boşlukla iki durumda da aynı yerde (ölçüldü: 20 px); daraltma düğmesi `aria-label` + `aria-expanded`, dar çubukta ortalı. Klasör başlığı, klasör ekleme kutusu, klasör silme düğmesi ve haftalık kart daralınca eskisi gibi gizlenir. Genişlik geçişi §11.5'teki transform/opacity kuralının istisnasıdır (önceden de vardı; Saul onayı). **Ajan:** Opus (Saul kararı). **Test:** Oto: 3 gerileme testi · tarayıcıda gerçek `studio.css` ile ölçüm ve görsel kontrol.
 
-### [ ] R3.0d · Yığın panel (Stack panel) — [A] yeri Saul'la belirlenecek (öneri: ifade sürüm geçmişi). **Ajan:** Sonnet · Opus denetim.
+### [x] R3.0d · Yığın panel (Stack panel) — v1.5.5
+
+- **Yer (Saul kararı):** ifade sürüm geçmişi. **Yapılan:** `src/design/StackPanel.tsx` + `stackPanel.css`: "Geçmiş" açılınca kartlar yığılı başlar, ortak yayla listeye dağılır; kapanırken yığılır ve kaybolur. Yığılıyken kartlar `inert`. Göreli gün + yerel saat, değişkenleri okunur önizleme, adlandırılmış kapatma düğmesi; 4+ sürümde kaydırma. Eski `history-inline-drawer` stilleri kaldırıldı. Öneri çiziminden fark: yığın, ayrı bir tıklama beklemeden açılışta dağılır (geri yükleme için iki tıklama gerekmesin). **Ajan:** Opus. **Test:** Oto: 4 bileşen testi · tarayıcıda açılış, dağılma, geri yükleme, kapanış denemesi.
 
 ### [ ] R3.0e · Kısayollarda klavye tuşu görünümü (Kbd) — Saul isteği
 

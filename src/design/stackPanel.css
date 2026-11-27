@@ -1,0 +1,112 @@
+/* Yığın panel (R3.0d): §11.4 renk rolleri, §11.5 ortak yay. Ölçüler StackPanel.tsx ile aynı. */
+
+.meetin-stack {
+  border: 1px solid var(--cizgi);
+  background: var(--yuzey-2);
+  border-radius: var(--r-md);
+  padding: 8px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.meetin-stack-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--metin-ikincil);
+}
+
+.meetin-stack-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--metin-ikincil);
+  cursor: pointer;
+}
+
+.meetin-stack-close:hover {
+  background: var(--cizgi);
+  color: var(--metin);
+}
+
+.meetin-stack-close:focus-visible {
+  outline: 2px solid var(--vurgu);
+  outline-offset: 1px;
+}
+
+.meetin-stack-empty {
+  margin: 0;
+  font-size: 12px;
+  color: var(--metin-ikincil);
+}
+
+.meetin-stack-scroll {
+  max-height: 264px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.meetin-stack-cards {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  transition: height var(--yay-sure) var(--yay-egri);
+}
+
+.meetin-stack-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px 0 12px;
+  border: 1px solid var(--cizgi);
+  border-radius: var(--r-md);
+  background: var(--yuzey);
+  transform-origin: 50% 0;
+  transition: transform var(--yay-sure) var(--yay-egri), opacity var(--yay-sure-kisa) ease;
+}
+
+.meetin-stack-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.meetin-stack-meta {
+  font-size: 11px;
+  color: var(--metin-ikincil);
+}
+
+.meetin-stack-preview {
+  font-size: 12px;
+  color: var(--metin);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Yığılıyken eylem düğmesi görünmez; kartlar zaten `inert` */
+.meetin-stack-card .btn {
+  flex: none;
+  transition: opacity var(--yay-sure-kisa) ease;
+}
+
+.meetin-stack:not(.is-fanned) .meetin-stack-card .btn {
+  opacity: 0;
+}

@@ -11,6 +11,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { t, useLanguage, type TranslationKey } from "../i18n";
 import { suggestAbbreviation } from "../island/abbrSuggest";
+import { StackPanel } from "../design/StackPanel";
 import { TagInput } from "../design/TagInput";
 import { MeetinSheep } from "../mascot/MeetinSheep";
 import { BulkAddModal } from "./BulkAddModal";
@@ -183,6 +184,14 @@ function formatRelativeDate(iso: string | null): string {
   if (diffDays <= 0) return t("studio.today");
   if (diffDays === 1) return t("studio.yesterday");
   return t("studio.daysAgo", { count: diffDays });
+}
+
+/** Sürüm zamanı: göreli gün ve yerel saat (aynı gün birden çok sürüm ayırt edilsin). */
+function formatVersionTime(iso: string): string {
+  const ts = Date.parse(iso.includes("T") ? iso : `${iso.replace(" ", "T")}Z`);
+  if (Number.isNaN(ts)) return iso;
+  const time = new Date(ts).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+  return `${formatRelativeDate(iso)} · ${time}`;
 }
 
 function renderContentSegments(text: string): { isVar: boolean; value: string }[] {
@@ -2194,41 +2203,20 @@ export function StudioView() {
                   removeLabel={(tag) => t("studio.removeTag", { tag })}
                 />
 
-                {showHistoryDrawer && (
-                  <div className="history-inline-drawer">
-                    <div className="sidebar-section-head">
-                      <span>{t("studio.tabHistory")}</span>
-                      <button
-                        type="button"
-                        className="mini-icon-btn"
-                        onClick={() => setShowHistoryDrawer(false)}
-                      >
-                        ×
-                      </button>
-                    </div>
-                    {versions.length === 0 ? (
-                      <p className="muted small" style={{ margin: 0 }}>
-                        {t("studio.historyEmpty")}
-                      </p>
-                    ) : (
-                      versions.map((ver) => (
-                        <div key={ver.id} className="history-item-row">
-                          <span className="muted small">{ver.created_at}</span>
-                          <span className="row-preview-line" style={{ flex: 1 }}>
-                            {ver.content}
-                          </span>
-                          <button
-                            type="button"
-                            className="btn btn-sm"
-                            onClick={() => void handleRestoreVersion(ver.id)}
-                          >
-                            {t("studio.restoreVersion")}
-                          </button>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                )}
+                <StackPanel
+                  open={showHistoryDrawer}
+                  items={versions.map((ver) => ({
+                    id: ver.id,
+                    meta: formatVersionTime(ver.created_at),
+                    preview: formatPreviewLine(ver.content),
+                  }))}
+                  title={t("studio.tabHistory")}
+                  closeLabel={t("studio.closeHistory")}
+                  emptyText={t("studio.historyEmpty")}
+                  actionLabel={t("studio.restoreVersion")}
+                  onAction={(id) => void handleRestoreVersion(id)}
+                  onClose={() => setShowHistoryDrawer(false)}
+                />
 
                 <div className="content-card-section">
                   <span className="tiny-label">{t("studio.tabContent")}</span>

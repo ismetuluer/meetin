@@ -222,6 +222,7 @@
   "studio.addTagPlaceholder": "+ tag",
   "studio.tagInputLabel": "Tags",
   "studio.removeTag": "Remove tag: {tag}",
+  "studio.closeHistory": "Close history",
   "studio.fmtLink": "Insert link",
   "studio.fmtImage": "Insert image",
   "studio.imageTooLarge": "Image size cannot exceed 2 MB.",

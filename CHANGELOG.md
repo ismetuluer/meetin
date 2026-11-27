@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü (CHANGELOG)
 
+## [1.5.5] - 2026-11-28
+
+### Değişti
+- **Sürüm geçmişi yığın panel oldu:** "Geçmiş" açılınca sürümler üst üste yığılı kartlardan yaylı bir listeye dağılır, kapanırken yeniden yığılır. Her sürümde göreli gün ve saat ("bugün · 14:32") ile tek satırlık önizleme görünür.
+
+### Düzeltildi
+- Sürüm geçmişinde ham zaman damgası yerine okunur zaman; değişkenler `[Tarih]` gibi okunur biçimde.
+- Geçmişi kapatma düğmesinin ekran okuyucu adı ve ipucu var.
+
 ## [1.5.4] - 2026-11-28
 
 ### Değişti
