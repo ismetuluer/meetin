@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü (CHANGELOG)
 
+## [1.5.1] - 2026-11-27
+
+### Değişti
+- **Ortak yay hareketi:** Ada, arama paneli ve seçim baloncuğu artık aynı yaylı hareketle açılır (açılış ~340 ms, küçük geçişler 220 ms). Windows'ta animasyon efektleri kapalıysa hareket kısa ve düz olur.
+
 ## [1.5.0] - 2026-11-27 (Güncelleyici)
 
 1.4.2–1.4.6 arasındaki güncelleme çalışmasının toplu sürümü:

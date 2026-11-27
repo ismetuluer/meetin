@@ -128,10 +128,11 @@ Her adımdan önce mevcut ekranın görüntüsü ve önerilen düzen Saul'a gös
 
 **Hareket bileşenleri (Saul'un seçtiği designbookmark.com/motion şablonları):** Kaynak kod kopyalanmaz; React'te, §11.4 renk rolleri ve Segoe UI ile yeniden yazılır, yeni bağımlılık eklenmez (Tailwind/shadcn yok).
 
-### [ ] R3.0 · Ortak yay (spring) altyapısı — v1.5.1
+### [x] R3.0 · Ortak yay (spring) altyapısı — v1.5.1
 
 - **Hedef:** Şu an her animasyon ayrı `cubic-bezier` kullanıyor. `src/design/motion.ts` + tokenlar: sertlik/sönüm değerleri tek yerde (§11.5: 380/28; şablonların değerleri farklıysa Saul karar verir), `prefers-reduced-motion` desteği. Sonraki bileşenler bunu kullanır.
 - **Ajan:** Opus (altyapı) · **Test:** Oto: yay çözücü birim testi.
+- **Yapılan:** `src/design/motion.ts` yayı (380/28) kapalı çözümle hesaplar ve CSS `linear()` eğrisine çevirir; `tokens.css`'te `--yay-egri`, `--yay-sure` (340 ms, %1 bandına oturma), `--yay-sure-kisa` (220 ms, aynı eğri). `prefers-reduced-motion`'da 120 ms `ease-out`. Ada, arama paneli ve baloncuk taşındı (Saul onayı); maskota dokunulmadı. Şablon değerleri kullanılmadı, şartnamedeki 380/28 esas alındı. Testler: çözücü, `tokens.css` ↔ `motion.ts` eşitliği, maskot dışında `cubic-bezier` kalmaması.
 
 ### [ ] R3.0a · Aç/kapa anahtarı (Toggle switch) — Ayarlar'daki 15 onay kutusu yerine. **Ajan:** Sonnet · Opus denetim.
 

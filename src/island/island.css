@@ -30,7 +30,7 @@ html.is-mascot-window #root {
   cursor: grab;
   touch-action: none;
   position: relative;
-  transition: transform 220ms cubic-bezier(0.22, 1.25, 0.36, 1);
+  transition: transform var(--yay-sure-kisa) var(--yay-egri);
 }
 
 .mascot-hit:active {
@@ -66,7 +66,7 @@ html.is-mascot-window #root {
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
-  animation: islandMorphIn 350ms cubic-bezier(0.22, 1.25, 0.36, 1) both;
+  animation: islandMorphIn var(--yay-sure) var(--yay-egri) both;
   max-width: 274px;
 }
 
@@ -103,7 +103,7 @@ html.is-mascot-window #root {
   backdrop-filter: blur(22px);
   -webkit-backdrop-filter: blur(22px);
   overflow: hidden;
-  animation: islandMorphIn 350ms cubic-bezier(0.22, 1.25, 0.36, 1) both;
+  animation: islandMorphIn var(--yay-sure) var(--yay-egri) both;
 }
 
 html.has-acrylic-backdrop .island-search-panel {

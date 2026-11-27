@@ -51,6 +51,12 @@
   --r-pill: 999px;
   --font-size-base: 14px;
 
+  /* Hareket (§11.5): yay 380/28. Değerler src/design/motion.ts'den gelir, elle değiştirilmez;
+   * motion.test.ts farkı yakalar ve doğru değeri gösterir. */
+  --yay-egri: linear(0, 0.0205, 0.0738, 0.1491, 0.2378, 0.3328, 0.4287, 0.5217, 0.6087, 0.6881, 0.7587, 0.8201, 0.8723, 0.9157, 0.951, 0.9788, 1.0002, 1.0159, 1.0268, 1.0338, 1.0377, 1.039, 1.0385, 1.0366, 1.0338, 1.0304, 1.0267, 1.023, 1.0193, 1.0159, 1.0127, 1);
+  --yay-sure: 340ms;
+  --yay-sure-kisa: 220ms;
+
   /* Klasör renk paleti */
   --folder-c-1: #0078d4;
   --folder-c-2: #7c4dff;
@@ -89,6 +95,15 @@
 
     --ada-zemin: rgba(28, 28, 34, 0.92);
     --ada-metin: #f2f1f7;
+  }
+}
+
+/* Windows "Animasyon efektleri" kapalı (§11.5): yaylar kısa düz geçişe döner. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --yay-egri: ease-out;
+    --yay-sure: 120ms;
+    --yay-sure-kisa: 120ms;
   }
 }
 
