@@ -162,7 +162,7 @@ Metin önizleme (biçimli metin biçimiyle korunur) · kısaltma (çakışma var
 - **Ağız ve yanaklar:** Ağız küçük ve açık renkli, yanaklarda hafif pembelik var.
 - **Bacaklar:** Kısa ve kalın; öndeki ikisi kömür, arkadakiler biraz daha koyu.
 
-**Karakter:** Sevimli ve meraklı. Tam bir hayvan gerçekçiliği yok; abartılı, sade şekillerden oluşur. Shaun the Sheep'ten esinlenilmiştir ama ona benzemez: kil dokusu yoktur, iki ayak üstünde durmaz, insan gibi el kol hareketi yapmaz.
+**Karakter:** Sevimli ve meraklı. Tam bir hayvan gerçekçiliği yok; abartılı, sade şekillerden oluşur. Shaun the Sheep'ten esinlenilmiştir ama ona benzemez: kil dokusu yoktur, iki ayak üstünde durmaz, insan gibi el kol hareketi yapmaz. **İstisna [K]:** `thumbsup` (başparmak) ve `super` (pelerin) animasyonları bilinçli olarak eklenmiştir (§5.1.1).
 
 **Renkler:** Klasik koyun renkleri kullanılır: beyaz, kömür, krem, hafif pembe. Maskotta **mor ya da lila kullanılmaz [K]**. Arayüzün renkleri temadan ve kullanıcının paletinden gelir (§11); maskot bunlardan etkilenmez.
 
@@ -195,6 +195,10 @@ Her animasyon `sheep a-<ad>` sınıfıyla tetiklenir. Yeni bir animasyon eklemek
 | `hop` (sevin)      | Kısaltma genişletilince                          | Mutlu "^ ^" gözler, iki kez zıplama                                                                             | 1,6 sn                  |
 | `sad` (üzül)       | Bulunamadı ya da hata                            | Kulaklar sarkar, kaşlar düşer, baş iki yana sallanır                                                            | 1,5 sn                  |
 | `squeeze` (sık)    | Basılı tutarken                                  | Gövde ezilir; bırakınca `eat` (basılı tutulduysa) ya da `baa` gelir                                             | basılı tutulduğu sürece |
+| `thumbsup` **[K]** | Genişletme, ifade kaydı, basket sayısı | Başparmak gösterir | kısa |
+| `super` **[K]** | Maskot fırlatılınca | Pelerinle uçar | uçuş süresince |
+
+**Ek etkileşimler [K]** (v1.1–v1.3'te kullanıcı isteğiyle eklendi): maskotu fırlatma ve sallama algılama, basketbol potası penceresi ve skor, ayrı fırlatma/çarpma sesleri, `Shift+F3` ile seçili metnin büyük/küçük harf döngüsü, arayüz yazı boyutu, listede sola kaydırıp silme, `.mee` paket uzantısı (§8'deki `.meetin` yerine).
 
 - **Durum rozetleri [Ö]:** Güncelleme varsa sağ üstte vurgu renginde küçük bir nokta görünür. Etkin pencere yönetici yetkisindeyse küçük bir kalkan simgesi çıkar.
 - **"Kendi hâlinde" modu:** Kullanıcı 5 sn etkileşimde bulunmazsa maskot 6 sn'de bir rastgele `graze`, `baa`, `stare` ya da `hop` oynatır. Ayarlardan kapatılabilir. `prefers-reduced-motion` açıkken bütün animasyonlar durur, maskot sadece göz kırpar.
@@ -235,6 +239,12 @@ PhraseExpress düzeninden esinlenilir ama kalabalık şerit menü kullanılmaz. 
 - **İstatistikler [K]:** En çok kullanılan 20 ifade, günlük/haftalık genişletme sayısı, **kazanılan tuş vuruşu ve tahmini dakika**. Maskot haftalık özet kartında "Bu hafta senin için 1.240 tuş bastım" der.
 - **Pano geçmişi [K]:** Son 100 metin (ayarlanabilir). Parola yöneticilerinden gelen ve "gizli" işaretli pano içerikleri alınmaz. Tek tıkla ifadeye çevrilir.
 - **İçe/dışa aktarma [K]:** bkz. §8.
+- **Liste ve düzenleyici sadeliği [K]:**
+  - İfadeler klasörlere **sürükle-bırak** ile taşınır. Satırlarda onay kutusu yoktur; çoklu seçim `Ctrl`/`Shift` + tık ile yapılır.
+  - Satır yalnızca gerekli bilgiyi taşır; anlamı açık olmayan süs simgesi kullanılmaz.
+  - Bir ifade seçilince üstte yer kaplayan bilgi yazıları çıkmaz; düzenleyici doğrudan içerikle başlar.
+  - Bağlam menüsünde tek bir "Dışa aktar…" girişi bulunur; biçim seçimi açılan pencerede yapılır.
+  - Genel ilke: Windows 11'in kendi uygulamaları kadar sade; "yapay zekâ şablonu" görünümünden kaçınılır.
 - **Ayarlar:** Genel · Tetikleme · Harf uyumu · **Görünüm** (mod, palet kaynağı, ana renk, önerilen palet, tek tek düzenleme, ada yüzeyi, saydamlık; bkz. §11.2) · Maskot (hareketler, sesler, boyut, opaklık) · Kısayollar · Dışlanan programlar · Yedek · Güncelleme · Dil.
 
 ---

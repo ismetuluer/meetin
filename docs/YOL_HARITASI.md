@@ -1,339 +1,143 @@
-# Meetin · Yol Haritası
+# Meetin · Yol Haritası (ayağa kaldırma)
 
-Kaynak: `docs/MEETIN-SARTNAME.md` (§13 aşamaları). Her adım tek commit (gerekirse birkaç küçük commit) ile biter.
-**Sürüm:** Aşama içi adımlar yama numarasını artırır (`0.0.x`, `0.1.x` …); aşama kabul testi geçince küçük sürüm çıkar (`0.1.0` = M1).
-**Durum işaretleri:** `[ ]` başlanmadı · `[~]` yarım · `[x]` tamamlandı (yalnızca dosya + test ile doğrulanınca).
-**Test:** _Oto_ = `cargo test` / `npm test` ile çalışan · _Elle_ = Kullanıcı / Geliştirici kontrolü.
-**Ajan:** Geliştirici = ana oturum · Alt görev = yardımcı ajan (aynı anda tek). Alt görev çıktısı her zaman dosya ve testle doğrulanır.
+**Başlangıç noktası:** v1.3.1 (Gemini dönemi). Şartnamedeki M1–M6 kapsamı kodda büyük ölçüde var; ayrıntılı durum ve bulgular: `docs/DENETIM_GEMINI.md`. Eski M1–M6 adım listesi git geçmişinde (`f9ba2e7`).
+**Sıra (Saul kararı, 27.11.2026):** önce güvenlik ve kararlılık → güncelleyici → arayüz sadeleştirme → bakım → kabul.
+**Durum:** `[ ]` başlanmadı · `[~]` yarım · `[x]` tamamlandı (yalnız dosya + test ile doğrulanınca).
+**Test:** *Oto* = `cargo test` / `npm test` · *Elle* = Saul'un yapacağı kontrol.
+**Ajan:** Opus = ana oturum · Sonnet / Haiku = alt ajan (aynı anda tek). Her adımdan önce ajan görevleri listelenir, onay beklenir.
 
 ---
 
-## M1 · Motor → v0.1.0
+## R0 · Hazırlık
 
-Bitti ölçütü (§13): `MİPY␣` Notepad, Word, Chrome, Outlook'ta doğru çalışıyor.
+### [x] R0.1 · Gemini geçmişini çalışma klasörüne al, belgeleri eşitle
 
-### [~] M1.0 · Proje iskeleti — v0.0.1
+- AGENTS.md geri geldi, şartnameye Saul kararları işlendi, bu yol haritası yazıldı, yanıltıcı `ATLANANLAR_YOL_HARITASI.md` kaldırıldı.
 
-- **Hedef:** `git init`, Tauri 2 + React + TS (Vite) iskeleti, §10 klasör yapısı (Rust modülleri `src-tauri/src/<modül>/`), `.gitignore`, `CHANGELOG.md`, vitest + `cargo test` kurulumu, rustfmt/clippy/eslint/prettier.
-- **Modüller:** kök, `src-tauri/`, `src/`
-- **Bitti:** `npm run tauri dev` boş pencere açar; `cargo test`, `npm test`, `cargo clippy -- -D warnings` temiz.
-- **Test:** Oto: boş test takımları geçer · Elle: pencere açılıyor mu.
-- **Ajan:** Opus.
+---
 
-### [ ] M1.1 · tr-TR harf kuralları — v0.0.2
+## R1 · Güvenlik ve kararlılık → v1.4.0
 
-- **Hedef:** `tr_upper`, `tr_lower`, `tr_title`; kısaltma normalize fonksiyonu; üç harf uyumu modu (yazışa uy / aynen / birebir) ve çıktıya harf uygulama. "Noktasız/noktalı i eşit" seçeneği (varsayılan kapalı).
-- **Modüller:** `matcher/case.rs`
-- **Bitti:** §3.2 tablosunun tüm hücreleri testle doğrulanıyor; `to_uppercase()` çekirdekte hiç kullanılmıyor (grep ile).
-- **Test:** Oto: i/İ/ı/I tüm kombinasyonlar, §3.2 tablosu, karışık harfli girişler.
-- **Ajan:** Opus.
+### [ ] R1.1 · Parola kutusunda tam geçiş — v1.3.2
 
-### [ ] M1.2 · Eşleme motoru — v0.0.3
-
-- **Hedef:** Bellekte kısaltma indeksi; "kelime başında başlar" kuralı; tetik kümesi (boşluk, Enter, Tab, `. , ; : ! ? ) "`); aynı kısaltmanın program kuralına göre seçimi için arayüz (kural verisi M4.5'te dolacak).
-- **Modüller:** `matcher/`
-- **Bitti:** Tuş arabelleği + tetik → eşleşen ifade / yok kararı saf fonksiyonla veriliyor; 10.000 ifadede arama < 1 ms.
-- **Test:** Oto: kelime başı (`xMİPY` açılmaz), her tetik tuşu, mod etkileşimi, benchmark testi.
-- **Ajan:** Opus.
-
-### [ ] M1.3 · SQLite katmanı — v0.0.4
-
-- **Hedef:** `rusqlite` (bundled), WAL, migration altyapısı + v1 şeması (§7.1'deki tüm tablolar), ifade CRUD (her yazma transaction içinde), veri konumu (`%APPDATA%\Meetin\` / `portable.flag` → `.\data\`).
-- **Modüller:** `db/`
-- **Bitti:** Boş DB'den v1'e geçiş; ikinci çalıştırmada değişiklik yok; silme `deleted_at` ile.
-- **Test:** Oto: migration, CRUD, transaction geri alma, portable yol seçimi (geçici klasörde).
-- **Ajan:** Opus.
-
-### [ ] M1.4 · Otomatik yedek (öne alındı, bkz. not) — v0.0.5
-
-- **Hedef:** Günün ilk açılışında ve kapanışta `VACUUM INTO backups\meetin-YYYY-MM-DD.db`; son 30 kopya. (Geri yükleme arayüzü M6.5'te.)
-- **Modüller:** `db/backup.rs`
-- **Bitti:** Yedek dosyası açılabilir ve içerik birebir; 31. yedek en eskiyi siler.
-- **Test:** Oto: yedek al → aç → karşılaştır; rotasyon.
-- **Ajan:** Opus.
-
-### [ ] M1.5 · Klavye kancası — v0.0.6
-
-- **Hedef:** Ayrı iş parçacığında mesaj döngülü `WH_KEYBOARD_LL` + `WH_MOUSE_LL`; geri çağrı < 1 ms, iş kanal ile aktarılır; karakter çözümü düzen-bağımsız (`ToUnicodeEx`, durum değiştirmeyen bayrakla; ölü tuşlar bozulmaz); 64 karakterlik yalnız-bellek arabelleği; pencere değişimi / fare tıkı / ok tuşlarında temizleme; kendi enjekte ettiğimiz olayları yok sayma (`dwExtraInfo` imzası); parola kutusu (`IsPassword`) ve dışlanan programlarda tam geçiş.
+- **Hedef:** Odak değişimi (`SetWinEventHook`, `EVENT_OBJECT_FOCUS`) worker'da izlenir, parola durumu atomik bayrakta tutulur. Kanca bu bayrak açıkken tuşu arabelleğe almaz, tetiği yutmaz, öneri göstermez (§7.4 [K]).
 - **Modüller:** `hook/`
-- **Bitti:** Arabellek ve temizleme kuralları saf fonksiyonda; hiçbir tuş diske/loga yazılmıyor (kod incelemesi + grep).
-- **Test:** Oto: arabellek/temizleme mantığı · Elle: Notepad'de hızlı yazarken gecikme yok, Türkçe Q ve F klavyede ölü tuşlar (`^`, `¨`) bozulmuyor, parola kutusunda tepki yok.
+- **Bitti:** Parola kutusunda arabellek boş kalır; tetik hiç yutulmaz.
+- **Test:** Oto: kanca karar fonksiyonu (parola bayrağı → geçiş) · Elle: Chrome'da parola alanına bir kısaltma + boşluk yaz (genişlememeli, sıra bozulmamalı), KeePass/Bitwarden alanı.
 - **Ajan:** Opus.
 
-### [ ] M1.6 · SendInput ile kısa metin yazma — v0.0.7
+### [ ] R1.2 · Genişletme sırasında tuş sırası — v1.3.3
 
-- **Hedef:** Tetik tuşu yutulur → kısaltma Backspace ile silinir → metin `KEYEVENTF_UNICODE` ile yazılır → tetik tuşu sona eklenir. Enjeksiyon sırasında kullanıcının bastığı tuşlar sıraya alınıp sonra iletilir (sıra bozulmaz). Duraklat (`Ctrl+Alt+P` geçici; kısayol kararı M2'de).
-- **Modüller:** `inject/`, `hook/`, `matcher/`
-- **Bitti:** `MİPY␣` Notepad'de doğru; tetik < 50 ms.
-- **Test:** Oto: olay dizisi üretimi (saf fonksiyon) · Elle: Notepad, Word, Chrome, Outlook; 100+ kelime/dk hızlı yazma; Enter ile tetik (WhatsApp Web'de mesaj kısaltmayla gitmiyor), Excel hücresi.
+- **Hedef:** Enjeksiyon sürerken kullanıcının fiziksel tuşları yutulup kuyruğa alınır, enjeksiyon bitince aynı sırayla yeniden gönderilir (üst sınır + zaman aşımı ile kilitlenme önlenir).
+- **Modüller:** `hook/`, `inject/`
+- **Bitti:** 100+ kelime/dk yazarken genişletme sonrası harf kaçmaz, sıra bozulmaz.
+- **Test:** Oto: kuyruk/sıralama saf fonksiyonu · Elle: Notepad ve Word'de hızlı yazma.
 - **Ajan:** Opus.
 
-### [ ] M1.7 · Pano ile uzun metin — v0.0.8
+### [ ] R1.3 · Pano yedek ve geri yükleme — v1.3.4
 
-- **Hedef:** > 200 karakter: panoyu tüm biçimleriyle yedekle → metni pano geçmişine girmeyecek şekilde koy (`ExcludeClipboardContentFromMonitorProcessing`, `CanIncludeInClipboardHistory=0`) → `Ctrl+V` → gecikmeli geri yükle.
+- **Hedef:** GDI tutamaçlı biçimler (bitmap, metafile, palet) doğru yedeklenir ya da sentez biçimleri (DIB) üzerinden korunur; Windows'un türettiği biçimler çift yazılmaz. Geri yükleme sabit 95 ms yerine hedefin okumasını bekleyen uyarlanır gecikmeyle yapılır. Meetin'in kendi geri yüklemesi pano geçmişine düşmez.
 - **Modüller:** `inject/clipboard.rs`
-- **Bitti:** 10.000 karakterlik ifade doğru geliyor; önceki pano içeriği (resim dahil) geri geliyor; Win+V geçmişinde ara içerik yok.
-- **Test:** Oto: biçim yedek/geri yükleme (gerçek pano üstünde, seri test) · Elle: Word, Chrome, Windows Terminal; Win+V kontrolü; açık pano yöneticisiyle.
+- **Bitti:** Panoda ekran görüntüsü, Excel aralığı ya da Word biçimli metin varken uzun ifade genişletilince pano aynen geri gelir.
+- **Test:** Oto: biçim sınıflandırma · Elle: üç pano türüyle Word/Chrome'da uzun ifade, sonra `Ctrl+V`.
 - **Ajan:** Opus.
 
-### [ ] M1.8 · Tepsi simgesi ve tek örnek — v0.0.9
+### [ ] R1.4 · Kanca hızı — v1.3.5
 
-- **Hedef:** `tauri-plugin-single-instance`; tepsi simgesi (referans SVG'den 32 px, kontur 2 px, perçem sade) ve menü: Duraklat · Çıkış. Duraklatınca simge değişir.
-- **Modüller:** `windows/tray.rs`, `src-tauri/icons/`
-- **Bitti:** İkinci başlatma mevcut örneği öne getirir; menü tüm öğeleri çalışır.
-- **Test:** Elle: %100 / %150 DPI'da simge netliği, duraklat/sürdür.
-- **Ajan:** Opus (kod) · Sonnet (SVG'den sadeleştirilmiş tepsi simgesi + ICO üretimi).
+- **Hedef:** Etkin pencere bilgisi (işlem adı, başlık) her tuşta değil, pencere değişince (`EVENT_SYSTEM_FOREGROUND`) güncellenir.
+- **Modüller:** `hook/`
+- **Bitti:** Kanca geri çağrısında ağır sistem çağrısı kalmaz.
+- **Test:** Oto: geri çağrı süresi ölçümü (< 1 ms) · Elle: genel akıcılık.
+- **Ajan:** Opus.
 
-### [ ] M1.9 · CSV içe aktarma + geçici ifade listesi — v0.0.10
+### [ ] R1.5 · Olay tabanlı pano izleyici ve CSP — v1.3.6
 
-- **Hedef:** CSV ayrıştırıcı (UTF-8 / Windows-1254 algılama, tırnaklı alan, boş satır); sütun eşleme ekranı; önizleme (kaç ifade, kaç çakışma) ve çakışma seçenekleri; yeni ifade ekleme/düzenleme için sade liste ekranı (M5'te uzman arayüzüne dönüşecek, ölü kod kalmaz). Arayüz metinleri `i18n/tr.json`'da.
-- **Modüller:** `io/csv.rs`, `src/studio/` (ilk hâli), `src/i18n/tr.json`
-- **Bitti:** Türkçe karakterli 1254 ve UTF-8 CSV'ler doğru içe aktarılıyor; eklenen ifade anında genişliyor.
-- **Test:** Oto: §14 içe aktarma vakaları · Elle: kendi CSV dosyanla içe aktarma.
-- **Ajan:** Sonnet (ayrıştırıcı, ardından ekran — ayrı görevler) · Haiku (tr.json) · Opus (kodlama algılama ve DB yazımını denetler).
+- **Hedef:** 900 ms yoklama yerine `AddClipboardFormatListener`; `csp: null` yerine kısıtlı CSP (zengin düzenleyici ve görseller çalışmaya devam eder).
+- **Modüller:** `inject/clipboard.rs`, `tauri.conf.json`
+- **Test:** Oto: mevcut testler · Elle: boşta işlemci ~%0 (Görev Yöneticisi), pano geçmişi, düzenleyicide görsel.
+- **Ajan:** Opus.
 
-### [ ] M1.10 · M1 kabul — v0.1.0
+### [ ] R1.6 · R1 kabul — v1.4.0
 
-- **Hedef:** §13 M1 ölçütü + §14 ilgili elle testler; CHANGELOG; `v0.1.0` etiketi. Farklı masaüstü yazılımlarda SendInput/pano denemesi [A] (§3.4).
-- **Test:** Elle: Notepad, Word, Chrome, Outlook, masaüstü yazılımlar; uyku/uyanma; boşta işlemci ~%0.
-- **Ajan:** Kullanıcı (elle) · Geliştirici (sonuçlara göre düzeltme).
+- **Test:** Elle: Notepad, Word, Outlook, Chrome (WhatsApp Web, Gmail), Windows Terminal, kurum yazılımı; parola alanı; hızlı yazma; pano türleri. **Ajan:** Saul · Opus.
 
 ---
 
-## M2 · Maskot ve ada → v0.2.0
+## R2 · Güncelleyici → v1.5.0
 
-Bitti ölçütü: Maskotla arayıp yapıştırma çalışıyor.
+### [ ] R2.1 · İmza anahtarı (sürüm yok)
 
-### [ ] M2.1 · Tasarım tokenları ve i18n — v0.1.1
+- **Hedef:** `tauri signer generate` ile anahtar çifti; özel anahtar ve parolası GitHub Secrets'a (**Saul elle ekler**), açık anahtar `tauri.conf.json`'a.
+- **Ajan:** Opus (komutlar ve talimat) · Saul.
 
-- **Hedef:** §11.4 renk rolleri CSS değişkeni olarak (şimdilik sabit açık/koyu varsayılan palet; üretici M6.1); 4 px ızgara, köşe, yay değerleri (380/28); küçük, bağımlılıksız `t()` yardımcı fonksiyonu.
-- **Modüller:** `src/design/`, `src/i18n/`
-- **Bitti:** Bileşenlerde sabit renk yok (lint kuralı / grep).
-- **Test:** Oto: `t()` eksik anahtar testi · Elle: açık/koyu görünüm.
-- **Ajan:** Sonnet.
+### [ ] R2.2 · `tauri-plugin-updater` geçişi — v1.4.1
 
-### [ ] M2.2 · Maskot bileşeni — v0.1.2
-
-- **Hedef:** `meetin-maskot.svg` yapısı ve sınıf adları aynen; `meetin-maskot-animasyon.html`'deki §5.1.1 animasyonları (`idle`, `graze`, `baa`, `stare`, `sleep`, `eat`, `hop`, `sad`, `squeeze`) taşınır; durum makinesi, göz bebeği takibi (tek `translate`), "kendi hâlinde" modu, `prefers-reduced-motion`, gizliyken animasyon durdurma; mee sesi (varsayılan kapalı).
-- **Modüller:** `src/mascot/`
-- **Bitti:** Referans HTML ile yan yana görsel olarak aynı; durum geçişleri testli.
-- **Test:** Oto: durum makinesi · Elle: referans dosya ile yan yana karşılaştırma, 70/48 px okunurluk.
-- **Ajan:** Sonnet · Opus denetim.
-
-### [ ] M2.3 · Maskot penceresi — v0.1.3
-
-- **Hedef:** Şeffaf, çerçevesiz, her zaman üstte, `WS_EX_NOACTIVATE`; sürükleme ve konum hatırlama (çoklu monitör, DPI); tek tık / çift tık / basılı tut / sağ tık ayrımı; sağ tık menüsü; göster/gizle kısayolu; tam ekranda kendiliğinden gizlenme; duraklatınca `sleep`.
-- **Modüller:** `windows/`, `src/mascot/`
-- **Bitti:** Maskot odak çalmadan her programın üstünde; tam ekran videoda görünmüyor.
-- **Test:** Elle: iki monitör %100/%150, tam ekran video/sunum, uyku/uyanma; boşta işlemci ~%0.
+- **Hedef:** Kendi yazılmış `updater/` (CNG ECDSA, PowerShell indirme/kurulum) kaldırılır; eklenti ile kontrol (açılışta + 24 saatte bir), maskot rozeti, CHANGELOG notları, "Şimdi kur / Sonra". İmzasız paket asla kurulmaz.
+- **Modüller:** `updater/` (silinir), `lib.rs`, `src/studio/` güncelleme sayfası
+- **Test:** Oto: sürüm karşılaştırma ve olay akışı · Elle: R2.5'te.
 - **Ajan:** Opus.
 
-### [ ] M2.4 · Ada morph + arama adası — v0.1.4
+### [ ] R2.3 · CI: imzalı yayın + köprü — v1.4.1
 
-- **Hedef:** Maskot → hap → panel morph (açılış ~350 ms, kapanış ~220 ms); `fuse.js` ile bulanık arama, ↑↓ gezinme, sağda önizleme, Esc; Enter → önceki etkin pencereye odak geri verilip yapıştırma.
-- **Modüller:** `src/island/`, `windows/`, `inject/`
-- **Bitti:** Arama → Enter metni doğru pencereye yazıyor; 10.000 ifadede arama < 30 ms.
-- **Test:** Oto: arama benchmark · Elle: Notepad, Chrome, Word'de arayıp yapıştırma; yalnız klavyeyle kullanım.
-- **Ajan:** Sonnet (ada arayüzü) · Opus (odak geri verme + yapıştırma komutu).
-
-### [ ] M2.5 · Onay hapı ve olay animasyonları — v0.1.5
-
-- **Hedef:** Rust → arayüz olayları: genişletme → `hop`, hata → `sad`; 1,2 sn onay hapı.
-- **Modüller:** `src/island/`, `src/mascot/`, olay köprüsü
-- **Bitti:** Her genişletmede doğru animasyon ve hap.
-- **Test:** Elle: genişletme, olmayan kısaltma ile arama.
-- **Ajan:** Sonnet.
-
-### [ ] M2.6 · Yönetici penceresi rozeti — v0.1.6
-
-- **Hedef:** Etkin pencere yükseltilmiş yetkideyse kalkan rozeti + ipucu (§3.6).
-- **Modüller:** `windows/`, `src/mascot/`
-- **Test:** Elle: yönetici olarak açılmış Notepad.
+- **Hedef:** CI imzalı NSIS paketi ve eklentinin manifestini (`updater.json`) yayımlar. Eski istemciler (≤ 1.4.0) için eski biçimdeki `latest.json` bir süre daha yayımlanır ki yeni sürüme geçebilsinler.
+- **Modüller:** `.github/workflows/release.yml`, `scripts/`
 - **Ajan:** Opus.
 
-### [ ] M2.7 · M2 kabul — v0.2.0
+### [ ] R2.4 · Portable güncelleme — v1.4.2
 
-- **Test:** Elle: §13 M2 ölçütü, bellek < 120 MB, boşta işlemci. **Ajan:** Kullanıcı · Geliştirici.
+- **Hedef:** [A] Eklenti portable'ı kurmaz. Seçenekler: (a) portable sürüm ZIP'i indirip `data\`'ya dokunmadan EXE'yi değiştirir (şartname §9), (b) yalnız bildirim + indirme bağlantısı. Saul karar verir.
+- **Ajan:** Opus.
+
+### [ ] R2.5 · R2 kabul — v1.5.0
+
+- **Test:** Elle: 1.3.1 (elle kurulu) → 1.4.x → 1.5.0 → test amaçlı 1.5.1; kurulumlu ve portable; bozuk imzalı paketin reddi. **Ajan:** Saul · Opus.
 
 ---
 
-## M3 · Ekleme → v0.3.0
+## R3 · Arayüz sadeleştirme → v1.6.0
 
-Bitti ölçütü: Üç ekleme yolu Word, Chrome ve diğer masaüstü yazılımlarda çalışıyor.
+Her adımdan önce mevcut ekranın görüntüsü ve önerilen düzen Saul'a gösterilir, onay sonrası uygulanır (şartname §6 "Liste ve düzenleyici sadeliği [K]").
 
-### [ ] M3.1 · Seçili metni okuma — v0.2.1
+### [ ] R3.1 · İfade listesi — v1.5.1
 
-- **Hedef:** UI Automation `TextPattern`; desteklenmiyorsa pano yedekle → `Ctrl+C` → oku → geri yükle.
-- **Modüller:** `selection/`
-- **Test:** Elle: Word, Chrome, Notepad, masaüstü yazılımlar; pano içeriği korunuyor.
-- **Ajan:** Opus.
+- **Hedef:** Onay kutuları kaldırılır; `Ctrl`/`Shift` + tık çoklu seçim; ifadeler klasörlere sürükle-bırak; anlamsız simgeler çıkar; toplu işlemler sağ tık menüsünde.
+- **Ajan:** Sonnet · Opus denetim. **Test:** Oto: seçim mantığı · Elle.
 
-### [ ] M3.2 · Seçim algılama + balon — v0.2.2
+### [ ] R3.2 · Düzenleyici başlığı ve alan düzeni — v1.5.2
 
-- **Hedef:** Fare kancasından sürükleme / çift / üç tık seçimi; ~300 ms sonra "+ Ekle" balonu; 3 sn veya yazmaya devamda kaybolma; program bazlı gizleme.
-- **Modüller:** `hook/`, `windows/`, `src/bubble/`
-- **Test:** Elle: farklı programlarda seçim; Photoshop/oyunda balon çıkmıyor.
-- **Ajan:** Opus (algılama, pencere) · Sonnet (balon arayüzü).
-
-### [ ] M3.3 · Ekleme adası — v0.2.3
-
-- **Hedef:** Önizleme, baş harf kısaltma önerisi (tr-TR), anında çakışma uyarısı, açıklama, klasör, etiket; Enter kaydet → `eat`; "Ayrıntılı düzenle".
-- **Modüller:** `src/island/`, `db/`
-- **Test:** Oto: kısaltma önerisi ("Metin ile Pratik Yazım" → `MİPY`) · Elle: ekle → hemen genişlet.
-- **Ajan:** Sonnet · Opus denetim.
-
-### [ ] M3.4 · Kısayol, panodan ekleme, sıkma — v0.2.4
-
-- **Hedef:** Seç + kısayol; "Panodakini ifade yap"; basılı tut ≥ 450 ms sıkma (1,26 × 0,72) → bırakınca ekleme.
-- **Modüller:** `windows/`, `src/mascot/`, `src/island/`
-- **Test:** Elle: üç yol.
-- **Ajan:** Sonnet (sıkma, düğme) · Opus (kısayol kaydı).
-
-### [ ] M3.5 · M3 kabul — v0.3.0 · **Ajan:** Kullanıcı · Geliştirici.
-
----
-
-## M4 · Zengin içerik → v0.4.0
-
-Bitti ölçütü: Biçimli ifade Word/Outlook'a biçimiyle gidiyor.
-
-### [ ] M4.1 · Değişken çözümleyici — v0.3.1
-
-- **Hedef:** §3.3 sözdizimi: `{tarih}` (biçimler, ±g/h/a/y), `{saat}`, `{pano}`, `{imleç}`, `{alan:…}`, `{ifade:…}` + döngü koruması; Türkçe ay/gün adları.
-- **Modüller:** `vars/`
-- **Test:** Oto: her değişken, ay sonu/artık yıl, döngü.
-- **Ajan:** Opus.
-
-### [ ] M4.2 · Biçimli metin yapıştırma — v0.3.2
-
-- **Hedef:** Saklama biçimi HTML; panoya CF_HTML + RTF + düz metin; biçim kabul etmeyen programa düz metin.
-- **Modüller:** `inject/`, `db/`
-- **Test:** Oto: HTML→RTF/CF_HTML dönüşümü · Elle: Word, Outlook, Notepad, Chrome.
-- **Ajan:** Opus.
-
-### [ ] M4.3 · `{imleç}` ve geri al — v0.3.3
-
-- **Hedef:** Genişletme sonrası `←`; genişletmeden hemen sonra Backspace → kısaltmaya dönüş.
-- **Modüller:** `inject/`, `hook/`
-- **Test:** Oto: olay dizisi · Elle: Notepad, Word, Chrome.
-- **Ajan:** Opus.
-
-### [ ] M4.4 · Alan doldurma adası — v0.3.4
-
-- **Hedef:** Kompakt form, metin kutusu ve açılır liste, Tab/Enter/Esc.
-- **Modüller:** `src/island/`
-- **Test:** Elle: iki alanlı ifade.
-- **Ajan:** Sonnet.
-
-### [ ] M4.5 · Program kuralları ve yapıştırma yöntemi — v0.3.5
-
-- **Hedef:** §3.5 sadece/hariç kuralları (işlem adı + başlık kelimesi) motorda; program bazlı yapıştırma tuşu (`Ctrl+Shift+V`).
-- **Modüller:** `matcher/`, `inject/`, `db/`
-- **Test:** Oto: kural seçimi · Elle: Windows Terminal, tarayıcıda "WhatsApp" başlığı.
-- **Ajan:** Opus.
-
-### [ ] M4.6 · M4 kabul — v0.4.0 · **Ajan:** Kullanıcı · Geliştirici.
-
----
-
-## M5 · Uzman arayüzü → v0.5.0
-
-Bitti ölçütü: PhraseExpress'teki temel işler yapılabiliyor.
-
-### [ ] M5.1 · Düzen ve klasör ağacı — v0.4.1
-
-- **Hedef:** Üç panel, Mica pencere, klasör ağacı (sürükle-bırak, renk, iç içe), sabit girişler, liste (sıralama/filtre), `Ctrl+K` komut paleti. M1.9 ekranı buraya taşınır.
-- **Ajan:** Sonnet · Opus denetim. **Test:** Elle: klavye ve fare ile gezinme.
-
-### [ ] M5.2 · Düzenleyici — v0.4.2
-
-- **Hedef:** `@tiptap/react` + değişken hapları, etiket hapları, harf uyumu modu, ifade başına kısayol tuşu.
-- **Ajan:** Sonnet (düzenleyici) · Opus (kısayol kaydı). **Test:** Oto: HTML ↔ hap dönüşümü · Elle.
-
-### [ ] M5.3 · Kurallar, geçmiş, çöp kutusu — v0.4.3
-
-- **Hedef:** Kural arayüzü; `phrase_versions` ile tek tık geri dönüş; çöp kutusu + ayarlanabilir kalıcı silme.
-- **Ajan:** Sonnet (arayüz) · Opus (DB). **Test:** Oto: sürüm geri alma, temizleyici · Elle.
-
-### [ ] M5.4 · Pano geçmişi — v0.4.4
-
-- **Hedef:** Son 100 metin (ayarlı); gizli/parola yöneticisi içeriği alınmaz; kendi ara pano yazımlarımız alınmaz; tek tıkla ifadeye çevir.
-- **Ajan:** Opus. **Test:** Oto: filtre · Elle: KeePass/Bitwarden kopyalama.
-
-### [ ] M5.5 · İstatistik — v0.4.5
-
-- **Hedef:** İlk 20, günlük/haftalık sayılar, kazanılan tuş ve dakika, maskot haftalık kartı.
-- **Ajan:** Sonnet · Opus (sorgular). **Test:** Oto: hesaplama · Elle.
-
-### [ ] M5.6 · İçe aktarma (kalanlar) + hızlı toplu ekleme — v0.4.6 … v0.4.8
-
-- **Hedef:** xlsx, docx/txt, AHK, Beeftext JSON, Espanso YAML, PhraseExpress [A: örnek dosya]; ortak önizleme/çakışma ekranı; hızlı toplu ekleme ekranı. Her ayrıştırıcı ayrı commit.
-- **Ajan:** Sonnet (ayrıştırıcı başına bir görev, sırayla) · Opus denetim. **Test:** Oto: her biçim için örnek dosyalar · Elle.
-
-### [ ] M5.7 · Dışa aktarma — v0.4.9
-
-- **Hedef:** `.meetin` (ZIP + JSON), CSV, AHK; `.meetin` → içe aktarma gidiş-dönüş.
-- **Ajan:** Sonnet. **Test:** Oto: gidiş-dönüş eşitliği.
-
-### [ ] M5.8 · M5 kabul — v0.5.0 · **Ajan:** Kullanıcı · Geliştirici.
-
----
-
-## M6 · Dağıtım → v1.0.0
-
-Bitti ölçütü: Temiz bir Windows'ta kurulum → güncelleme → kaldırma sorunsuz.
-
-### [ ] M6.1 · Palet üretici — v0.5.1
-
-- **Hedef:** Saf TS, OKLCH; 11 basamak, nötrler, vurgu üstü metin, durum renkleri, koyu tema, 4,5:1 güvencesi; elle değişen rolleri koruma.
-- **Ajan:** Opus. **Test:** Oto: hazır renkler + rastgele 500 renk, açık/koyu, tüm çiftler ≥ 4,5:1.
-
-### [ ] M6.2 · Windows tema uyumu — v0.5.2
-
-- **Hedef:** Açık/koyu ve vurgu rengi canlı izleme, Mica/Akrilik (`window-vibrancy`), saydamlık kapalı, `forced-colors`, Windows 10 yedek görünüm.
-- **Ajan:** Opus. **Test:** Elle: §14 tema maddeleri.
-
-### [ ] M6.3 · Görünüm ayarları — v0.5.3
-
-- **Hedef:** §11.2 üç düzey, canlı önizleme, karşıtlık rozetleri, ada yüzeyi, saydamlık, `.meetin-tema` içe/dışa, varsayılana dön.
+- **Hedef:** Seçimde üstte çıkan bilgi yazıları kaldırılır; kısayol ile klasör alanı ayrılır (A2); kural haplarında "sadece/hariç" görünür (A3).
 - **Ajan:** Sonnet · Opus denetim. **Test:** Elle.
 
-### [ ] M6.4 · Diğer ayar sayfaları — v0.5.4
+### [ ] R3.3 · Değişken hapları satır içi — v1.5.3
 
-- **Hedef:** Genel, Tetikleme, Harf uyumu, Maskot, Kısayollar (çakışma uyarısı), Dışlanan programlar, Dil.
-- **Ajan:** Sonnet · Haiku (tr.json). **Test:** Elle: her ayar gerçekten etki ediyor.
+- **Hedef:** Düzenleyicide `{…}` ham yazısı görünmez, haplar metnin içindedir; listede `[Tarih (uzun)]` yerine okunur önizleme (A1).
+- **Ajan:** Sonnet · Opus denetim. **Test:** Oto: HTML ↔ hap gidiş-dönüş · Elle.
 
-### [ ] M6.5 · Yedek arayüzü — v0.5.5
+### [ ] R3.4 · Dışa aktarma ve bağlam menüleri — v1.5.4
 
-- **Hedef:** "Şimdi yedekle", "Yedekten geri yükle" (geri yüklemeden önce mevcut DB'nin yedeği).
-- **Ajan:** Opus. **Test:** Oto: geri yükleme · Elle.
+- **Hedef:** Tek "Dışa aktar…" girişi + biçim seçme penceresi (renkli/renksiz seçenek kalkar).
+- **Ajan:** Sonnet. **Test:** Elle.
 
-### [ ] M6.6 · İlk açılış — v0.5.6
+### [ ] R3.5 · Görünüm sayfası ve renk kuralı — v1.5.5
 
-- **Hedef:** `sleep` → `hop`, isim sorma, 3 adımlık tanıtım.
-- **Ajan:** Sonnet. **Test:** Elle: temiz veri klasörüyle.
+- **Hedef:** "Sistemle uyumlu" seçiliyken renk denetimleri pasif (A4); bileşenlerdeki sabit renkler role taşınır (A5).
+- **Ajan:** Sonnet. **Test:** Oto: sabit renk taraması · Elle.
 
-### [ ] M6.7 · Yazarken öneri adası — v0.5.7
-
-- **Hedef:** 2+ harfte 1–3 öneri hapı, `Tab` ile seçim; parola kutusu ve dışlanan programlarda kapalı.
-- **Ajan:** Opus (kanca tarafı) · Sonnet (haplar). **Test:** Elle: dikkat dağıtıyor mu [A].
-
-### [ ] M6.8 · Başlangıç ve yönetici modu — v0.5.8
-
-- **Hedef:** Windows ile başla; "Yönetici olarak başlat" (Görev Zamanlayıcı, UAC'siz).
-- **Ajan:** Opus. **Test:** Elle: yeniden başlatma.
-
-### [ ] M6.9 · Paketleme ve güncelleme — v0.5.9
-
-- **Hedef:** NSIS kurulum, portable ZIP, imzalı `latest.json` + GitHub Releases, portable kendini güncelleme (`Meetin.old.exe`), WebView2 kontrolü, maskot güncelleme rozeti, "Şimdi kur / Sonra".
-- **Ajan:** Opus. **Test:** Elle: sahte bir 0.5.10 sürümüyle güncelleme denemesi.
-
-### [ ] M6.10 · M6 kabul — v1.0.0
-
-- **Test:** Elle: temiz Windows 10 ve 11 (VM) kurulum → güncelleme → kaldırma; 24 saat açık kalma, bellek; salt okunur USB'de portable. **Ajan:** Kullanıcı · Geliştirici.
+### [ ] R3.6 · R3 kabul — v1.6.0 · **Ajan:** Saul · Opus.
 
 ---
 
-### Not
+## R4 · Bakım → v1.7.0
 
-- **M1.4 (otomatik yedek)** şartnamede M6'da; veri kaybı riski M1'de başladığı için öne alındı. Geri yükleme arayüzü yine M6.5'te.
+### [ ] R4.1 · `lib.rs` komutlarını modüllere böl — Opus
+
+### [ ] R4.2 · `StudioView.tsx` ve `MascotIslandApp.tsx`'i bileşenlere böl — Sonnet (dosya başına ayrı görev) · Opus denetim
+
+- Davranış değişmez; her bölme mevcut testler + elle duman testiyle doğrulanır.
+
+---
+
+## Açık kararlar (Saul)
+
+- R2.4: portable güncellemesi tam otomatik mi, yalnız bildirim mi?
+- A6: fırlatma/çarpma sesleri varsayılan açık kalsın mı?
