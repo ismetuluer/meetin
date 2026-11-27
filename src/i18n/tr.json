@@ -220,6 +220,8 @@
   "studio.descriptionTitle": "Açıklama",
   "studio.historyPill": "Geçmiş · {count} sürüm",
   "studio.addTagPlaceholder": "+ etiket",
+  "studio.tagInputLabel": "Etiketler",
+  "studio.removeTag": "Etiketi kaldır: {tag}",
   "studio.fmtLink": "Bağlantı ekle",
   "studio.fmtImage": "Görsel ekle",
   "studio.imageTooLarge": "Görsel boyutu en fazla 2 MB olabilir.",

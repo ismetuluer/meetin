@@ -138,7 +138,9 @@ Her adımdan önce mevcut ekranın görüntüsü ve önerilen düzen Saul'a gös
 
 - **Yapılan:** `src/design/Toggle.tsx` + `toggle.css`: yerel onay kutusu (`role="switch"`), §11.4 rolleri, ortak yay, yüksek karşıtlık kipi. Ayarlar'daki 15 onay kutusu (12 öğe, biri 4 tetikle tekrarlanır) anahtar oldu. Studio listesi ve CSV penceresindeki seçim kutuları R3.1'e kaldı. **Ajan:** Opus (Saul kararı). **Test:** Oto: bileşen çıktısı, renk rolleri, Ayarlar'da düz onay kutusu kalmaması · tarayıcıda görsel kontrol (koyu tema, pasif durum, azaltılmış hareket).
 
-### [ ] R3.0b · Etiket girişi (Tag input) — düzenleyicideki etiket hapları. **Ajan:** Sonnet · Opus denetim.
+### [x] R3.0b · Etiket girişi (Tag input) — v1.5.3
+
+- **Yapılan:** `src/design/TagInput.tsx` + `tagInput.css` + saf `tagLogic.ts` (tr-TR'ye duyarsız tekrar denetimi). Enter/virgül/odaktan çıkınca ekleme, virgüllü yapıştırma, Backspace ile işaretle-sil, yaylı açılış/kapanış (yalnız yeni eklenenler), adlandırılmış kaldırma düğmesi. Eski `tag-chips-bar`/`inline-tag-input` stilleri kaldırıldı. **Ajan:** Opus (Saul kararı). **Test:** Oto: etiket mantığı (5), bileşen çıktısı (4) · tarayıcıda etkileşim denemesi (ekleme, tekrar, odaktan çıkma, Backspace, ×, yapıştırma).
 
 ### [ ] R3.0c · Kenar çubuğu daraltma (Sidebar collapse) — uzman arayüzünün sol çubuğu (bugün animasyonsuz). **Ajan:** Sonnet · Opus denetim.
 

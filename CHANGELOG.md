@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü (CHANGELOG)
 
+## [1.5.3] - 2026-11-28
+
+### Değişti
+- **Etiket girişi:** Etiketler yaylı açılır ve kapanır. Virgüllü yapıştırma birden çok etiket ekler; boş kutuda Backspace önce son etiketi işaretler, ikinci basışta siler.
+
+### Düzeltildi
+- Yazılıp Enter'a basılmadan bırakılan etiket kaybolmuyor; kutudan çıkınca eklenir.
+- "İş" ile "iş" gibi yalnız büyük/küçük harfi farklı etiketler tekrar eklenmiyor.
+- Etiket kaldırma düğmesinin ekran okuyucu adı ve ipucu var.
+
 ## [1.5.2] - 2026-11-27
 
 ### Değişti

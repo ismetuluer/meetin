@@ -11,6 +11,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { t, useLanguage, type TranslationKey } from "../i18n";
 import { suggestAbbreviation } from "../island/abbrSuggest";
+import { TagInput } from "../design/TagInput";
 import { MeetinSheep } from "../mascot/MeetinSheep";
 import { BulkAddModal } from "./BulkAddModal";
 import { CommandPalette, type PaletteCommand } from "./CommandPalette";
@@ -241,7 +242,6 @@ export function StudioView() {
   const [draft, setDraft] = useState<EditorDraft | null>(null);
   const [descriptionManual, setDescriptionManual] = useState(false);
   const [autoSaveState, setAutoSaveState] = useState<"idle" | "saving" | "saved">("idle");
-  const [tagDraft, setTagDraft] = useState("");
   const [appRules, setAppRules] = useState<AppRule[]>([]);
   const [runningApps, setRunningApps] = useState<RunningAppInfo[]>([]);
   const [newRuleProc, setNewRuleProc] = useState("");
@@ -2188,40 +2188,13 @@ export function StudioView() {
                   </div>
                 </div>
 
-                <div className="tag-chips-bar">
-                  {draft.tags.map((tag) => (
-                    <span key={tag} className="tag-pill">
-                      #{tag}
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setDraft({
-                            ...draft,
-                            tags: draft.tags.filter((x) => x !== tag),
-                          })
-                        }
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                  <input
-                    className="inline-tag-input"
-                    value={tagDraft}
-                    onChange={(e) => setTagDraft(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === ",") {
-                        e.preventDefault();
-                        const clean = tagDraft.trim().replace(/^#/, "");
-                        if (clean && !draft.tags.includes(clean)) {
-                          setDraft({ ...draft, tags: [...draft.tags, clean] });
-                        }
-                        setTagDraft("");
-                      }
-                    }}
-                    placeholder={t("studio.addTagPlaceholder")}
-                  />
-                </div>
+                <TagInput
+                  value={draft.tags}
+                  onChange={(tags) => setDraft((d) => (d ? { ...d, tags } : d))}
+                  placeholder={t("studio.addTagPlaceholder")}
+                  inputLabel={t("studio.tagInputLabel")}
+                  removeLabel={(tag) => t("studio.removeTag", { tag })}
+                />
 
                 {showHistoryDrawer && (
                   <div className="history-inline-drawer">

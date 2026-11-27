@@ -515,13 +515,6 @@ html.has-mica-backdrop .fluent-detail-col {
   border-bottom-color: var(--vurgu);
 }
 
-.tag-chips-bar {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
 .tag-pill {
   display: inline-flex;
   align-items: center;
@@ -540,15 +533,6 @@ html.has-mica-backdrop .fluent-detail-col {
   color: var(--metin-pasif);
   cursor: pointer;
   padding: 0 2px;
-}
-
-.inline-tag-input {
-  border: none;
-  background: transparent;
-  font-size: 11px;
-  color: var(--metin);
-  width: 110px;
-  outline: none;
 }
 
 .history-inline-drawer {

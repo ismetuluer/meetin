@@ -1,0 +1,98 @@
+/* Etiket girişi (R3.0b): §11.4 renk rolleri, §11.5 ortak yay. */
+
+.meetin-tag-input {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  cursor: text;
+}
+
+.meetin-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 3px 1px 8px;
+  border-radius: var(--r-pill);
+  background: var(--yuzey-2);
+  border: 1px solid var(--cizgi);
+  color: var(--metin-ikincil);
+  font-size: 11px;
+  line-height: 18px;
+  transition: background-color var(--yay-sure-kisa) ease, color var(--yay-sure-kisa) ease,
+    border-color var(--yay-sure-kisa) ease;
+}
+
+.meetin-tag.is-fresh {
+  animation: meetinTagIn var(--yay-sure-kisa) var(--yay-egri) both;
+}
+
+/* Backspace ile silinmek üzere işaretli */
+.meetin-tag.is-marked {
+  background: var(--vurgu-zayif);
+  border-color: var(--vurgu);
+  color: var(--vurgu);
+}
+
+.meetin-tag.is-leaving {
+  pointer-events: none;
+  animation: meetinTagOut var(--yay-sure-kisa) ease-in both;
+}
+
+.meetin-tag button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--metin-pasif);
+  cursor: pointer;
+}
+
+.meetin-tag button:hover {
+  background: var(--cizgi);
+  color: var(--metin);
+}
+
+.meetin-tag button:focus-visible {
+  outline: 2px solid var(--vurgu);
+  outline-offset: 1px;
+}
+
+.meetin-tag-input input {
+  flex: 1;
+  min-width: 110px;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+  color: var(--metin);
+  outline: none;
+  padding: 0;
+}
+
+.meetin-tag-input input::placeholder {
+  color: var(--metin-pasif);
+}
+
+@keyframes meetinTagIn {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes meetinTagOut {
+  to {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
