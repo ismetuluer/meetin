@@ -7,7 +7,7 @@ Meetin güncellemeleri `tauri-plugin-updater` ile denetlenir ve kurulur (şartna
 1. Uygulama açılışta ve 24 saatte bir `https://github.com/ismetuluer/meetin/releases/latest/download/latest.json` adresini okur.
 2. Yeni sürüm varsa kurulum dosyasını indirir ve **minisign imzasını** uygulamanın içindeki açık anahtarla doğrular (`src-tauri/tauri.conf.json` › `plugins.updater.pubkey`).
 3. İmza tutmazsa ya da yoksa kurulum yapılmaz; hata kayıt günlüğüne `update.install_failed` olarak yazılır.
-4. Portable sürüm kendini kurmaz; yeni ZIP'in adresi gösterilir.
+4. Portable sürüm onaylanınca imzalı ZIP'i indirip doğrular, `Meetin.exe`'yi yerinde değiştirir (eskisi `Meetin.old.exe` olur, yeni sürüm açılınca silinir) ve yeniden başlar; `data\` klasörüne dokunmaz. Klasör yazılamıyorsa yalnız indirme bağlantısı gösterilir.
 
 ## Anahtar
 
@@ -25,6 +25,6 @@ Meetin güncellemeleri `tauri-plugin-updater` ile denetlenir ve kurulur (şartna
 `vX.Y.Z` etiketi `.github/workflows/release.yml`'yi çalıştırır:
 
 1. Kurulum dosyası ve portable ZIP derlenir (varsa Authenticode imzası atılır).
-2. `npx tauri signer sign` kurulum dosyasını imzalar; secret yoksa yayın durur.
-3. `latest.json` yazılır: eklenti alanları (`version`, `notes`, `pub_date`, `platforms`) ve 1.4.1 ve öncesinin okuduğu köprü alanları (`download_url`, `sha256`, `portable_url`, `portable_sha256`).
+2. `npx tauri signer sign` kurulum dosyasını ve portable ZIP'i imzalar; secret yoksa yayın durur.
+3. `latest.json` yazılır: eklenti alanları (`version`, `notes`, `pub_date`, `platforms`) ve 1.4.1 ve öncesinin okuduğu köprü alanları (`download_url`, `sha256`, `portable_url`, `portable_sha256`) ve portable imzası (`portable_signature`).
 4. Notlar `CHANGELOG.md`'deki sürüm bölümünden alınır; bölüm yoksa yayın durur.

@@ -808,6 +808,7 @@ async fn run_update_check(
             raw_json: &u.raw_json,
         }),
         startup::is_portable_mode(),
+        portable_dir_writable(),
         tauri::webview_version().is_ok(),
     );
     logging::event(
@@ -843,9 +844,6 @@ async fn check_for_updates(app: AppHandle) -> Result<UpdateCheckResult, String> 
 /// başlar ve Meetin kapanır (bu işlev dönmez); hata olursa günlüğe yazılıp arayüze iletilir.
 #[tauri::command]
 async fn install_verified_update(app: AppHandle) -> Result<UpdateInstallResult, String> {
-    if startup::is_portable_mode() {
-        return Err("Portable sürüm kendini güncellemez; yeni ZIP'i indirip açın.".to_string());
-    }
     let fail = |stage: &'static str, e: String| {
         logging::event(
             logging::Level::Warn,
@@ -871,13 +869,78 @@ async fn install_verified_update(app: AppHandle) -> Result<UpdateInstallResult, 
     logging::event(
         logging::Level::Info,
         "update.install_started",
-        &[("version", logging::Field::Sys(version.clone()))],
+        &[
+            ("version", logging::Field::Sys(version.clone())),
+            (
+                "portable",
+                logging::Field::Bool(startup::is_portable_mode()),
+            ),
+        ],
     );
+    if startup::is_portable_mode() {
+        install_portable_update(&app, update)
+            .await
+            .map_err(|(stage, e)| fail(stage, e))?;
+        return Ok(UpdateInstallResult { version });
+    }
     update
         .download_and_install(|_, _| {}, || {})
         .await
         .map_err(|e| fail("download_or_verify", e.to_string()))?;
     Ok(UpdateInstallResult { version })
+}
+
+/// Portable klasörü (EXE'nin yanı) yazılabilir mi? Değilse yalnız indirme bağlantısı verilir.
+fn portable_dir_writable() -> bool {
+    startup::is_portable_mode() && db::ensure_writable_dir(&db::exe_dir()).is_ok()
+}
+
+/// Portable güncelleme (R2.4): imzalı ZIP eklentiyle indirilip doğrulanır, EXE yerinde
+/// değiştirilir, yeni EXE başlatılır ve bu süreç kapanır. Hata olursa eski EXE yerinde kalır.
+async fn install_portable_update(
+    app: &AppHandle,
+    update: tauri_plugin_updater::Update,
+) -> Result<(), (&'static str, String)> {
+    if !portable_dir_writable() {
+        return Err((
+            "portable_readonly",
+            "Meetin klasörü yazılamıyor; yeni ZIP'i indirip elle açın.".to_string(),
+        ));
+    }
+    let (url, signature) = updater::portable_package(&update.raw_json).ok_or((
+        "portable_package",
+        "Bu sürüm için imzalı portable paket yok; yeni ZIP'i indirip elle açın.".to_string(),
+    ))?;
+    let mut portable = update.clone();
+    portable.download_url = url
+        .parse()
+        .map_err(|_| ("portable_package", "Paket adresi geçersiz.".to_string()))?;
+    portable.signature = signature;
+    // `download` imzayı uygulamadaki açık anahtarla doğrular; tutmazsa hata döner.
+    let zip_bytes = portable
+        .download(|_, _| {}, || {})
+        .await
+        .map_err(|e| ("download_or_verify", e.to_string()))?;
+    let new_exe = updater::extract_exe_from_zip(&zip_bytes).map_err(|e| ("extract", e))?;
+    let exe = std::env::current_exe().map_err(|e| ("swap", e.to_string()))?;
+    updater::swap_portable_exe(&exe, &new_exe).map_err(|e| ("swap", e))?;
+    let spawned = std::process::Command::new(&exe)
+        .arg(format!(
+            "{}{}",
+            updater::AFTER_UPDATE_ARG,
+            std::process::id()
+        ))
+        .spawn();
+    if let Err(e) = spawned {
+        // Yeni sürüm başlatılamadıysa eskisini geri koy; kullanıcı Meetin'siz kalmasın.
+        let old = exe.with_file_name("Meetin.old.exe");
+        let _ = std::fs::remove_file(&exe);
+        let _ = std::fs::rename(&old, &exe);
+        return Err(("relaunch", e.to_string()));
+    }
+    logging::event(logging::Level::Info, "update.portable_swapped", &[]);
+    app.exit(0);
+    Ok(())
 }
 
 #[tauri::command]
@@ -1767,6 +1830,24 @@ pub fn run() {
     }
     // Kayıt günlüğü her şeyden önce: açılıştaki hatalar da yakalansın (R1.4)
     logging::init(&data_dir);
+    // Portable güncelleme sonrası: eski süreç kapanmadan tek örnek denetimi yeni süreci
+    // kapatmasın diye önce onu bekle, sonra kenara alınan eski EXE'yi sil (R2.4).
+    if let Some(old_pid) = updater::after_update_pid(std::env::args()) {
+        #[cfg(windows)]
+        updater::wait_for_process_exit(old_pid, 15_000);
+        let _ = old_pid;
+        logging::event(logging::Level::Info, "update.portable_applied", &[]);
+    }
+    if startup::is_portable_mode() {
+        if let Ok(exe) = std::env::current_exe() {
+            match updater::remove_old_exe(&exe) {
+                Ok(_) => {}
+                Err(e) => {
+                    logging::error_text(logging::Level::Warn, "update.old_exe_remove_failed", &e)
+                }
+            }
+        }
+    }
     let portable = startup::is_portable_mode();
     logging::log_startup(portable);
 

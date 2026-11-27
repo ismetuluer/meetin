@@ -108,9 +108,11 @@
 - **Modüller:** `.github/workflows/release.yml`, `scripts/`
 - **Ajan:** Opus.
 
-### [ ] R2.4 · Portable güncelleme — v1.4.3
+### [x] R2.4 · Portable güncelleme — v1.4.3
 
-- **Hedef:** [A] Eklenti portable'ı kurmaz. Seçenekler: (a) portable sürüm ZIP'i indirip `data\`'ya dokunmadan EXE'yi değiştirir (şartname §9), (b) yalnız bildirim + indirme bağlantısı. Saul karar verir.
+- **Karar (Saul, 27.11.2026):** bildir, onayla, kendisi kursun (şartname §9).
+- **Yapılan:** imzalı ZIP eklentinin `download` doğrulamasıyla indirilir; `Meetin.exe` çıkarılır; çalışan EXE `Meetin.old.exe` adını alır, yenisi yerine konur, yeni süreç `--meetin-after-update=<pid>` ile başlar, eski süreç kapanınca `Meetin.old.exe` silinir. Betik ya da yardımcı süreç yok (1.4.1'deki PowerShell betiği bu bilgisayarda hiç çalışmadı). Hata olursa eski EXE geri konur.
+- **Test:** Oto: ZIP'ten çıkarma, EXE değişimi ve geri alma, imza/klasör koşulları (12 güncelleyici testi). Bu bilgisayarda çalışan EXE'nin adının değiştirilebildiği denendi. Elle: R2.5'te (1.4.3 → 1.4.4).
 - **Ajan:** Opus.
 
 ### [ ] R2.5 · R2 kabul — v1.5.0

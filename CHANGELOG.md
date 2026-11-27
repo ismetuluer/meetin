@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü (CHANGELOG)
 
+## [1.4.3] - 2026-11-27
+
+### Eklendi
+- **Portable sürüm kendini günceller:** Yeni sürüm bildirilir; onaylayınca Meetin imzalı paketi indirip doğrular, kendi programını yenisiyle değiştirir ve yeniden açılır. Veriler ve `data` klasörü olduğu gibi kalır. Klasör yazılamıyorsa (ör. salt okunur USB) indirme bağlantısı gösterilir.
+
+### Bilinen
+- 1.4.2 portable bu sürümü kendisi kuramaz; 1.4.3 bir kez elle açılmalıdır. Sonraki sürümler otomatik gelir.
+
 ## [1.4.2] - 2026-11-27
 
 ### Değişti
