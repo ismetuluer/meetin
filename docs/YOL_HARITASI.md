@@ -18,7 +18,7 @@
 
 ## R1 · Güvenlik ve kararlılık → v1.4.0
 
-### [ ] R1.1 · Parola kutusunda tam geçiş — v1.3.2
+### [~] R1.1 · Parola kutusunda tam geçiş — v1.3.2
 
 - **Hedef:** Odak değişimi (`SetWinEventHook`, `EVENT_OBJECT_FOCUS`) worker'da izlenir, parola durumu atomik bayrakta tutulur. Kanca bu bayrak açıkken tuşu arabelleğe almaz, tetiği yutmaz, öneri göstermez (§7.4 [K]).
 - **Modüller:** `hook/`

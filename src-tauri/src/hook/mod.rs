@@ -7,6 +7,7 @@
 //! - Tuş vuruşları ASLA diske veya loga yazılmaz.
 
 pub mod buffer;
+pub mod focus;
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -25,6 +26,7 @@ use crate::selection;
 use crate::vars::{self, FormField, ResolveContext};
 
 use self::buffer::KeyBuffer;
+use self::focus::FocusTracker;
 
 /// Kendi `SendInput` olaylarımızı tanımak için `dwExtraInfo` imzası.
 pub const INJECTED_EXTRA_INFO: usize = 0x4D45_4554;
@@ -268,6 +270,10 @@ struct HookShared {
     trigger_config: Arc<RwLock<TriggerConfig>>,
     state: Mutex<HookFastState>,
     tx: mpsc::Sender<WorkerJob>,
+    /// Odaklanan denetim parola kutusu mu? (§7.4) Kanca yalnız `Normal` durumda tuş işler.
+    focus: FocusTracker,
+    /// `meetin-focus` iş parçacığını uyandırır (odak değişti, yeniden sorgula).
+    focus_tx: mpsc::Sender<()>,
 }
 
 #[derive(Default)]
@@ -320,6 +326,7 @@ pub struct HookStarter {
     storage: Arc<Storage>,
     shared: Arc<HookShared>,
     rx: mpsc::Receiver<WorkerJob>,
+    focus_rx: mpsc::Receiver<()>,
     injecting: Arc<AtomicBool>,
 }
 
@@ -380,6 +387,7 @@ pub fn create_controller(storage: Arc<Storage>) -> (HookController, HookStarter)
     let shift_f3_enabled = Arc::new(AtomicBool::new(shift_f3_init));
 
     let (tx, rx) = mpsc::channel::<WorkerJob>();
+    let (focus_tx, focus_rx) = mpsc::channel::<()>();
 
     let shared = Arc::new(HookShared {
         paused: Arc::clone(&paused),
@@ -391,6 +399,8 @@ pub fn create_controller(storage: Arc<Storage>) -> (HookController, HookStarter)
         trigger_config: Arc::clone(&trigger_config),
         state: Mutex::new(HookFastState::default()),
         tx: tx.clone(),
+        focus: FocusTracker::default(),
+        focus_tx,
     });
 
     let controller = HookController {
@@ -407,6 +417,7 @@ pub fn create_controller(storage: Arc<Storage>) -> (HookController, HookStarter)
         storage,
         shared,
         rx,
+        focus_rx,
         injecting,
     };
     (controller, starter)
@@ -419,6 +430,7 @@ impl HookStarter {
         let worker_storage = self.storage;
         let worker_shared = self.shared;
         let rx = self.rx;
+        let focus_rx = self.focus_rx;
         let on_expanded = callbacks.on_expanded;
         let on_selection_candidate = callbacks.on_selection_candidate;
         let on_user_activity = callbacks.on_user_activity;
@@ -619,6 +631,19 @@ impl HookStarter {
         })
         .ok();
 
+    // Odak (parola kutusu) sorgu iş parçacığı (§7.4)
+    #[cfg(windows)]
+    {
+        thread::Builder::new()
+            .name("meetin-focus".to_string())
+            .spawn(move || {
+                win_impl::run_focus_loop(focus_rx);
+            })
+            .ok();
+    }
+    #[cfg(not(windows))]
+    drop(focus_rx);
+
     // Windows kanca iş parçacığı
     #[cfg(windows)]
     {
@@ -645,8 +670,10 @@ mod win_impl {
         PROCESS_QUERY_LIMITED_INFORMATION,
     };
     use windows::Win32::UI::Accessibility::{
-        CUIAutomation, IUIAutomation, UIA_IsPasswordPropertyId,
+        CUIAutomation, IUIAutomation, SetWinEventHook, UnhookWinEvent, HWINEVENTHOOK,
+        UIA_IsPasswordPropertyId,
     };
+    use super::focus::FocusState;
     use windows::Win32::UI::Input::KeyboardAndMouse::{
         GetAsyncKeyState, GetKeyState, GetKeyboardLayout, ToUnicodeEx, VK_BACK, VK_CAPITAL,
         VK_CONTROL, VK_DELETE, VK_DOWN, VK_END, VK_ESCAPE, VK_F3, VK_HOME, VK_LEFT, VK_LSHIFT,
@@ -656,6 +683,8 @@ mod win_impl {
     use windows::Win32::UI::WindowsAndMessaging::{
         CallNextHookEx, DispatchMessageW, GetForegroundWindow, GetMessageW, GetWindowTextW,
         GetWindowThreadProcessId, SetWindowsHookExW, TranslateMessage, UnhookWindowsHookEx,
+        EVENT_OBJECT_FOCUS, EVENT_SYSTEM_FOREGROUND, WINEVENT_OUTOFCONTEXT,
+        WINEVENT_SKIPOWNPROCESS,
         KBDLLHOOKSTRUCT, MSG, MSLLHOOKSTRUCT, WH_KEYBOARD_LL, WH_MOUSE_LL, WM_KEYDOWN,
         WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_SYSKEYDOWN,
     };
@@ -664,6 +693,28 @@ mod win_impl {
         unsafe {
             let kb_hook = SetWindowsHookExW(WH_KEYBOARD_LL, Some(keyboard_proc), None, 0);
             let mouse_hook = SetWindowsHookExW(WH_MOUSE_LL, Some(mouse_proc), None, 0);
+
+            // Odak ve ön plan değişimleri (bu iş parçacığının mesaj döngüsünde teslim edilir)
+            let flags = WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS;
+            let focus_hook = SetWinEventHook(
+                EVENT_OBJECT_FOCUS,
+                EVENT_OBJECT_FOCUS,
+                None,
+                Some(focus_event_proc),
+                0,
+                0,
+                flags,
+            );
+            let fg_hook = SetWinEventHook(
+                EVENT_SYSTEM_FOREGROUND,
+                EVENT_SYSTEM_FOREGROUND,
+                None,
+                Some(focus_event_proc),
+                0,
+                0,
+                flags,
+            );
+            request_focus_check();
 
             let mut msg = MSG::default();
             while GetMessageW(&mut msg, None, 0, 0).as_bool() {
@@ -677,6 +728,68 @@ mod win_impl {
             if let Ok(h) = mouse_hook {
                 let _ = UnhookWindowsHookEx(h);
             }
+            for h in [focus_hook, fg_hook] {
+                if !h.is_invalid() {
+                    let _ = UnhookWinEvent(h);
+                }
+            }
+        }
+    }
+
+    /// Odak sorgusunu geçersiz kılar ve `meetin-focus` iş parçacığına iş yollar.
+    fn request_focus_check() {
+        if let Some(shared) = HOOK_SHARED.get() {
+            shared.focus.invalidate();
+            let _ = shared.focus_tx.send(());
+        }
+    }
+
+    unsafe extern "system" fn focus_event_proc(
+        _hook: HWINEVENTHOOK,
+        _event: u32,
+        _hwnd: HWND,
+        _id_object: i32,
+        _id_child: i32,
+        _thread: u32,
+        _time: u32,
+    ) {
+        request_focus_check();
+    }
+
+    /// Odaklanan denetimin parola kutusu olup olmadığını sorgulayan döngü.
+    /// UIA nesnesi bir kez oluşturulur; birikmiş istekler tek sorguda birleştirilir.
+    pub fn run_focus_loop(rx: mpsc::Receiver<()>) {
+        let uia: Option<IUIAutomation> = unsafe {
+            let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
+            CoCreateInstance(&CUIAutomation, None, CLSCTX_INPROC_SERVER).ok()
+        };
+        while rx.recv().is_ok() {
+            while rx.try_recv().is_ok() {}
+            let Some(shared) = HOOK_SHARED.get() else {
+                continue;
+            };
+            let generation = shared.focus.current_generation();
+            let result = FocusState::from_query(uia.as_ref().and_then(query_is_password));
+            if shared.focus.resolve(generation, result) && result == FocusState::Password {
+                if let Ok(mut st) = shared.state.lock() {
+                    st.buffer.clear();
+                    st.last_expansion = None;
+                    st.active_suggestions.clear();
+                    st.active_suggest_typed.clear();
+                }
+                let _ = shared.tx.send(WorkerJob::SuggestionsChanged {
+                    items: Vec::new(),
+                    check_password: false,
+                });
+            }
+        }
+    }
+
+    fn query_is_password(uia: &IUIAutomation) -> Option<bool> {
+        unsafe {
+            let elem = uia.GetFocusedElement().ok()?;
+            let val = elem.GetCurrentPropertyValue(UIA_IsPasswordPropertyId).ok()?;
+            bool::try_from(&val).ok()
         }
     }
 
@@ -900,6 +1013,16 @@ mod win_impl {
 
         // Kullanıcı yazmaya devam ediyorsa açık seçim balonunu gizle (§4.1)
         let _ = shared.tx.send(WorkerJob::UserActivity(None));
+
+        // Parola kutusu ya da henüz sorgulanmamış odak: tuşa hiç dokunma (§7.4 [K]).
+        // Arabelleğe alınmaz, tetik yutulmaz, öneri gösterilmez.
+        if shared.focus.state().passes_through() {
+            if let Ok(mut st) = shared.state.try_lock() {
+                st.buffer.clear();
+                st.last_expansion = None;
+            }
+            return CallNextHookEx(None, code, wparam, lparam);
+        }
 
         let (hwnd_raw, ctx) = active_window_info();
 

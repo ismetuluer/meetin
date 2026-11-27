@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü (CHANGELOG)
 
+## [1.3.2] - 2026-11-27
+
+### Düzeltildi
+- **Parola kutularında tam geçiş (§7.4):** Odak bir parola kutusuna geçtiğinde Meetin artık tuşları hiç işlemez: arabelleğe almaz, tetik tuşunu yutmaz, öneri göstermez. Önceden kontrol yalnızca genişletme anında yapılıyordu ve parola kısaltmayla bitip tetiğe basılırsa harf sırası bozulabiliyordu.
+- Odak durumu ayrı bir iş parçacığında UI Automation ile sorgulanır; klavye kancası beklemez. Sorgu sonucu gelene kadar tuşlar dokunulmadan geçirilir.
+
 ## [1.3.1] - 2026-11-27 (`latest.json` Ayrıştırma Düzeltmesi · Başlangıçta Otomatik Güncelleme)
 
 ### Düzeltmeler ve İyileştirmeler
