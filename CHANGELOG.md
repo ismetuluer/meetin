@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü (CHANGELOG)
 
+## [1.4.6] - 2026-11-27
+
+### Değişti
+- Güncelleme yolunun (kurulumlu ve portable) denenmesi için çıkan bakım sürümü; işlevsel bir değişiklik yok.
+
 ## [1.4.5] - 2026-11-27
 
 ### Eklendi

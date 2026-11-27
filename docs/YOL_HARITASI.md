@@ -115,8 +115,9 @@
 - **Test:** Oto: ZIP'ten çıkarma, EXE değişimi ve geri alma, imza/klasör koşulları (12 güncelleyici testi). Bu bilgisayarda çalışan EXE'nin adının değiştirilebildiği denendi. Elle: R2.5'te.
 - **Ajan:** Opus.
 
-### [ ] R2.5 · R2 kabul — v1.5.0
+### [~] R2.5 · R2 kabul — v1.5.0
 
+- **Durum:** 1.4.5 yayımlandı; test sürümü 1.4.6 hazır.
 - **Test:** Elle: 1.4.5 (elle kurulu) → test amaçlı 1.4.6; kurulumlu ve portable; bozuk imzalı paketin reddi. Kabulden sonra 1.5.0 aynı yoldan gelir. **Ajan:** Saul · Opus.
 
 ---
