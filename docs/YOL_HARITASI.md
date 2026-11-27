@@ -98,27 +98,42 @@
 
 Her adımdan önce mevcut ekranın görüntüsü ve önerilen düzen Saul'a gösterilir, onay sonrası uygulanır (şartname §6 "Liste ve düzenleyici sadeliği [K]").
 
-### [ ] R3.1 · İfade listesi — v1.5.1
+**Hareket bileşenleri (Saul'un seçtiği designbookmark.com/motion şablonları):** Kaynak kod kopyalanmaz; React'te, §11.4 renk rolleri ve Segoe UI ile yeniden yazılır, yeni bağımlılık eklenmez (Tailwind/shadcn yok).
+
+### [ ] R3.0 · Ortak yay (spring) altyapısı — v1.5.1
+
+- **Hedef:** Şu an her animasyon ayrı `cubic-bezier` kullanıyor. `src/design/motion.ts` + tokenlar: sertlik/sönüm değerleri tek yerde (§11.5: 380/28; şablonların değerleri farklıysa Saul karar verir), `prefers-reduced-motion` desteği. Sonraki bileşenler bunu kullanır.
+- **Ajan:** Opus (altyapı) · **Test:** Oto: yay çözücü birim testi.
+
+### [ ] R3.0a · Aç/kapa anahtarı (Toggle switch) — Ayarlar'daki 15 onay kutusu yerine. **Ajan:** Sonnet · Opus denetim.
+
+### [ ] R3.0b · Etiket girişi (Tag input) — düzenleyicideki etiket hapları. **Ajan:** Sonnet · Opus denetim.
+
+### [ ] R3.0c · Kenar çubuğu daraltma (Sidebar collapse) — uzman arayüzünün sol çubuğu (bugün animasyonsuz). **Ajan:** Sonnet · Opus denetim.
+
+### [ ] R3.0d · Yığın panel (Stack panel) — [A] yeri Saul'la belirlenecek (öneri: ifade sürüm geçmişi). **Ajan:** Sonnet · Opus denetim.
+
+### [ ] R3.1 · İfade listesi — v1.5.2
 
 - **Hedef:** Onay kutuları kaldırılır; `Ctrl`/`Shift` + tık çoklu seçim; ifadeler klasörlere sürükle-bırak; anlamsız simgeler çıkar; toplu işlemler sağ tık menüsünde.
 - **Ajan:** Sonnet · Opus denetim. **Test:** Oto: seçim mantığı · Elle.
 
-### [ ] R3.2 · Düzenleyici başlığı ve alan düzeni — v1.5.2
+### [ ] R3.2 · Düzenleyici başlığı ve alan düzeni — v1.5.3
 
 - **Hedef:** Seçimde üstte çıkan bilgi yazıları kaldırılır; kısayol ile klasör alanı ayrılır (A2); kural haplarında "sadece/hariç" görünür (A3).
 - **Ajan:** Sonnet · Opus denetim. **Test:** Elle.
 
-### [ ] R3.3 · Değişken hapları satır içi — v1.5.3
+### [ ] R3.3 · Değişken hapları satır içi — v1.5.4
 
 - **Hedef:** Düzenleyicide `{…}` ham yazısı görünmez, haplar metnin içindedir; listede `[Tarih (uzun)]` yerine okunur önizleme (A1).
 - **Ajan:** Sonnet · Opus denetim. **Test:** Oto: HTML ↔ hap gidiş-dönüş · Elle.
 
-### [ ] R3.4 · Dışa aktarma ve bağlam menüleri — v1.5.4
+### [ ] R3.4 · Dışa aktarma ve bağlam menüleri — v1.5.5
 
 - **Hedef:** Tek "Dışa aktar…" girişi + biçim seçme penceresi (renkli/renksiz seçenek kalkar).
 - **Ajan:** Sonnet. **Test:** Elle.
 
-### [ ] R3.5 · Görünüm sayfası ve renk kuralı — v1.5.5
+### [ ] R3.5 · Görünüm sayfası ve renk kuralı — v1.5.6
 
 - **Hedef:** "Sistemle uyumlu" seçiliyken renk denetimleri pasif (A4); bileşenlerdeki sabit renkler role taşınır (A5).
 - **Ajan:** Sonnet. **Test:** Oto: sabit renk taraması · Elle.
