@@ -129,6 +129,17 @@ Her adımdan önce mevcut ekranın görüntüsü ve önerilen düzen Saul'a gös
 
 ### [ ] R3.0d · Yığın panel (Stack panel) — [A] yeri Saul'la belirlenecek (öneri: ifade sürüm geçmişi). **Ajan:** Sonnet · Opus denetim.
 
+### [ ] R3.0e · Kısayollarda klavye tuşu görünümü (Kbd) — Saul isteği
+
+- **Hedef:** `Ctrl+Alt+P` gibi düz yazılar yerine tuş biçiminde küçük kutucuklar (shadcn "Kbd" görünümü örnek alınır, kütüphane eklenmez): Yardım, Ayarlar › Kısayollar, komut paleti, ipuçları. Ortak `<Kbd>` / `<KbdGroup>` bileşeni; Windows adlandırması (Ctrl, Alt, Shift, Win, Boşluk, Enter ↵, Tab ⇥, oklar ←↑→↓), §11.4 renk rolleri.
+- **Ajan:** Sonnet · Opus denetim. **Test:** Oto: kısayol metni → tuş listesi ayrıştırma · Elle.
+
+### [ ] R3.0f · Maskot: monitörler arası fırlatma + roket — Saul isteği
+
+- **Hedef:** (1) Fırlatma fiziği tek monitörle sınırlı (`get_mascot_monitor_bounds` → `current_monitor`, Rust'ta `clamp_to_monitor`). Tüm monitörlerin birleşimi kullanılır; zemin, maskotun altındaki monitöre göre hesaplanır; monitörler arası boşluğa düşerse en yakın monitöre yerleşir; farklı DPI ölçekleri doğru çevrilir. (2) Fırlatma hızı, maskotu başka bir monitöre taşıyacak kadar yüksekse **`rocket` animasyonu**: sırtta küçük bir roket ve alev izi, uçuş boyunca. Çizim referanstaki gibi değil, Meetin tarzında: kalın koyu kontur, sade şekiller, yumuşak renkler. Maskot renkleri değişmez, roket bir aksesuardır. (3) Kısa "fışş" roket sesi, fırlatma sesi ayarına bağlı. `prefers-reduced-motion` açıkken roket yok.
+- **Şartname:** §5.1.1 kataloğuna `rocket` satırı [K] olarak eklenir.
+- **Ajan:** Opus (çoklu monitör fiziği, Rust konumlandırma) · Sonnet (roket SVG + CSS animasyonu, Opus denetimi). **Test:** Oto: monitör birleşimi, zemin ve geçiş fiziği · Elle: iki monitörde (%100/%150) yavaş ve hızlı fırlatma.
+
 ### [ ] R3.1 · İfade listesi — v1.5.2
 
 - **Hedef:** Onay kutuları kaldırılır; `Ctrl`/`Shift` + tık çoklu seçim; ifadeler klasörlere sürükle-bırak; anlamsız simgeler çıkar; toplu işlemler sağ tık menüsünde.
