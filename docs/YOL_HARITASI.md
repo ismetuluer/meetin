@@ -92,6 +92,7 @@
 
 - **Hedef:** Kendi yazılmış `updater/` (CNG ECDSA, PowerShell indirme/kurulum) kaldırılır; eklenti ile kontrol (açılışta + 24 saatte bir), maskot rozeti, CHANGELOG notları, "Şimdi kur / Sonra". İmzasız paket asla kurulmaz.
 - **Modüller:** `updater/` (silinir), `lib.rs`, `src/studio/` güncelleme sayfası
+- **Bulunan hatalar (1.3.10 denemesi):** denetim sonucu hiçbir yere yazılmıyor; maskot bildirimi tek seferlik olaya bağlı ve kaçırılabiliyor (durumu sonradan sormuyor). Çözüm: her denetim günlüğe yazılır, arayüz durumu açılışta ve olayda sorar, Studio'da kalıcı bildirim.
 - **Test:** Oto: sürüm karşılaştırma ve olay akışı · Elle: R2.5'te.
 - **Ajan:** Opus.
 
