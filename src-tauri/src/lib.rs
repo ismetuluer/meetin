@@ -73,6 +73,7 @@ use crate::io::formats::{
 use crate::io::mee_archive::export_mee_archive as build_mee_archive;
 use crate::matcher::case::{tr_lower, tr_title, tr_upper};
 use crate::matcher::AppRule;
+use crate::updater::{UpdateCheckResult, UpdateInstallResult};
 use crate::vars::{extract_form_fields, FormField};
 use crate::windows::backdrop::{self, WindowBackdropInfo};
 use crate::windows::bubble::{self, BubbleState, BUBBLE_LABEL};
@@ -88,7 +89,6 @@ use crate::windows::mascot::{
 use crate::windows::startup::{self, StartupStatus};
 use crate::windows::theme::{self, SystemThemeInfo};
 use crate::windows::tray;
-use crate::updater::{UpdateCheckResult, UpdateInstallResult};
 
 pub const DEFAULT_UPDATE_MANIFEST_URL: &str =
     "https://github.com/ismetuluer/meetin/releases/latest/download/latest.json";
@@ -542,7 +542,10 @@ fn set_shift_f3_enabled(state: State<'_, AppState>, enabled: bool) -> Result<(),
 
 #[tauri::command]
 fn set_abbr_suggest_mode(state: State<'_, AppState>, mode: String) -> Result<String, String> {
-    let norm = if matches!(mode.as_str(), "initials" | "first_word" | "last_word" | "tag") {
+    let norm = if matches!(
+        mode.as_str(),
+        "initials" | "first_word" | "last_word" | "tag"
+    ) {
         mode
     } else {
         "initials".to_string()
@@ -761,7 +764,10 @@ fn check_for_updates(
         *guard = Some(res.clone());
     }
     if res.update_available && res.signature_status != updater::SIG_STATUS_INVALID {
-        let _ = app.emit("update-available", res.latest_version.clone().unwrap_or_default());
+        let _ = app.emit(
+            "update-available",
+            res.latest_version.clone().unwrap_or_default(),
+        );
     }
     Ok(res)
 }
@@ -1245,12 +1251,7 @@ pub struct StudioDraftPayload {
 }
 
 #[tauri::command]
-fn open_studio_with_draft(
-    app: AppHandle,
-    abbr: String,
-    content: String,
-    description: String,
-) {
+fn open_studio_with_draft(app: AppHandle, abbr: String, content: String, description: String) {
     tray::show_main_window(&app);
     let _ = app.emit(
         "studio-new-draft",
@@ -1315,7 +1316,10 @@ fn quit_app(app: AppHandle, state: State<'_, AppState>) {
 }
 
 #[tauri::command]
-fn get_phrase_app_rules(state: State<'_, AppState>, phrase_id: i64) -> Result<Vec<AppRule>, String> {
+fn get_phrase_app_rules(
+    state: State<'_, AppState>,
+    phrase_id: i64,
+) -> Result<Vec<AppRule>, String> {
     state
         .storage
         .get_phrase_app_rules(phrase_id)
@@ -1427,13 +1431,7 @@ fn update_folder(
     name: Option<String>,
     color: Option<String>,
 ) -> Result<FolderRecord, String> {
-    let color_arg = color.map(|c| {
-        if c.trim().is_empty() {
-            None
-        } else {
-            Some(c)
-        }
-    });
+    let color_arg = color.map(|c| if c.trim().is_empty() { None } else { Some(c) });
     let color_ref = color_arg.as_ref().map(|opt| opt.as_deref());
     state
         .storage
@@ -1578,7 +1576,10 @@ fn bulk_create_phrases(
 
 #[tauri::command]
 fn export_library(state: State<'_, AppState>, format: String) -> Result<String, String> {
-    let phrases = state.storage.list_phrases(false).map_err(|e| e.to_string())?;
+    let phrases = state
+        .storage
+        .list_phrases(false)
+        .map_err(|e| e.to_string())?;
     let folders = state.storage.list_folders().map_err(|e| e.to_string())?;
     if format.eq_ignore_ascii_case("csv") {
         export_csv(&phrases, &folders).map_err(|e| e.to_string())
@@ -1591,7 +1592,10 @@ fn export_library(state: State<'_, AppState>, format: String) -> Result<String, 
 
 #[tauri::command]
 fn export_mee_archive(state: State<'_, AppState>) -> Result<Vec<u8>, String> {
-    let phrases = state.storage.list_phrases(false).map_err(|e| e.to_string())?;
+    let phrases = state
+        .storage
+        .list_phrases(false)
+        .map_err(|e| e.to_string())?;
     let folders = state.storage.list_folders().map_err(|e| e.to_string())?;
     build_mee_archive(&phrases, &folders, env!("CARGO_PKG_VERSION")).map_err(|e| e.to_string())
 }
@@ -1664,9 +1668,7 @@ fn paste_phrase_from_island(
         return Err(msg);
     }
 
-    let _ = state
-        .storage
-        .record_usage(phrase.id, proc_name.as_deref());
+    let _ = state.storage.record_usage(phrase.id, proc_name.as_deref());
     let _ = app.emit("phrase-expanded", phrase.abbr);
     Ok(())
 }
@@ -1688,7 +1690,8 @@ pub fn run() {
 
     // Portable ilk açılış: bu bilgisayardaki eski veriyi kopyalamayı öner (R1.5)
     let appdata = std::env::var_os("APPDATA").map(std::path::PathBuf::from);
-    if let Some(src) = db::portable_migration_source(&db::exe_dir(), &data_dir, appdata.as_deref()) {
+    if let Some(src) = db::portable_migration_source(&db::exe_dir(), &data_dir, appdata.as_deref())
+    {
         if native_dialog::ask(
             "Bu bilgisayarda daha önce kullanılmış Meetin verisi bulundu.\n\n\
              İfadeleriniz bu taşınabilir klasöre kopyalansın mı?\n\
@@ -1698,7 +1701,9 @@ pub fn run() {
                 Ok(()) => logging::event(logging::Level::Info, "portable.migrated", &[]),
                 Err(e) => {
                     logging::error_text(logging::Level::Error, "portable.migrate_failed", &e);
-                    native_dialog::error("Veriler kopyalanamadı. Meetin boş bir kütüphaneyle açılacak.");
+                    native_dialog::error(
+                        "Veriler kopyalanamadı. Meetin boş bir kütüphaneyle açılacak.",
+                    );
                 }
             }
         } else {
@@ -1781,7 +1786,8 @@ pub fn run() {
                         let paused = state.hook.toggle_paused();
                         tray::update_tray_paused(app, paused);
                         let _ = app.emit("engine-status-changed", paused);
-                    } else if parse_shortcut(&sc_cfg.toggle_mascot).ok().as_ref() == Some(shortcut) {
+                    } else if parse_shortcut(&sc_cfg.toggle_mascot).ok().as_ref() == Some(shortcut)
+                    {
                         toggle_user_visibility(app, &state.mascot);
                     } else if parse_shortcut(&sc_cfg.search).ok().as_ref() == Some(shortcut) {
                         capture_foreground_target(app, &state.mascot);
@@ -1880,8 +1886,7 @@ pub fn run() {
                 on_user_activity: Some(Arc::new(move |mouse_pos| {
                     if let Some((mx, my)) = mouse_pos {
                         if let Some(bwin) = app_activity.get_webview_window(BUBBLE_LABEL) {
-                            if let (Ok(pos), Ok(size)) =
-                                (bwin.outer_position(), bwin.outer_size())
+                            if let (Ok(pos), Ok(size)) = (bwin.outer_position(), bwin.outer_size())
                             {
                                 if mx >= pos.x
                                     && mx <= pos.x + size.width as i32
@@ -1920,7 +1925,10 @@ pub fn run() {
             mascot::start_environment_watcher(app.handle().clone());
             theme::start_theme_watcher(app.handle().clone());
             let _ = storage.purge_expired_trash(30);
-            inject::clipboard::start_clipboard_watcher(Arc::clone(&storage), clipboard_cfg_for_setup);
+            inject::clipboard::start_clipboard_watcher(
+                Arc::clone(&storage),
+                clipboard_cfg_for_setup,
+            );
 
             // Kayıtlı veya varsayılan GitHub güncelleme URL'sinden arka planda otomatik kontrol et
             let auto_check_updates = storage

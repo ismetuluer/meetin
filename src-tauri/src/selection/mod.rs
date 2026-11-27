@@ -19,13 +19,7 @@ pub enum SelectionSourceOutcome {
 
 /// Boş / yalnızca boşluk olan metni eler.
 pub fn clean_selected_text(raw: Option<String>) -> Option<String> {
-    raw.and_then(|s| {
-        if s.trim().is_empty() {
-            None
-        } else {
-            Some(s)
-        }
-    })
+    raw.and_then(|s| if s.trim().is_empty() { None } else { Some(s) })
 }
 
 /// UIA okuma sonucunu parola koruması ve boşluk filtresiyle çözümler.
@@ -48,7 +42,10 @@ where
 pub fn read_selected_text() -> Option<String> {
     #[cfg(windows)]
     {
-        resolve_selection_outcome(win_sel::try_read_via_uia(), clipboard::read_selection_via_ctrl_c)
+        resolve_selection_outcome(
+            win_sel::try_read_via_uia(),
+            clipboard::read_selection_via_ctrl_c,
+        )
     }
     #[cfg(not(windows))]
     {

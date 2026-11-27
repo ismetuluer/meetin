@@ -138,14 +138,20 @@ pub fn run_migrations(conn: &mut Connection) -> Result<i32, DbError> {
     if current < 1 {
         let tx = conn.transaction()?;
         tx.execute_batch(MIGRATION_V1)?;
-        tx.execute("INSERT OR IGNORE INTO schema_migrations (version) VALUES (1)", [])?;
+        tx.execute(
+            "INSERT OR IGNORE INTO schema_migrations (version) VALUES (1)",
+            [],
+        )?;
         tx.commit()?;
     }
 
     if current < 2 {
         let tx = conn.transaction()?;
         tx.execute_batch(MIGRATION_V2)?;
-        tx.execute("INSERT OR IGNORE INTO schema_migrations (version) VALUES (2)", [])?;
+        tx.execute(
+            "INSERT OR IGNORE INTO schema_migrations (version) VALUES (2)",
+            [],
+        )?;
         tx.commit()?;
     }
 

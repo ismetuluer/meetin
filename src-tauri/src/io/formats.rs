@@ -157,9 +157,7 @@ pub fn parse_ahk_hotstrings(raw: &[u8]) -> Vec<ImportedPhraseItem> {
                         } else {
                             CaseMode::MatchTyped
                         };
-                        let next_is_paren = lines
-                            .get(i + 1)
-                            .is_some_and(|next| next.trim() == "(");
+                        let next_is_paren = lines.get(i + 1).is_some_and(|next| next.trim() == "(");
                         if body == "(" || (body.is_empty() && next_is_paren) {
                             // Çok satırlı AHK devam bloğu
                             if body != "(" {
@@ -265,9 +263,7 @@ pub fn parse_txt_blocks(raw: &[u8]) -> Vec<ImportedPhraseItem> {
 }
 
 /// Meetin JSON (`.meetin`/`.json`) veya Beeftext JSON biçimini ayrıştırır.
-pub fn parse_beeftext_or_meetin_json(
-    raw: &[u8],
-) -> Result<Vec<ImportedPhraseItem>, FormatIoError> {
+pub fn parse_beeftext_or_meetin_json(raw: &[u8]) -> Result<Vec<ImportedPhraseItem>, FormatIoError> {
     let (decoded, _) = decode_bytes(raw);
     let trimmed = decoded.trim_start_matches('\u{FEFF}').trim();
     if trimmed.is_empty() {
@@ -310,11 +306,8 @@ pub fn parse_beeftext_or_meetin_json(
     }
 
     let bt: BeeftextDoc = serde_json::from_str(trimmed)?;
-    let group_map: HashMap<String, String> = bt
-        .groups
-        .into_iter()
-        .map(|g| (g.uuid, g.name))
-        .collect();
+    let group_map: HashMap<String, String> =
+        bt.groups.into_iter().map(|g| (g.uuid, g.name)).collect();
 
     Ok(bt
         .combos
@@ -417,7 +410,10 @@ pub fn export_csv(
 
 pub fn export_ahk(phrases: &[PhraseRecord]) -> String {
     let mut out = String::from("; Meetin Dışa Aktarım (AutoHotkey)\n");
-    for p in phrases.iter().filter(|p| p.deleted_at.is_none() && p.enabled) {
+    for p in phrases
+        .iter()
+        .filter(|p| p.deleted_at.is_none() && p.enabled)
+    {
         let opts = match p.case_mode {
             CaseMode::KeepOriginal => "*C",
             _ => "*",
@@ -506,7 +502,12 @@ pub fn import_items(
             continue;
         }
         summary.total_valid += 1;
-        let folder_id = match item.folder.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+        let folder_id = match item
+            .folder
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        {
             Some(name) => Some(storage.get_or_create_folder(name)?),
             None => None,
         };
@@ -534,8 +535,7 @@ pub fn import_items(
                     summary.overwritten += 1;
                 }
                 ConflictStrategy::SuggestNew => {
-                    let new_abbr =
-                        suggest_unique_imported_abbr(abbr, &used_norms, fold_dotted_i);
+                    let new_abbr = suggest_unique_imported_abbr(abbr, &used_norms, fold_dotted_i);
                     let new_norm = normalize_abbr(&new_abbr, fold_dotted_i);
                     used_norms.insert(new_norm);
                     let created = storage.create_phrase(&NewPhrase {
@@ -549,7 +549,8 @@ pub fn import_items(
                         shortcut: None,
                         tags: item.tags.clone(),
                     })?;
-                    existing_by_norm.insert(normalize_abbr(&created.abbr, fold_dotted_i), created.id);
+                    existing_by_norm
+                        .insert(normalize_abbr(&created.abbr, fold_dotted_i), created.id);
                     summary.renamed += 1;
                     summary.imported += 1;
                 }

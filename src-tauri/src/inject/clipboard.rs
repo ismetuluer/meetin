@@ -76,8 +76,8 @@ mod win_clip {
     use windows::Win32::System::LibraryLoader::GetModuleHandleW;
     use windows::Win32::UI::WindowsAndMessaging::{
         CreateWindowExW, DefWindowProcW, DispatchMessageW, GetMessageW, RegisterClassW,
-        HWND_MESSAGE, MSG, WINDOW_EX_STYLE, WINDOW_STYLE, WM_DESTROYCLIPBOARD,
-        WM_RENDERALLFORMATS, WM_RENDERFORMAT, WNDCLASSW,
+        HWND_MESSAGE, MSG, WINDOW_EX_STYLE, WINDOW_STYLE, WM_DESTROYCLIPBOARD, WM_RENDERALLFORMATS,
+        WM_RENDERFORMAT, WNDCLASSW,
     };
 
     const CF_UNICODETEXT: u32 = 13;
@@ -436,8 +436,7 @@ mod win_clip {
 
             // UTF-16LE + null sonlandırıcı
             let wide: Vec<u16> = plain.encode_utf16().chain(std::iter::once(0)).collect();
-            let byte_slice =
-                std::slice::from_raw_parts(wide.as_ptr() as *const u8, wide.len() * 2);
+            let byte_slice = std::slice::from_raw_parts(wide.as_ptr() as *const u8, wide.len() * 2);
             let h_text = alloc_and_copy(byte_slice)?;
             let _ = SetClipboardData(CF_UNICODETEXT, h_text);
 
@@ -518,7 +517,9 @@ mod win_clip {
 
         let sent = unsafe { SendInput(&inputs, size_of::<INPUT>() as i32) };
         if sent as usize != inputs.len() {
-            return Err(InjectError::Win32("Yapıştırma tuşu gönderilemedi".to_string()));
+            return Err(InjectError::Win32(
+                "Yapıştırma tuşu gönderilemedi".to_string(),
+            ));
         }
         let _ = std::ptr::null::<c_void>();
         Ok(())
@@ -745,8 +746,7 @@ mod win_clip {
         unsafe {
             let _ = EmptyClipboard();
             let wide: Vec<u16> = text.encode_utf16().chain(std::iter::once(0)).collect();
-            let byte_slice =
-                std::slice::from_raw_parts(wide.as_ptr() as *const u8, wide.len() * 2);
+            let byte_slice = std::slice::from_raw_parts(wide.as_ptr() as *const u8, wide.len() * 2);
             let h_text = alloc_and_copy(byte_slice)?;
             let _ = SetClipboardData(CF_UNICODETEXT, h_text);
             let _ = CloseClipboard();

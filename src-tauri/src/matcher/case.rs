@@ -301,8 +301,14 @@ mod tests {
     #[test]
     fn mixed_case_preserves_original() {
         let expansion = "Metin ile Pratik Yazım";
-        assert_eq!(apply_case("mİpy", expansion, CaseMode::MatchTyped), expansion);
-        assert_eq!(apply_case("MiPy", expansion, CaseMode::MatchTyped), expansion);
+        assert_eq!(
+            apply_case("mİpy", expansion, CaseMode::MatchTyped),
+            expansion
+        );
+        assert_eq!(
+            apply_case("MiPy", expansion, CaseMode::MatchTyped),
+            expansion
+        );
     }
 
     #[test]

@@ -177,11 +177,11 @@ pub fn import_csv(
     };
 
     for row in data_rows {
-        let abbr = row
-            .get(mapping.abbr_col)
-            .map(|s| s.trim())
+        let abbr = row.get(mapping.abbr_col).map(|s| s.trim()).unwrap_or("");
+        let content = row
+            .get(mapping.content_col)
+            .map(|s| s.as_str())
             .unwrap_or("");
-        let content = row.get(mapping.content_col).map(|s| s.as_str()).unwrap_or("");
 
         if abbr.is_empty() || content.is_empty() {
             continue;
@@ -301,7 +301,8 @@ mod tests {
 
     #[test]
     fn detects_utf8_and_windows_1254_turkish_characters() {
-        let utf8_csv = "Kısaltma,Metin,Açıklama\nMİPY,\"Metin ile Pratik Yazım, Türkçe şğüöçı\",Örnek\n\n";
+        let utf8_csv =
+            "Kısaltma,Metin,Açıklama\nMİPY,\"Metin ile Pratik Yazım, Türkçe şğüöçı\",Örnek\n\n";
         let prev = preview_csv(utf8_csv.as_bytes()).unwrap();
         assert_eq!(prev.detected_encoding, "UTF-8");
         assert_eq!(prev.detected_delimiter, ",");
@@ -337,14 +338,28 @@ mod tests {
             has_header: true,
         };
 
-        let r1 = import_csv(&storage, csv_data, &mapping, ConflictStrategy::Skip, false, false)
-            .unwrap();
+        let r1 = import_csv(
+            &storage,
+            csv_data,
+            &mapping,
+            ConflictStrategy::Skip,
+            false,
+            false,
+        )
+        .unwrap();
         assert_eq!(r1.imported, 1);
         assert!(r1.conflicts.is_empty());
 
         // Aynı kısaltma -> Skip
-        let r_skip = import_csv(&storage, csv_data, &mapping, ConflictStrategy::Skip, false, false)
-            .unwrap();
+        let r_skip = import_csv(
+            &storage,
+            csv_data,
+            &mapping,
+            ConflictStrategy::Skip,
+            false,
+            false,
+        )
+        .unwrap();
         assert_eq!(r_skip.skipped, 1);
         assert_eq!(r_skip.conflicts.len(), 1);
 

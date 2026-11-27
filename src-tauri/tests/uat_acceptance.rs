@@ -155,7 +155,10 @@ fn uat_target_app_matrix_injection_strategy_and_cursor() {
     };
     let resolved = resolve_template("Sayın {imleç},\nİyi çalışmalar.", &ctx);
     assert_eq!(resolved.text, "Sayın ,\nİyi çalışmalar.");
-    assert_eq!(resolved.cursor_left_steps, ",\nİyi çalışmalar.".chars().count());
+    assert_eq!(
+        resolved.cursor_left_steps,
+        ",\nİyi çalışmalar.".chars().count()
+    );
 
     // Tetik karakteriyle birlikte toplam geri ok sayısı (+1)
     let left_steps = build_cursor_left_steps(resolved.cursor_left_steps + 1);
@@ -249,13 +252,19 @@ fn uat_app_rules_only_exclude_across_target_matrix() {
                 assert_eq!(matched.expect("Word kuralı çalışmalı").phrase_id, 101);
             }
             "chrome.exe" => {
-                assert_eq!(matched.expect("Chrome başlık kuralı çalışmalı").phrase_id, 102);
+                assert_eq!(
+                    matched.expect("Chrome başlık kuralı çalışmalı").phrase_id,
+                    102
+                );
             }
             "slack.exe" => {
                 assert_eq!(matched.expect("Slack kuralı çalışmalı").phrase_id, 103);
             }
             "notepad.exe" => {
-                assert_eq!(matched.expect("Notepad genel ifadeyi almalı").phrase_id, general.id);
+                assert_eq!(
+                    matched.expect("Notepad genel ifadeyi almalı").phrase_id,
+                    general.id
+                );
             }
             "EXCEL.EXE" | "WindowsTerminal.exe" => {
                 assert!(
@@ -273,17 +282,26 @@ fn uat_app_rules_only_exclude_across_target_matrix() {
         window_title: Some("Dokümantasyon - Google Chrome".to_string()),
     };
     assert_eq!(
-        matcher.try_match("slm", ' ', &chrome_other_tab).unwrap().phrase_id,
+        matcher
+            .try_match("slm", ' ', &chrome_other_tab)
+            .unwrap()
+            .phrase_id,
         general.id
     );
 
     // Küresel dışlama ve balon gizleme kuralları
-    let excluded = vec!["keepassxc.exe".to_string(), "windowsterminal.exe".to_string()];
+    let excluded = vec![
+        "keepassxc.exe".to_string(),
+        "windowsterminal.exe".to_string(),
+    ];
     assert!(is_process_excluded(Some("WindowsTerminal.exe"), &excluded));
     assert!(!is_process_excluded(Some("WINWORD.EXE"), &excluded));
     assert!(is_bubble_hidden_process(Some("Photoshop.exe"), &excluded));
     assert!(is_bubble_hidden_process(Some("meetin.exe"), &excluded));
-    assert!(is_bubble_hidden_process(Some("WindowsTerminal.exe"), &excluded));
+    assert!(is_bubble_hidden_process(
+        Some("WindowsTerminal.exe"),
+        &excluded
+    ));
     assert!(!is_bubble_hidden_process(Some("notepad.exe"), &excluded));
 }
 
@@ -304,10 +322,7 @@ fn uat_turkish_case_modes_shift_f3_and_ignore_accents() {
         apply_case("MİPY", phrase, CaseMode::MatchTyped),
         "İSTANBUL IĞDIR ÇİÇEK ŞİRKETİ"
     );
-    assert_eq!(
-        apply_case("mİpY", phrase, CaseMode::MatchTyped),
-        phrase
-    );
+    assert_eq!(apply_case("mİpY", phrase, CaseMode::MatchTyped), phrase);
 
     for typed in ["mipy", "Mipy", "MİPY"] {
         assert_eq!(apply_case(typed, phrase, CaseMode::KeepOriginal), phrase);
@@ -512,13 +527,25 @@ fn uat_mee_zip_rich_media_round_trip_and_integrity() {
     // 2. Doğrudan import_mee_archive ve parse_import_file ile kayıpsız geri yükleme
     let direct_items = import_mee_archive(&zip_bytes).unwrap();
     assert_eq!(direct_items.len(), 1);
-    assert_eq!(direct_items[0].content_html.as_deref(), Some(original_html.as_str()));
-    assert_eq!(direct_items[0].folder.as_deref(), Some("Kurumsal Şablonlar"));
-    assert_eq!(direct_items[0].tags, vec!["imza".to_string(), "medya".to_string()]);
+    assert_eq!(
+        direct_items[0].content_html.as_deref(),
+        Some(original_html.as_str())
+    );
+    assert_eq!(
+        direct_items[0].folder.as_deref(),
+        Some("Kurumsal Şablonlar")
+    );
+    assert_eq!(
+        direct_items[0].tags,
+        vec!["imza".to_string(), "medya".to_string()]
+    );
 
     let parsed = parse_import_file("yedek.mee", &zip_bytes).unwrap();
     assert_eq!(parsed.len(), 1);
-    assert_eq!(parsed[0].content_html.as_deref(), Some(original_html.as_str()));
+    assert_eq!(
+        parsed[0].content_html.as_deref(),
+        Some(original_html.as_str())
+    );
 
     // 3. Temiz veritabanına içe aktarım
     let dir = TempDir::new().unwrap();
@@ -527,7 +554,10 @@ fn uat_mee_zip_rich_media_round_trip_and_integrity() {
     assert_eq!(summary.imported, 1);
     let stored = dst_db.list_phrases(false).unwrap();
     assert_eq!(stored.len(), 1);
-    assert_eq!(stored[0].content_html.as_deref(), Some(original_html.as_str()));
+    assert_eq!(
+        stored[0].content_html.as_deref(),
+        Some(original_html.as_str())
+    );
 
     // 4. Geriye dönük düz JSON .mee / .meetin desteği
     let legacy_json = export_meetin_json(&phrases, &folders).unwrap();
@@ -542,7 +572,10 @@ fn uat_mee_zip_rich_media_round_trip_and_integrity() {
     tampered[corrupt_idx] ^= 0xFF;
     let err = import_mee_archive(&tampered).unwrap_err();
     assert!(
-        matches!(err, MeeArchiveError::CrcMismatch { .. } | MeeArchiveError::InvalidZip(_)),
+        matches!(
+            err,
+            MeeArchiveError::CrcMismatch { .. } | MeeArchiveError::InvalidZip(_)
+        ),
         "Bozuk arşiv yakalanmalı, alınan: {err}"
     );
 
@@ -555,18 +588,21 @@ fn uat_mee_zip_rich_media_round_trip_and_integrity() {
 fn uat_signed_update_manifest_verification() {
     let dir = TempDir::new().unwrap();
     let installer_path = dir.path().join("Meetin_1.4.0_x64-setup.exe");
-    fs::write(&installer_path, b"meetin-uat-signed-installer-payload-v1.4.0").unwrap();
+    fs::write(
+        &installer_path,
+        b"meetin-uat-signed-installer-payload-v1.4.0",
+    )
+    .unwrap();
     let file_hash = digest_to_hex(&sha256_file(&installer_path).unwrap());
 
     #[cfg(windows)]
     {
         let download_url = installer_path.to_string_lossy().into_owned();
         let canonical = canonical_signing_payload("1.4.0", &file_hash, &download_url);
-        let (spki_pem, sig_b64) = generate_cng_p256_pem_and_signature(canonical.as_bytes()).unwrap();
+        let (spki_pem, sig_b64) =
+            generate_cng_p256_pem_and_signature(canonical.as_bytes()).unwrap();
 
-        assert!(
-            verify_ecdsa_p256_signature(canonical.as_bytes(), &sig_b64, &spki_pem).unwrap()
-        );
+        assert!(verify_ecdsa_p256_signature(canonical.as_bytes(), &sig_b64, &spki_pem).unwrap());
 
         let manifest = UpdateManifest {
             version: "1.4.0".to_string(),
@@ -586,8 +622,8 @@ fn uat_signed_update_manifest_verification() {
         );
 
         let raw_json = serde_json::to_string(&manifest).unwrap();
-        let check = parse_latest_json_with_key(&raw_json, "1.2.0", false, Some(&spki_pem), true)
-            .unwrap();
+        let check =
+            parse_latest_json_with_key(&raw_json, "1.2.0", false, Some(&spki_pem), true).unwrap();
         assert!(check.update_available);
         assert_eq!(check.signature_status, SIG_STATUS_VERIFIED);
         assert!(check.can_auto_install);
@@ -639,7 +675,10 @@ fn uat_signed_update_manifest_verification() {
         signature: None,
         key_id: None,
     };
-    assert_eq!(evaluate_manifest_signature(&unsigned, None), SIG_STATUS_UNSIGNED);
+    assert_eq!(
+        evaluate_manifest_signature(&unsigned, None),
+        SIG_STATUS_UNSIGNED
+    );
     let unsigned_json = serde_json::to_string(&unsigned).unwrap();
     let http_check =
         parse_latest_json_with_key(&unsigned_json, "1.2.0", false, None, false).unwrap();

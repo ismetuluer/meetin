@@ -188,7 +188,9 @@ fn crash_event(code: &'static str, fields: &[(&'static str, Field)]) {
 
 fn write_event(level: Level, code: &'static str, fields: &[(&'static str, Field)], wait: bool) {
     let Some(logger) = LOGGER.get() else { return };
-    let ts = chrono::Local::now().format("%Y-%m-%dT%H:%M:%S%.3f%:z").to_string();
+    let ts = chrono::Local::now()
+        .format("%Y-%m-%dT%H:%M:%S%.3f%:z")
+        .to_string();
     let line = format_line(&ts, level, code, fields);
     let mut guard = if wait {
         logger.file.lock().unwrap_or_else(|e| e.into_inner())
@@ -294,7 +296,12 @@ mod native {
         let (code, addr) = info
             .as_ref()
             .and_then(|p| p.ExceptionRecord.as_ref())
-            .map(|r| (r.ExceptionCode.0 as u32 as i64, r.ExceptionAddress as usize as i64))
+            .map(|r| {
+                (
+                    r.ExceptionCode.0 as u32 as i64,
+                    r.ExceptionAddress as usize as i64,
+                )
+            })
             .unwrap_or((0, 0));
         crash_event(
             "native_exception",
@@ -341,7 +348,11 @@ mod tests {
             "2026-11-27T10:00:00.000+03:00",
             Level::Error,
             "db.backup",
-            &[("n", Field::Num(3)), ("ok", Field::Bool(false)), ("kind", Field::Code("io"))],
+            &[
+                ("n", Field::Num(3)),
+                ("ok", Field::Bool(false)),
+                ("kind", Field::Code("io")),
+            ],
         );
         assert_eq!(
             line,
@@ -362,9 +373,13 @@ mod tests {
     #[test]
     fn duzgun_kapanis_tespiti() {
         assert!(previous_session_was_clean(""));
-        assert!(previous_session_was_clean("x INFO app.start\nx INFO app.exit\n"));
+        assert!(previous_session_was_clean(
+            "x INFO app.start\nx INFO app.exit\n"
+        ));
         assert!(!previous_session_was_clean("x INFO app.start\n"));
-        assert!(!previous_session_was_clean("x INFO app.exit\nx INFO app.start\n\n"));
+        assert!(!previous_session_was_clean(
+            "x INFO app.exit\nx INFO app.start\n\n"
+        ));
     }
 
     #[test]
@@ -380,7 +395,10 @@ mod tests {
         }
         rotate(dir.path());
         assert!(!dir.path().join(FILE_NAME).exists());
-        assert_eq!(fs::read_to_string(dir.path().join("meetin.1.log")).unwrap(), "0");
+        assert_eq!(
+            fs::read_to_string(dir.path().join("meetin.1.log")).unwrap(),
+            "0"
+        );
         assert_eq!(
             fs::read_to_string(dir.path().join(format!("meetin.{KEEP_ROTATED}.log"))).unwrap(),
             format!("{}", KEEP_ROTATED - 1)
@@ -393,7 +411,14 @@ mod tests {
     fn serbest_gunluk_kanali_yok() {
         let src = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
         let mut stack = vec![src];
-        let banned = ["log::info", "log::warn", "log::error", "log::debug", "println!", "eprintln!"];
+        let banned = [
+            "log::info",
+            "log::warn",
+            "log::error",
+            "log::debug",
+            "println!",
+            "eprintln!",
+        ];
         while let Some(d) = stack.pop() {
             for e in fs::read_dir(&d).unwrap().flatten() {
                 let p = e.path();

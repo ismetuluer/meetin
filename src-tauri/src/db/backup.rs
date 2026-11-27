@@ -182,7 +182,11 @@ pub fn list_backups(backups_dir: &Path) -> Result<Vec<BackupFileInfo>, DbError> 
             modified_at,
         });
     }
-    out.sort_by(|a, b| b.modified_at.cmp(&a.modified_at).then_with(|| b.filename.cmp(&a.filename)));
+    out.sort_by(|a, b| {
+        b.modified_at
+            .cmp(&a.modified_at)
+            .then_with(|| b.filename.cmp(&a.filename))
+    });
     Ok(out)
 }
 

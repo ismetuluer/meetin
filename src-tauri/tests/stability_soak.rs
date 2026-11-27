@@ -24,9 +24,7 @@ const MAX_MEMORY_GROWTH_BYTES: usize = 15 * 1024 * 1024;
 #[cfg(windows)]
 fn current_working_set_bytes() -> usize {
     use std::mem::size_of;
-    use windows::Win32::System::ProcessStatus::{
-        K32GetProcessMemoryInfo, PROCESS_MEMORY_COUNTERS,
-    };
+    use windows::Win32::System::ProcessStatus::{K32GetProcessMemoryInfo, PROCESS_MEMORY_COUNTERS};
     use windows::Win32::System::Threading::GetCurrentProcess;
 
     unsafe {
@@ -204,7 +202,9 @@ fn soak_sqlite_crud_versions_clipboard_and_vacuum_backups() {
     let storage = Storage::open(&db_path).unwrap();
 
     // Isınma: SQLite sayfa önbelleğini ve WAL dosyalarını başlat
-    let folder = storage.create_folder("Kararlılık", None, Some("c1")).unwrap();
+    let folder = storage
+        .create_folder("Kararlılık", None, Some("c1"))
+        .unwrap();
     let warm = storage
         .create_phrase(&NewPhrase {
             abbr: "isın0".to_string(),

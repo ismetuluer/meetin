@@ -28,9 +28,7 @@ fn read_hkcu_dword(subkey: &str, value_name: &str) -> Option<u32> {
     use std::ffi::c_void;
     use std::mem::size_of;
     use windows::core::PCWSTR;
-    use windows::Win32::System::Registry::{
-        RegGetValueW, HKEY_CURRENT_USER, RRF_RT_REG_DWORD,
-    };
+    use windows::Win32::System::Registry::{RegGetValueW, HKEY_CURRENT_USER, RRF_RT_REG_DWORD};
 
     let subkey_w: Vec<u16> = subkey.encode_utf16().chain(std::iter::once(0)).collect();
     let value_w: Vec<u16> = value_name

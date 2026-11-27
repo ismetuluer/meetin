@@ -326,13 +326,7 @@ pub fn parse_latest_json(
     is_portable: bool,
 ) -> Result<UpdateCheckResult, String> {
     let pub_key = resolve_configured_public_key();
-    parse_latest_json_with_key(
-        raw,
-        current_version,
-        is_portable,
-        pub_key.as_deref(),
-        false,
-    )
+    parse_latest_json_with_key(raw, current_version, is_portable, pub_key.as_deref(), false)
 }
 
 /// İndirilen `latest.json` baytlarını isteğe bağlı UTF-8 BOM'dan arındırarak metne çevirir.
@@ -404,7 +398,9 @@ pub fn fetch_manifest_raw(source: &str) -> Result<(String, bool), String> {
         }
         #[cfg(not(windows))]
         {
-            return Err("HTTPS güncelleme indirme yalnızca Windows üzerinde desteklenir.".to_string());
+            return Err(
+                "HTTPS güncelleme indirme yalnızca Windows üzerinde desteklenir.".to_string(),
+            );
         }
     }
     Err("Güncelleme bildirim dosyası bulunamadı veya geçerli bir HTTPS adresi değil.".to_string())
@@ -718,10 +714,7 @@ fn resolve_portable_exe_from_artifact(
 
 /// Portable güncellemede çalışan EXE'yi `Meetin.old.exe` olarak kenara alır ve yenisini kopyalar (§9).
 /// `data\` klasörüne kesinlikle dokunmaz.
-pub fn prepare_portable_self_update(
-    current_exe: &Path,
-    new_exe: &Path,
-) -> Result<PathBuf, String> {
+pub fn prepare_portable_self_update(current_exe: &Path, new_exe: &Path) -> Result<PathBuf, String> {
     if !new_exe.is_file() {
         return Err("Yeni çalıştırılabilir dosya bulunamadı".to_string());
     }
@@ -852,7 +845,8 @@ mod tests {
     fn real_ecdsa_p256_manifest_signing_and_tamper_detection() {
         let version = "1.3.0";
         let sha256 = digest_to_hex(&sha256_digest(b"sample-release-binary"));
-        let download_url = "https://github.com/OWNER/meetin/releases/download/v1.3.0/Meetin_1.3.0_x64-setup.exe";
+        let download_url =
+            "https://github.com/OWNER/meetin/releases/download/v1.3.0/Meetin_1.3.0_x64-setup.exe";
         let payload = canonical_signing_payload(version, &sha256, download_url);
 
         // Gerçek Windows CNG ECDSA P-256 anahtar çifti üret ve kanonik yükü imzala

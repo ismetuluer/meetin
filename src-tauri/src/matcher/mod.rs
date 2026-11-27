@@ -446,14 +446,18 @@ mod tests {
     fn all_spec_trigger_chars_work() {
         let mut m = Matcher::default();
         m.rebuild(vec![entry(1, "mipy", "test", CaseMode::KeepOriginal)]);
-        let triggers = [' ', '\n', '\r', '\t', '.', ',', ';', ':', '!', '?', ')', '"'];
+        let triggers = [
+            ' ', '\n', '\r', '\t', '.', ',', ';', ':', '!', '?', ')', '"',
+        ];
         for t in triggers {
             let res = m.try_match("mipy", t, &ActiveContext::default());
             assert!(res.is_some(), "tetik '{:?}' eşleşmeli", t);
             assert_eq!(res.unwrap().trigger, t);
         }
         // Normal harf tetik değildir
-        assert!(m.try_match("mipy", 'a', &ActiveContext::default()).is_none());
+        assert!(m
+            .try_match("mipy", 'a', &ActiveContext::default())
+            .is_none());
     }
 
     #[test]

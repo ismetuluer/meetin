@@ -292,13 +292,21 @@ impl Storage {
 
     /// Yedek dosyasından geri yükler; öncesinde mevcut veritabanının emniyet yedeğini alır (§7.3, M6.5).
     pub fn restore_from_backup(&self, filename: &str) -> Result<backup::BackupFileInfo, DbError> {
-        if filename.contains('/') || filename.contains('\\') || filename.contains("..") || !filename.ends_with(".db") {
-            return Err(DbError::InvalidInput("Geçersiz yedek dosya adı".to_string()));
+        if filename.contains('/')
+            || filename.contains('\\')
+            || filename.contains("..")
+            || !filename.ends_with(".db")
+        {
+            return Err(DbError::InvalidInput(
+                "Geçersiz yedek dosya adı".to_string(),
+            ));
         }
         let backups_dir = self.backups_dir();
         let src_path = backups_dir.join(filename);
         if !src_path.is_file() {
-            return Err(DbError::InvalidInput("Yedek dosyası bulunamadı".to_string()));
+            return Err(DbError::InvalidInput(
+                "Yedek dosyası bulunamadı".to_string(),
+            ));
         }
 
         // Seçilen yedeğin geçerli bir Meetin veritabanı olduğunu doğrula
@@ -414,8 +422,7 @@ impl Storage {
             .map(|v| v == "true")
             .unwrap_or(false);
         let target_norm = crate::matcher::case::normalize_abbr(abbr, fold);
-        let mut stmt =
-            tx.prepare("SELECT id, abbr FROM phrases WHERE deleted_at IS NULL")?;
+        let mut stmt = tx.prepare("SELECT id, abbr FROM phrases WHERE deleted_at IS NULL")?;
         let rows = stmt.query_map([], |r| Ok((r.get::<_, i64>(0)?, r.get::<_, String>(1)?)))?;
         for row in rows {
             let (id, existing_abbr) = row?;
@@ -539,7 +546,8 @@ impl Storage {
         tx.commit()?;
 
         drop(conn);
-        self.get_phrase(input.id)?.ok_or(DbError::NotFound(input.id))
+        self.get_phrase(input.id)?
+            .ok_or(DbError::NotFound(input.id))
     }
 
     /// İfadeyi sürükle-bırak ile klasöre taşır veya `copy = true` ise hedef klasöre de ekler.
@@ -614,7 +622,8 @@ impl Storage {
             tx.commit()?;
         }
 
-        self.get_phrase(phrase_id)?.ok_or(DbError::NotFound(phrase_id))
+        self.get_phrase(phrase_id)?
+            .ok_or(DbError::NotFound(phrase_id))
     }
 
     /// İfadeyi çöp kutusuna taşır (`deleted_at` alanı dolar, §7.1).
@@ -638,7 +647,9 @@ impl Storage {
         let mut conn = self.conn.lock().map_err(|_| DbError::LockPoisoned)?;
         let tx = conn.transaction()?;
         let abbr: Option<String> = tx
-            .query_row("SELECT abbr FROM phrases WHERE id = ?1", params![id], |r| r.get(0))
+            .query_row("SELECT abbr FROM phrases WHERE id = ?1", params![id], |r| {
+                r.get(0)
+            })
             .optional()?;
         let Some(abbr) = abbr else {
             return Err(DbError::NotFound(id));
@@ -1349,7 +1360,10 @@ impl Storage {
             if tag.is_empty() {
                 continue;
             }
-            tx.execute("INSERT OR IGNORE INTO tags (name) VALUES (?1)", params![tag])?;
+            tx.execute(
+                "INSERT OR IGNORE INTO tags (name) VALUES (?1)",
+                params![tag],
+            )?;
             let tag_id: i64 =
                 tx.query_row("SELECT id FROM tags WHERE name = ?1", params![tag], |r| {
                     r.get(0)
@@ -1457,11 +1471,17 @@ mod tests {
         let old_db = appdata.path().join("Meetin").join("meetin.db");
 
         // Bayrak yokken (kurulumlu sürüm) taşıma sorulmaz
-        assert_eq!(portable_migration_source(exe.path(), &data, Some(appdata.path())), None);
+        assert_eq!(
+            portable_migration_source(exe.path(), &data, Some(appdata.path())),
+            None
+        );
 
         std::fs::write(exe.path().join("portable.flag"), "").unwrap();
         // Eski veri yoksa aday yok
-        assert_eq!(portable_migration_source(exe.path(), &data, Some(appdata.path())), None);
+        assert_eq!(
+            portable_migration_source(exe.path(), &data, Some(appdata.path())),
+            None
+        );
 
         // Eski veri varsa aday; kopyalanınca içerik aynı
         let old = Storage::open(&old_db).unwrap();
@@ -1484,7 +1504,10 @@ mod tests {
         assert_eq!(copied.list_phrases(false).unwrap().len(), 1);
 
         // Yerel veri oluştuktan sonra bir daha sorulmaz
-        assert_eq!(portable_migration_source(exe.path(), &data, Some(appdata.path())), None);
+        assert_eq!(
+            portable_migration_source(exe.path(), &data, Some(appdata.path())),
+            None
+        );
     }
 
     #[test]
@@ -1630,9 +1653,7 @@ mod tests {
             .unwrap();
         assert_eq!(updated.name, "Yeni Ad");
         assert_eq!(updated.color.as_deref(), Some("c3"));
-        let cleared = storage
-            .update_folder(f.id, None, Some(None))
-            .unwrap();
+        let cleared = storage.update_folder(f.id, None, Some(None)).unwrap();
         assert_eq!(cleared.name, "Yeni Ad");
         assert_eq!(cleared.color, None);
     }
@@ -1815,7 +1836,8 @@ mod tests {
                 })
                 .unwrap();
             let conn = storage.conn.lock().unwrap();
-            let _ = conn.execute_batch("PRAGMA wal_checkpoint(TRUNCATE); PRAGMA journal_mode = DELETE;");
+            let _ = conn
+                .execute_batch("PRAGMA wal_checkpoint(TRUNCATE); PRAGMA journal_mode = DELETE;");
         }
 
         let mut perms = std::fs::metadata(&db_path).unwrap().permissions();

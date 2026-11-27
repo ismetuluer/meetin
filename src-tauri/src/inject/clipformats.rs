@@ -55,7 +55,10 @@ pub fn classify(fmt: u32, present: &[u32]) -> FormatKind {
 
 /// Sınır aşıldığında yine de alınacak (küçük, metin) biçimler mi?
 pub fn is_essential_text(fmt: u32) -> bool {
-    matches!(fmt, CF_UNICODETEXT | CF_TEXT | CF_OEMTEXT | 16 /* CF_LOCALE */)
+    matches!(
+        fmt,
+        CF_UNICODETEXT | CF_TEXT | CF_OEMTEXT | 16 /* CF_LOCALE */
+    )
 }
 
 /// Hedef program panoyu ne zaman okuyup bitirdi? "Gecikmeli yazma"da her biçim istendiğinde

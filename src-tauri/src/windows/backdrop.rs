@@ -138,7 +138,9 @@ pub fn role_for_mascot_size(width: f64, height: f64, focusable: bool) -> WindowR
 }
 
 /// Kayıtlı `theme_config` JSON metninden tema modu ve ada yüzeyi tercihini ayrıştırır.
-pub fn parse_theme_preferences(config_json: Option<&str>) -> (ThemeModeChoice, IslandSurfaceChoice) {
+pub fn parse_theme_preferences(
+    config_json: Option<&str>,
+) -> (ThemeModeChoice, IslandSurfaceChoice) {
     let Some(raw) = config_json else {
         return (ThemeModeChoice::System, IslandSurfaceChoice::MatchTheme);
     };
@@ -229,14 +231,8 @@ pub fn apply_main_backdrop<R: Runtime>(win: &WebviewWindow<R>, dark: bool) -> bo
         let Ok(hwnd) = win.hwnd() else {
             return false;
         };
-        let applied = win_impl::apply_backdrop_to_hwnd(
-            hwnd.0 as isize,
-            kind,
-            dark,
-            false,
-            None,
-            build,
-        );
+        let applied =
+            win_impl::apply_backdrop_to_hwnd(hwnd.0 as isize, kind, dark, false, None, build);
         MAIN_MICA_APPLIED.store(applied, Ordering::Relaxed);
         if applied {
             let _ = win.set_background_color(Some(tauri::window::Color(0, 0, 0, 0)));
@@ -264,11 +260,7 @@ pub fn apply_mascot_backdrop<R: Runtime>(
             return false;
         };
         let is_island = role == WindowRole::MascotIsland && kind == BackdropKind::Acrylic;
-        let round_corners = if is_island {
-            Some(true)
-        } else {
-            Some(false)
-        };
+        let round_corners = if is_island { Some(true) } else { Some(false) };
         win_impl::apply_backdrop_to_hwnd(
             hwnd.0 as isize,
             kind,
@@ -389,7 +381,11 @@ mod win_impl {
     }
 
     pub fn is_dwm_composition_enabled() -> bool {
-        unsafe { DwmIsCompositionEnabled().map(|b| b.as_bool()).unwrap_or(false) }
+        unsafe {
+            DwmIsCompositionEnabled()
+                .map(|b| b.as_bool())
+                .unwrap_or(false)
+        }
     }
 
     pub fn apply_backdrop_to_hwnd(
@@ -565,7 +561,10 @@ mod tests {
 
         // Windows 11 22H2+ (22621 / 26100): main -> Mica, ada -> Acrylic, diğerleri -> None
         for build in [22523, 22621, 22631, 26100] {
-            assert_eq!(backdrop_for_role(WindowRole::Main, build), BackdropKind::Mica);
+            assert_eq!(
+                backdrop_for_role(WindowRole::Main, build),
+                BackdropKind::Mica
+            );
             assert_eq!(
                 backdrop_for_role(WindowRole::MascotIsland, build),
                 BackdropKind::Acrylic
@@ -684,9 +683,7 @@ mod tests {
             (ThemeModeChoice::System, IslandSurfaceChoice::MatchTheme)
         );
         assert_eq!(
-            parse_theme_preferences(Some(
-                r#"{"mode":"light","islandSurface":"always_dark"}"#
-            )),
+            parse_theme_preferences(Some(r#"{"mode":"light","islandSurface":"always_dark"}"#)),
             (ThemeModeChoice::Light, IslandSurfaceChoice::AlwaysDark)
         );
         assert_eq!(

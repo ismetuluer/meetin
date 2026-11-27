@@ -443,242 +443,240 @@ impl HookStarter {
         thread::Builder::new()
             .name("meetin-expander".to_string())
             .spawn(move || {
-            while let Ok(job) = rx.recv() {
-                match job {
-                    WorkerJob::Expand {
-                        matched,
-                        hwnd,
-                        process_name,
-                    } => {
-                        // Kapı, tetiği yutan kancada açıldı; arm bitince (continue dahil)
-                        // bekleyen kullanıcı tuşları sırayla gönderilir (§1.3).
-                        let gate_guard = worker_shared.gate.open(inject::replay_keys);
-
-                        // Parola kutusundaysa ASLA genişletme; yutulan tetik tuşunu ilet (§7.4)
-                        #[cfg(windows)]
-                        if win_impl::is_focused_control_password() {
-                            if matched.trigger != '\0' {
-                                let _ = inject::send_single_trigger(matched.trigger);
-                            }
-                            continue;
-                        }
-
-                        // Doldurulacak alan ({alan:...}) varsa kısaltmayı silip Alan Adasını aç (§3.3, §5.2)
-                        let fields = vars::extract_form_fields(&matched.expanded_text);
-                        if !fields.is_empty() {
-                            let _ = inject::inject_undo(matched.abbr_char_len, "");
-                            if let Some(cb) = &on_fill_requested {
-                                cb(FillRequest {
-                                    matched,
-                                    fields,
-                                    process_name,
-                                });
-                            }
-                            continue;
-                        }
-
-                        let fold = worker_shared
-                            .matcher
-                            .read()
-                            .map(|m| m.fold_dotted_i())
-                            .unwrap_or(false);
-                        let resolved = resolve_with_storage(
-                            &worker_storage,
-                            &matched.expanded_text,
-                            HashMap::new(),
-                            fold,
-                        );
-                        let resolved_html = matched.content_html.as_deref().map(|h| {
-                            resolve_with_storage(&worker_storage, h, HashMap::new(), fold).text
-                        });
-                        let trigger_opt = if matched.trigger == '\0' {
-                            None
-                        } else {
-                            Some(matched.trigger)
-                        };
-
-                        let res = inject::inject_resolved(
-                            matched.abbr_char_len,
-                            &resolved.text,
-                            resolved_html.as_deref(),
-                            trigger_opt,
-                            resolved.cursor_left_steps,
-                            process_name.as_deref(),
-                        );
-                        // Geri alma kaydı kapı kapanmadan yazılır: bekleyen tuşlar yeniden
-                        // gönderilince kanca bu kaydı doğru biçimde geçersiz kılar (§3.1).
-                        if res.is_ok() && resolved.cursor_left_steps == 0 {
-                            if let Ok(mut st) = worker_shared.state.lock() {
-                                st.last_expansion = Some(LastExpansion {
-                                    hwnd,
-                                    delete_len: resolved.text.chars().count()
-                                        + usize::from(trigger_opt.is_some()),
-                                    original_abbr: matched.abbr.clone(),
-                                });
-                            }
-                        }
-                        drop(gate_guard);
-
-                        if res.is_ok() {
-                            let _ = worker_storage
-                                .record_usage(matched.phrase_id, process_name.as_deref());
-                            if let Some(cb) = &on_expanded {
-                                cb(ExpansionNotice {
-                                    phrase_id: matched.phrase_id,
-                                    abbr: matched.abbr.clone(),
-                                });
-                            }
-                        }
-                    }
-                    WorkerJob::UndoExpansion {
-                        delete_len,
-                        original_abbr,
-                    } => {
-                        let gate_guard = worker_shared.gate.open(inject::replay_keys);
-                        let _ = inject::inject_undo(delete_len, &original_abbr);
-                        drop(gate_guard);
-                    }
-                    WorkerJob::SelectionCandidate(cand) => {
-                        if let Some(cb) = &on_selection_candidate {
-                            cb(cand);
-                        }
-                    }
-                    WorkerJob::UserActivity(pos) => {
-                        if let Some(cb) = &on_user_activity {
-                            cb(pos);
-                        }
-                    }
-                    WorkerJob::SuggestionsChanged {
-                        items,
-                        check_password,
-                    } => {
-                        #[cfg(windows)]
-                        let safe_items = if check_password && win_impl::is_focused_control_password()
-                        {
-                            if let Ok(mut st) = worker_shared.state.lock() {
-                                st.active_suggestions.clear();
-                                st.active_suggest_typed.clear();
-                            }
-                            Vec::new()
-                        } else {
-                            items
-                        };
-                        #[cfg(not(windows))]
-                        let safe_items = {
-                            let _ = check_password;
-                            items
-                        };
-                        if let Some(cb) = &on_suggestions_changed {
-                            cb(safe_items);
-                        }
-                    }
-                    WorkerJob::AcceptSuggestion { phrase_id } => {
-                        let pending = if let Ok(mut st) = worker_shared.state.lock() {
-                            let typed = std::mem::take(&mut st.active_suggest_typed);
-                            let proc_name = st.active_suggest_process.take();
-                            let hwnd = st.active_suggest_hwnd;
-                            st.active_suggestions.clear();
-                            st.buffer.clear();
-                            let built = worker_shared
-                                .matcher
-                                .read()
-                                .ok()
-                                .and_then(|m| m.build_match_for_id(phrase_id, &typed, '\0'));
-                            built.map(|m| (m, hwnd, proc_name))
-                        } else {
-                            None
-                        };
-                        if let Some(cb) = &on_suggestions_changed {
-                            cb(Vec::new());
-                        }
-                        if let Some((matched, hwnd, proc_name)) = pending {
-                            let _ = worker_shared.tx.send(WorkerJob::Expand {
-                                matched,
-                                hwnd,
-                                process_name: proc_name,
-                            });
-                        }
-                    }
-                    WorkerJob::CycleSelectionCase => {
-                        #[cfg(windows)]
-                        {
+                while let Ok(job) = rx.recv() {
+                    match job {
+                        WorkerJob::Expand {
+                            matched,
+                            hwnd,
+                            process_name,
+                        } => {
+                            // Kapı, tetiği yutan kancada açıldı; arm bitince (continue dahil)
+                            // bekleyen kullanıcı tuşları sırayla gönderilir (§1.3).
                             let gate_guard = worker_shared.gate.open(inject::replay_keys);
+
+                            // Parola kutusundaysa ASLA genişletme; yutulan tetik tuşunu ilet (§7.4)
+                            #[cfg(windows)]
                             if win_impl::is_focused_control_password() {
+                                if matched.trigger != '\0' {
+                                    let _ = inject::send_single_trigger(matched.trigger);
+                                }
                                 continue;
                             }
-                            let _ = inject::release_shift_keys();
-                            thread::sleep(std::time::Duration::from_millis(20));
-                            if let Some(selected) = selection::read_selected_text() {
-                                if !selected.trim().is_empty() {
-                                    let cycled = crate::matcher::case::cycle_turkish_case(&selected);
-                                    let (_, ctx) = win_impl::active_window_info();
-                                    let shortcut = inject::paste_shortcut_for_process(
-                                        ctx.process_name.as_deref(),
-                                    );
-                                    if inject::clipboard::paste_rich_preserving_clipboard(
-                                        &cycled,
-                                        None,
-                                        shortcut,
-                                    )
-                                    .is_ok()
-                                    {
-                                        thread::sleep(std::time::Duration::from_millis(30));
-                                        let left_n = inject::build_reselect_left_count(&cycled);
-                                        let _ = inject::send_reselect_left(left_n);
-                                    }
+
+                            // Doldurulacak alan ({alan:...}) varsa kısaltmayı silip Alan Adasını aç (§3.3, §5.2)
+                            let fields = vars::extract_form_fields(&matched.expanded_text);
+                            if !fields.is_empty() {
+                                let _ = inject::inject_undo(matched.abbr_char_len, "");
+                                if let Some(cb) = &on_fill_requested {
+                                    cb(FillRequest {
+                                        matched,
+                                        fields,
+                                        process_name,
+                                    });
+                                }
+                                continue;
+                            }
+
+                            let fold = worker_shared
+                                .matcher
+                                .read()
+                                .map(|m| m.fold_dotted_i())
+                                .unwrap_or(false);
+                            let resolved = resolve_with_storage(
+                                &worker_storage,
+                                &matched.expanded_text,
+                                HashMap::new(),
+                                fold,
+                            );
+                            let resolved_html = matched.content_html.as_deref().map(|h| {
+                                resolve_with_storage(&worker_storage, h, HashMap::new(), fold).text
+                            });
+                            let trigger_opt = if matched.trigger == '\0' {
+                                None
+                            } else {
+                                Some(matched.trigger)
+                            };
+
+                            let res = inject::inject_resolved(
+                                matched.abbr_char_len,
+                                &resolved.text,
+                                resolved_html.as_deref(),
+                                trigger_opt,
+                                resolved.cursor_left_steps,
+                                process_name.as_deref(),
+                            );
+                            // Geri alma kaydı kapı kapanmadan yazılır: bekleyen tuşlar yeniden
+                            // gönderilince kanca bu kaydı doğru biçimde geçersiz kılar (§3.1).
+                            if res.is_ok() && resolved.cursor_left_steps == 0 {
+                                if let Ok(mut st) = worker_shared.state.lock() {
+                                    st.last_expansion = Some(LastExpansion {
+                                        hwnd,
+                                        delete_len: resolved.text.chars().count()
+                                            + usize::from(trigger_opt.is_some()),
+                                        original_abbr: matched.abbr.clone(),
+                                    });
                                 }
                             }
                             drop(gate_guard);
+
+                            if res.is_ok() {
+                                let _ = worker_storage
+                                    .record_usage(matched.phrase_id, process_name.as_deref());
+                                if let Some(cb) = &on_expanded {
+                                    cb(ExpansionNotice {
+                                        phrase_id: matched.phrase_id,
+                                        abbr: matched.abbr.clone(),
+                                    });
+                                }
+                            }
+                        }
+                        WorkerJob::UndoExpansion {
+                            delete_len,
+                            original_abbr,
+                        } => {
+                            let gate_guard = worker_shared.gate.open(inject::replay_keys);
+                            let _ = inject::inject_undo(delete_len, &original_abbr);
+                            drop(gate_guard);
+                        }
+                        WorkerJob::SelectionCandidate(cand) => {
+                            if let Some(cb) = &on_selection_candidate {
+                                cb(cand);
+                            }
+                        }
+                        WorkerJob::UserActivity(pos) => {
+                            if let Some(cb) = &on_user_activity {
+                                cb(pos);
+                            }
+                        }
+                        WorkerJob::SuggestionsChanged {
+                            items,
+                            check_password,
+                        } => {
+                            #[cfg(windows)]
+                            let safe_items =
+                                if check_password && win_impl::is_focused_control_password() {
+                                    if let Ok(mut st) = worker_shared.state.lock() {
+                                        st.active_suggestions.clear();
+                                        st.active_suggest_typed.clear();
+                                    }
+                                    Vec::new()
+                                } else {
+                                    items
+                                };
+                            #[cfg(not(windows))]
+                            let safe_items = {
+                                let _ = check_password;
+                                items
+                            };
+                            if let Some(cb) = &on_suggestions_changed {
+                                cb(safe_items);
+                            }
+                        }
+                        WorkerJob::AcceptSuggestion { phrase_id } => {
+                            let pending = if let Ok(mut st) = worker_shared.state.lock() {
+                                let typed = std::mem::take(&mut st.active_suggest_typed);
+                                let proc_name = st.active_suggest_process.take();
+                                let hwnd = st.active_suggest_hwnd;
+                                st.active_suggestions.clear();
+                                st.buffer.clear();
+                                let built =
+                                    worker_shared.matcher.read().ok().and_then(|m| {
+                                        m.build_match_for_id(phrase_id, &typed, '\0')
+                                    });
+                                built.map(|m| (m, hwnd, proc_name))
+                            } else {
+                                None
+                            };
+                            if let Some(cb) = &on_suggestions_changed {
+                                cb(Vec::new());
+                            }
+                            if let Some((matched, hwnd, proc_name)) = pending {
+                                let _ = worker_shared.tx.send(WorkerJob::Expand {
+                                    matched,
+                                    hwnd,
+                                    process_name: proc_name,
+                                });
+                            }
+                        }
+                        WorkerJob::CycleSelectionCase => {
+                            #[cfg(windows)]
+                            {
+                                let gate_guard = worker_shared.gate.open(inject::replay_keys);
+                                if win_impl::is_focused_control_password() {
+                                    continue;
+                                }
+                                let _ = inject::release_shift_keys();
+                                thread::sleep(std::time::Duration::from_millis(20));
+                                if let Some(selected) = selection::read_selected_text() {
+                                    if !selected.trim().is_empty() {
+                                        let cycled =
+                                            crate::matcher::case::cycle_turkish_case(&selected);
+                                        let (_, ctx) = win_impl::active_window_info();
+                                        let shortcut = inject::paste_shortcut_for_process(
+                                            ctx.process_name.as_deref(),
+                                        );
+                                        if inject::clipboard::paste_rich_preserving_clipboard(
+                                            &cycled, None, shortcut,
+                                        )
+                                        .is_ok()
+                                        {
+                                            thread::sleep(std::time::Duration::from_millis(30));
+                                            let left_n = inject::build_reselect_left_count(&cycled);
+                                            let _ = inject::send_reselect_left(left_n);
+                                        }
+                                    }
+                                }
+                                drop(gate_guard);
+                            }
                         }
                     }
                 }
-            }
-        })
-        .ok();
-
-    // Odak (parola kutusu) sorgu iş parçacığı (§7.4)
-    #[cfg(windows)]
-    {
-        thread::Builder::new()
-            .name("meetin-focus".to_string())
-            .spawn(move || {
-                win_impl::run_focus_loop(focus_rx);
             })
             .ok();
-    }
-    #[cfg(not(windows))]
-    drop(focus_rx);
 
-    // Windows kanca iş parçacığı
-    #[cfg(windows)]
-    {
-        thread::Builder::new()
-            .name("meetin-hook".to_string())
-            .spawn(move || {
-                win_impl::run_hook_loop();
-            })
-            .ok();
-    }
+        // Odak (parola kutusu) sorgu iş parçacığı (§7.4)
+        #[cfg(windows)]
+        {
+            thread::Builder::new()
+                .name("meetin-focus".to_string())
+                .spawn(move || {
+                    win_impl::run_focus_loop(focus_rx);
+                })
+                .ok();
+        }
+        #[cfg(not(windows))]
+        drop(focus_rx);
+
+        // Windows kanca iş parçacığı
+        #[cfg(windows)]
+        {
+            thread::Builder::new()
+                .name("meetin-hook".to_string())
+                .spawn(move || {
+                    win_impl::run_hook_loop();
+                })
+                .ok();
+        }
     }
 }
 
 #[cfg(windows)]
 mod win_impl {
+    use super::focus::FocusState;
     use super::*;
+    use windows::core::PWSTR;
     use windows::Win32::Foundation::{CloseHandle, HWND, LPARAM, LRESULT, WPARAM};
     use windows::Win32::System::Com::{
         CoCreateInstance, CoInitializeEx, CLSCTX_INPROC_SERVER, COINIT_MULTITHREADED,
     };
-    use windows::core::PWSTR;
     use windows::Win32::System::Threading::{
         OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_WIN32,
         PROCESS_QUERY_LIMITED_INFORMATION,
     };
     use windows::Win32::UI::Accessibility::{
-        CUIAutomation, IUIAutomation, SetWinEventHook, UnhookWinEvent, HWINEVENTHOOK,
-        UIA_IsPasswordPropertyId,
+        CUIAutomation, IUIAutomation, SetWinEventHook, UIA_IsPasswordPropertyId, UnhookWinEvent,
+        HWINEVENTHOOK,
     };
-    use super::focus::FocusState;
     use windows::Win32::UI::Input::KeyboardAndMouse::{
         GetAsyncKeyState, GetKeyState, GetKeyboardLayout, ToUnicodeEx, VK_BACK, VK_CAPITAL,
         VK_CONTROL, VK_DELETE, VK_DOWN, VK_END, VK_ESCAPE, VK_F3, VK_HOME, VK_LEFT, VK_LSHIFT,
@@ -688,11 +686,10 @@ mod win_impl {
     use windows::Win32::UI::WindowsAndMessaging::{
         CallNextHookEx, DispatchMessageW, GetForegroundWindow, GetMessageW, GetWindowTextW,
         GetWindowThreadProcessId, SetWindowsHookExW, TranslateMessage, UnhookWindowsHookEx,
-        EVENT_OBJECT_FOCUS, EVENT_SYSTEM_FOREGROUND, WINEVENT_OUTOFCONTEXT,
-        WINEVENT_SKIPOWNPROCESS,
-        KBDLLHOOKSTRUCT, LLKHF_EXTENDED, MSG, MSLLHOOKSTRUCT, WH_KEYBOARD_LL, WH_MOUSE_LL,
-        WM_KEYDOWN, WM_KEYUP, WM_SYSKEYUP,
-        WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_SYSKEYDOWN,
+        EVENT_OBJECT_FOCUS, EVENT_SYSTEM_FOREGROUND, KBDLLHOOKSTRUCT, LLKHF_EXTENDED, MSG,
+        MSLLHOOKSTRUCT, WH_KEYBOARD_LL, WH_MOUSE_LL, WINEVENT_OUTOFCONTEXT,
+        WINEVENT_SKIPOWNPROCESS, WM_KEYDOWN, WM_KEYUP, WM_LBUTTONDOWN, WM_LBUTTONUP,
+        WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_SYSKEYDOWN, WM_SYSKEYUP,
     };
 
     pub fn run_hook_loop() {
@@ -700,10 +697,18 @@ mod win_impl {
             let kb_hook = SetWindowsHookExW(WH_KEYBOARD_LL, Some(keyboard_proc), None, 0);
             let mouse_hook = SetWindowsHookExW(WH_MOUSE_LL, Some(mouse_proc), None, 0);
             if kb_hook.is_err() {
-                crate::logging::event(crate::logging::Level::Error, "hook.keyboard_install_failed", &[]);
+                crate::logging::event(
+                    crate::logging::Level::Error,
+                    "hook.keyboard_install_failed",
+                    &[],
+                );
             }
             if mouse_hook.is_err() {
-                crate::logging::event(crate::logging::Level::Error, "hook.mouse_install_failed", &[]);
+                crate::logging::event(
+                    crate::logging::Level::Error,
+                    "hook.mouse_install_failed",
+                    &[],
+                );
             }
 
             // Odak ve ön plan değişimleri (bu iş parçacığının mesaj döngüsünde teslim edilir)
@@ -800,7 +805,9 @@ mod win_impl {
     fn query_is_password(uia: &IUIAutomation) -> Option<bool> {
         unsafe {
             let elem = uia.GetFocusedElement().ok()?;
-            let val = elem.GetCurrentPropertyValue(UIA_IsPasswordPropertyId).ok()?;
+            let val = elem
+                .GetCurrentPropertyValue(UIA_IsPasswordPropertyId)
+                .ok()?;
             bool::try_from(&val).ok()
         }
     }
@@ -955,9 +962,8 @@ mod win_impl {
                     let now = Instant::now();
                     if let Ok(mut st) = shared.state.try_lock() {
                         if let Some((dx0, dy0)) = st.mouse_down_pos.take() {
-                            let drag_dist = (((ms.pt.x - dx0).pow(2) + (ms.pt.y - dy0).pow(2))
-                                as f64)
-                                .sqrt();
+                            let drag_dist =
+                                (((ms.pt.x - dx0).pow(2) + (ms.pt.y - dy0).pow(2)) as f64).sqrt();
                             if drag_dist > 8.0 {
                                 is_selection_gesture = true;
                             }
@@ -965,9 +971,8 @@ mod win_impl {
                         if !is_selection_gesture {
                             if let Some((prev_t, px, py)) = st.last_click_up {
                                 let dt = now.duration_since(prev_t).as_millis();
-                                let dist = (((ms.pt.x - px).pow(2) + (ms.pt.y - py).pow(2))
-                                    as f64)
-                                    .sqrt();
+                                let dist =
+                                    (((ms.pt.x - px).pow(2) + (ms.pt.y - py).pow(2)) as f64).sqrt();
                                 if dt <= 450 && dist <= 6.0 {
                                     is_selection_gesture = true;
                                 }
@@ -984,13 +989,14 @@ mod win_impl {
                             .map(|ex| is_bubble_hidden_process(ctx.process_name.as_deref(), &ex))
                             .unwrap_or(false);
                         if !hidden {
-                            let _ = shared.tx.send(WorkerJob::SelectionCandidate(
-                                SelectionCandidate {
-                                    x: ms.pt.x,
-                                    y: ms.pt.y,
-                                    process_name: ctx.process_name,
-                                },
-                            ));
+                            let _ =
+                                shared
+                                    .tx
+                                    .send(WorkerJob::SelectionCandidate(SelectionCandidate {
+                                        x: ms.pt.x,
+                                        y: ms.pt.y,
+                                        process_name: ctx.process_name,
+                                    }));
                         }
                     }
                 }
@@ -1250,7 +1256,7 @@ mod win_impl {
                         });
                     }
                     shared.gate.begin(Instant::now());
-let _ = shared.tx.send(WorkerJob::Expand {
+                    let _ = shared.tx.send(WorkerJob::Expand {
                         matched: m,
                         hwnd: hwnd_raw,
                         process_name: ctx.process_name,
@@ -1276,7 +1282,7 @@ let _ = shared.tx.send(WorkerJob::Expand {
                             check_password: false,
                         });
                         shared.gate.begin(Instant::now());
-let _ = shared.tx.send(WorkerJob::Expand {
+                        let _ = shared.tx.send(WorkerJob::Expand {
                             matched: m,
                             hwnd: hwnd_raw,
                             process_name: ctx.process_name,

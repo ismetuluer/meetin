@@ -84,8 +84,7 @@ pub struct MascotWindowState {
 
 impl MascotWindowState {
     pub fn is_visible_logical(&self) -> bool {
-        !self.user_hidden.load(Ordering::Relaxed)
-            && !self.fullscreen_hidden.load(Ordering::Relaxed)
+        !self.user_hidden.load(Ordering::Relaxed) && !self.fullscreen_hidden.load(Ordering::Relaxed)
     }
 }
 
@@ -199,7 +198,9 @@ pub fn resize_mascot_window(
 
     let target_role = backdrop::role_for_mascot_size(width, height, focusable);
     let is_island = target_role == backdrop::WindowRole::MascotIsland;
-    let was_island = state.island_backdrop_active.swap(is_island, Ordering::Relaxed);
+    let was_island = state
+        .island_backdrop_active
+        .swap(is_island, Ordering::Relaxed);
     if is_island {
         let island_dark =
             backdrop::resolve_current_island_dark(app, theme::read_system_theme().dark);
@@ -378,7 +379,9 @@ mod win_impl {
     use std::ffi::c_void;
     use std::mem::size_of;
     use windows::core::PWSTR;
-    use windows::Win32::Foundation::{CloseHandle, GetLastError, ERROR_ACCESS_DENIED, HANDLE, HWND};
+    use windows::Win32::Foundation::{
+        CloseHandle, GetLastError, ERROR_ACCESS_DENIED, HANDLE, HWND,
+    };
     use windows::Win32::Security::{
         GetTokenInformation, TokenElevation, TOKEN_ELEVATION, TOKEN_QUERY,
     };
@@ -487,11 +490,7 @@ mod win_impl {
                 let _ = SetForegroundWindow(HWND(raw as *mut c_void));
             }
         }
-        state
-            .prev_process
-            .lock()
-            .ok()
-            .and_then(|g| g.clone())
+        state.prev_process.lock().ok().and_then(|g| g.clone())
     }
 
     pub fn is_foreground_fullscreen() -> bool {
