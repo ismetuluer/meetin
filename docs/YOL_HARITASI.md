@@ -140,6 +140,11 @@ Her adımdan önce mevcut ekranın görüntüsü ve önerilen düzen Saul'a gös
 - **Şartname:** §5.1.1 kataloğuna `rocket` satırı [K] olarak eklenir.
 - **Ajan:** Opus (çoklu monitör fiziği, Rust konumlandırma) · Sonnet (roket SVG + CSS animasyonu, Opus denetimi). **Test:** Oto: monitör birleşimi, zemin ve geçiş fiziği · Elle: iki monitörde (%100/%150) yavaş ve hızlı fırlatma.
 
+### [ ] R3.0g · Mikro animasyonlar ("UI Moments" tarzı) — Saul isteği
+
+- **Hedef:** `gif/` klasöründeki 72 örneğin tarzında (sade, tek renk, yaylı) küçük etkileşim animasyonları. Kod kopyalanmaz, ortak yay altyapısı (R3.0) ve §11.4 renk rolleriyle yeniden yazılır. Hangisinin nerede kullanılacağı Saul ile birlikte seçilir; seçilenler bu maddeye alt adım olarak eklenir.
+- **Ajan:** Sonnet (bileşen başına ayrı görev, sırayla) · Opus denetim.
+
 ### [ ] R3.1 · İfade listesi — v1.5.2
 
 - **Hedef:** Onay kutuları kaldırılır; `Ctrl`/`Shift` + tık çoklu seçim; ifadeler klasörlere sürükle-bırak; anlamsız simgeler çıkar; toplu işlemler sağ tık menüsünde.
