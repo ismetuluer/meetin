@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { KbdGroup } from "../design/Kbd";
 import { t } from "../i18n";
 import type { PhraseRecord } from "./types";
 
@@ -107,7 +108,7 @@ export function CommandPalette({
                   >
                     <span>{item.cmd.label}</span>
                     {item.cmd.hint && (
-                      <span className="muted small">{item.cmd.hint}</span>
+                      <KbdGroup shortcut={item.cmd.hint} />
                     )}
                   </button>
                 );

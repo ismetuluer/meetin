@@ -12,6 +12,7 @@ import {
   playThrowSound,
   playWallImpactSound,
 } from "../mascot/mascotMachine";
+import { ShortcutField } from "../design/Kbd";
 import { Toggle } from "../design/Toggle";
 import { AppearanceSettings } from "./AppearanceSettings";
 import { captureShortcutCombo } from "./shortcutCapture";
@@ -789,18 +790,14 @@ export function SettingsView({
                 ).map(([field, labelKey]) => (
                   <div key={field} className="settings-row">
                     <span>{t(labelKey)}</span>
-                    <input
-                      className="input"
-                      readOnly
-                      style={{
-                        width: 240,
-                        fontFamily: "ui-monospace, Consolas, monospace",
-                        cursor: "pointer",
-                      }}
+                    <ShortcutField
+                      label={t(labelKey)}
                       title={t("settings.shortcutFieldTip")}
                       placeholder={t("settings.shortcutCapturePlaceholder")}
                       value={shortcutDraft[field]}
                       onKeyDown={(e) => {
+                        // Tab alandan çıkar (klavye tuzağı olmasın)
+                        if (e.key === "Tab") return;
                         e.preventDefault();
                         const combo = captureShortcutCombo(e);
                         if (combo) {

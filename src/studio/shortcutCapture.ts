@@ -5,7 +5,7 @@ const MODIFIER_KEYS = new Set(["Control", "Alt", "Shift", "Meta", "AltGraph"]);
 /**
  * Klavye olayından Tauri/Windows uyumlu kısayol metni üretir (örn. `Ctrl+Alt+P`).
  */
-export function captureShortcutCombo(e: KeyboardEvent<HTMLInputElement>): string | null {
+export function captureShortcutCombo(e: KeyboardEvent<Element>): string | null {
   if (MODIFIER_KEYS.has(e.key)) {
     return null;
   }

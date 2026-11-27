@@ -86,15 +86,9 @@ html.has-mica-backdrop .fluent-detail-col {
   border-color: var(--vurgu);
 }
 
-.kbd-badge {
+.command-search-kbd {
   margin-left: auto;
-  font-size: 11px;
-  font-family: ui-monospace, Consolas, monospace;
-  padding: 1px 6px;
-  border-radius: var(--r-sm);
-  background: var(--yuzey-2);
-  border: 1px solid var(--cizgi);
-  color: var(--metin-ikincil);
+  display: inline-flex;
 }
 
 .icon-btn {
@@ -853,12 +847,14 @@ html.has-mica-backdrop .fluent-detail-col {
   outline: none;
 }
 
-.shortcut-input {
-  min-width: 80px;
+/* İfade kısayolu alanı kutunun içinde çerçevesiz durur */
+.unified-abbr-box .meetin-shortcut-field {
   flex: 1;
+  min-width: 80px;
+  height: auto;
+  padding: 0;
   border: none;
   background: transparent;
-  outline: none;
 }
 
 .inline-case-select {

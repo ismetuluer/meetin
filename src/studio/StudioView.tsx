@@ -11,6 +11,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { t, useLanguage, type TranslationKey } from "../i18n";
 import { suggestAbbreviation } from "../island/abbrSuggest";
+import { KbdGroup, ShortcutField } from "../design/Kbd";
 import { StackPanel } from "../design/StackPanel";
 import { TagInput } from "../design/TagInput";
 import { MeetinSheep } from "../mascot/MeetinSheep";
@@ -1234,7 +1235,9 @@ export function StudioView() {
               <path d="M11 11L14.5 14.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
             <span className="muted">{t("studio.searchOrCommand")}</span>
-            <kbd className="kbd-badge">Ctrl K</kbd>
+            <span className="command-search-kbd">
+              <KbdGroup shortcut="Ctrl+K" />
+            </span>
           </button>
 
           <div className="dropdown-wrap">
@@ -2368,12 +2371,10 @@ export function StudioView() {
                   <div className="meta-field-group">
                     <span className="tiny-label">{t("studio.shortcutLabel")}</span>
                     <div className="unified-abbr-box">
-                      <input
-                        className="shortcut-input"
-                        readOnly
-                        style={{ cursor: "pointer" }}
-                        title={t("settings.shortcutFieldTip")}
+                      <ShortcutField
                         value={draft.shortcut}
+                        label={t("studio.shortcutLabel")}
+                        title={t("settings.shortcutFieldTip")}
                         onKeyDown={(e) => {
                           if (e.key === "Backspace" || e.key === "Delete") {
                             e.preventDefault();

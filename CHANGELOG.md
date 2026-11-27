@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü (CHANGELOG)
 
+## [1.5.6] - 2026-11-28
+
+### Değişti
+- **Kısayollar tuş görünümünde:** Yardım, Ayarlar › Kısayollar, ifade kısayolu alanı, arama düğmesi ve komut paletinde kısayollar `Ctrl` `Alt` `P` gibi tuş kutucuklarıyla gösterilir; Windows adları kullanılır (Win, Boşluk, Enter ↵, Tab ⇥, oklar).
+
+### Düzeltildi
+- Ayarlar › Kısayollar alanından Tab ile çıkılabiliyor (önceden klavye odağı alanda kalıyordu).
+
 ## [1.5.5] - 2026-11-28
 
 ### Değişti

@@ -150,10 +150,11 @@ Her adımdan önce mevcut ekranın görüntüsü ve önerilen düzen Saul'a gös
 
 - **Yer (Saul kararı):** ifade sürüm geçmişi. **Yapılan:** `src/design/StackPanel.tsx` + `stackPanel.css`: "Geçmiş" açılınca kartlar yığılı başlar, ortak yayla listeye dağılır; kapanırken yığılır ve kaybolur. Yığılıyken kartlar `inert`. Göreli gün + yerel saat, değişkenleri okunur önizleme, adlandırılmış kapatma düğmesi; 4+ sürümde kaydırma. Eski `history-inline-drawer` stilleri kaldırıldı. Öneri çiziminden fark: yığın, ayrı bir tıklama beklemeden açılışta dağılır (geri yükleme için iki tıklama gerekmesin). **Ajan:** Opus. **Test:** Oto: 4 bileşen testi · tarayıcıda açılış, dağılma, geri yükleme, kapanış denemesi.
 
-### [ ] R3.0e · Kısayollarda klavye tuşu görünümü (Kbd) — Saul isteği
+### [x] R3.0e · Kısayollarda klavye tuşu görünümü (Kbd) — v1.5.6
 
 - **Hedef:** `Ctrl+Alt+P` gibi düz yazılar yerine tuş biçiminde küçük kutucuklar (shadcn "Kbd" görünümü örnek alınır, kütüphane eklenmez): Yardım, Ayarlar › Kısayollar, komut paleti, ipuçları. Ortak `<Kbd>` / `<KbdGroup>` bileşeni; Windows adlandırması (Ctrl, Alt, Shift, Win, Boşluk, Enter ↵, Tab ⇥, oklar ←↑→↓), §11.4 renk rolleri.
 - **Ajan:** Sonnet · Opus denetim. **Test:** Oto: kısayol metni → tuş listesi ayrıştırma · Elle.
+- **Yapılan:** `src/design/Kbd.tsx` (`KbdGroup`, metin içi `ShortcutText`, `ShortcutField`) + `shortcutKeys.ts` + `kbd.css`. Yardım tablosu ve metinleri, Ayarlar › Kısayollar, ifade kısayolu alanı, arama düğmesi, komut paleti. `Ctrl+tıkla` gibi Türkçe kullanımlar düz yazı kalır. Fare ipuçları (`title`) düz yazı kalır, içine öğe konamaz. Ayarlar'daki kısayol alanındaki Tab tuzağı düzeltildi. **Ajan:** Opus. **Test:** Oto: ayrıştırma (4), bileşen (5) · tarayıcıda görünüm, tuş yakalama ve Tab.
 
 ### [ ] R3.0f · Maskot: monitörler arası fırlatma + roket — Saul isteği
 

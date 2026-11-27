@@ -1,0 +1,63 @@
+/* Klavye tuşu görünümü (R3.0e): §11.4 renk rolleri. */
+
+.meetin-kbd-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.meetin-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border: 1px solid var(--cizgi);
+  border-radius: 5px;
+  background: var(--yuzey);
+  box-shadow: inset 0 -1.5px 0 var(--cizgi);
+  color: var(--metin-ikincil);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.meetin-shortcut-field {
+  display: inline-flex;
+  align-items: center;
+  min-width: 160px;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--cizgi);
+  border-radius: var(--r-sm);
+  background: var(--yuzey);
+  color: var(--metin);
+  font: inherit;
+  cursor: pointer;
+}
+
+.meetin-shortcut-field:hover {
+  border-color: var(--metin-pasif);
+}
+
+.meetin-shortcut-field:focus-visible,
+.meetin-shortcut-field:focus {
+  outline: 2px solid var(--vurgu);
+  outline-offset: 1px;
+}
+
+.meetin-shortcut-placeholder {
+  color: var(--metin-pasif);
+  font-size: 12px;
+}
+
+@media (forced-colors: active) {
+  .meetin-kbd {
+    border-color: ButtonText;
+    box-shadow: none;
+  }
+}

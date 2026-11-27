@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { KbdGroup, ShortcutText } from "../design/Kbd";
 import { t, useLanguage } from "../i18n";
 import {
   getHelpSections,
@@ -88,7 +89,7 @@ export function HelpView({
       case "paragraph":
         return (
           <p key={idx} className="help-paragraph">
-            {block.text}
+            <ShortcutText text={block.text} />
           </p>
         );
       case "steps":
@@ -97,7 +98,9 @@ export function HelpView({
             {block.title && <h4 className="help-card-title">{block.title}</h4>}
             <ol className="help-steps">
               {block.items.map((step, sIdx) => (
-                <li key={sIdx}>{step}</li>
+                <li key={sIdx}>
+                  <ShortcutText text={step} />
+                </li>
               ))}
             </ol>
           </div>
@@ -109,7 +112,7 @@ export function HelpView({
             <ul className="help-bullets">
               {block.items.map((item, bIdx) => (
                 <li key={bIdx}>
-                  <strong>{item.label}:</strong> {item.text}
+                  <strong>{item.label}:</strong> <ShortcutText text={item.text} />
                 </li>
               ))}
             </ul>
@@ -160,7 +163,9 @@ export function HelpView({
                   {block.rows.map((row, rIdx) => (
                     <tr key={rIdx}>
                       {row.map((cell, cIdx) => (
-                        <td key={cIdx}>{cell}</td>
+                        <td key={cIdx}>
+                          <ShortcutText text={cell} />
+                        </td>
                       ))}
                     </tr>
                   ))}
@@ -175,7 +180,7 @@ export function HelpView({
             key={idx}
             className={`help-callout ${block.tone === "warn" ? "is-warn" : "is-info"}`}
           >
-            {block.text}
+            <ShortcutText text={block.text} />
           </div>
         );
       case "faq":
@@ -188,7 +193,9 @@ export function HelpView({
                 open={openFaq || fIdx === 0}
               >
                 <summary className="help-faq-q">{item.q}</summary>
-                <p className="help-faq-a">{item.a}</p>
+                <p className="help-faq-a">
+                  <ShortcutText text={item.a} />
+                </p>
               </details>
             ))}
           </div>
@@ -221,7 +228,7 @@ export function HelpView({
                 {renderShortcutRows().map((row) => (
                   <tr key={row.keys}>
                     <td>
-                      <kbd className="kbd-badge">{row.keys}</kbd>
+                      <KbdGroup shortcut={row.keys} />
                     </td>
                     <td>{row.desc}</td>
                   </tr>
