@@ -807,6 +807,9 @@ mod win_impl {
             let Some(shared) = HOOK_SHARED.get() else {
                 continue;
             };
+            // Ön plandaki işlemin adını kancadan önce önbelleğe al: kanca geri çağrısında
+            // OpenProcess/QueryFullProcessImageNameW çalışmasın (R1.6, < 1 ms hedefi).
+            let _ = active_window_info();
             let generation = shared.focus.current_generation();
             let result = FocusState::from_query(uia.as_ref().and_then(query_is_password));
             if shared.focus.resolve(generation, result) && result == FocusState::Password {
