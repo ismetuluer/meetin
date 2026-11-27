@@ -64,15 +64,41 @@ mod win_clip {
     };
     use windows::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowThreadProcessId};
 
+    use super::super::clipformats::{
+        classify, is_essential_text, FormatKind, RenderWait, CF_ENHMETAFILE, MAX_BACKUP_BYTES,
+    };
+    use std::sync::{mpsc, Condvar, Mutex, OnceLock};
+    use std::time::Instant;
+    use windows::core::w;
+    use windows::Win32::Foundation::{HINSTANCE, HWND, LPARAM, LRESULT, WPARAM};
+    use windows::Win32::Graphics::Gdi::{GetEnhMetaFileBits, SetEnhMetaFileBits, HENHMETAFILE};
+    use windows::Win32::System::DataExchange::GetClipboardOwner;
+    use windows::Win32::System::LibraryLoader::GetModuleHandleW;
+    use windows::Win32::UI::WindowsAndMessaging::{
+        CreateWindowExW, DefWindowProcW, DispatchMessageW, GetMessageW, RegisterClassW,
+        HWND_MESSAGE, MSG, WINDOW_EX_STYLE, WINDOW_STYLE, WM_DESTROYCLIPBOARD,
+        WM_RENDERALLFORMATS, WM_RENDERFORMAT, WNDCLASSW,
+    };
+
     const CF_UNICODETEXT: u32 = 13;
 
+    enum Entry {
+        Memory(u32, Vec<u8>),
+        EnhMetafile(Vec<u8>),
+    }
+
+    /// Kullanıcının panosunun yedeği (yalnız bellekte tutulur, diske yazılmaz).
     pub struct ClipboardBackup {
-        formats: Vec<(u32, Vec<u8>)>,
+        entries: Vec<Entry>,
     }
 
     fn open_clipboard_retry() -> Result<(), InjectError> {
+        open_clipboard_as(owner_hwnd())
+    }
+
+    fn open_clipboard_as(owner: Option<HWND>) -> Result<(), InjectError> {
         for _ in 0..10 {
-            if unsafe { OpenClipboard(None) }.is_ok() {
+            if unsafe { OpenClipboard(owner.unwrap_or_default()) }.is_ok() {
                 return Ok(());
             }
             thread::sleep(Duration::from_millis(10));
@@ -81,7 +107,7 @@ mod win_clip {
     }
 
     unsafe fn alloc_and_copy(data: &[u8]) -> Result<HANDLE, InjectError> {
-        let hmem = GlobalAlloc(GMEM_MOVEABLE, data.len())
+        let hmem = GlobalAlloc(GMEM_MOVEABLE, data.len().max(1))
             .map_err(|e| InjectError::Win32(e.to_string()))?;
         let ptr = GlobalLock(hmem);
         if ptr.is_null() {
@@ -92,43 +118,302 @@ mod win_clip {
         Ok(HANDLE(hmem.0))
     }
 
+    unsafe fn read_memory_format(fmt: u32) -> Option<Vec<u8>> {
+        let handle = GetClipboardData(fmt).ok()?;
+        let hglobal = HGLOBAL(handle.0);
+        let size = GlobalSize(hglobal);
+        if size == 0 {
+            return None;
+        }
+        let ptr = GlobalLock(hglobal);
+        if ptr.is_null() {
+            return None;
+        }
+        let bytes = std::slice::from_raw_parts(ptr as *const u8, size).to_vec();
+        let _ = GlobalUnlock(hglobal);
+        Some(bytes)
+    }
+
+    unsafe fn read_enh_metafile() -> Option<Vec<u8>> {
+        let handle = GetClipboardData(CF_ENHMETAFILE).ok()?;
+        let hemf = HENHMETAFILE(handle.0);
+        let size = GetEnhMetaFileBits(hemf, None) as usize;
+        if size == 0 {
+            return None;
+        }
+        let mut buf = vec![0u8; size];
+        let written = GetEnhMetaFileBits(hemf, Some(&mut buf)) as usize;
+        (written == size).then_some(buf)
+    }
+
+    /// Panoyu biçimlerine göre yedekler: bellek blokları kopyalanır, metafile içeriğiyle
+    /// alınır, GDI tutamaçları ve Windows'un türettiği biçimler atlanır (`clipformats`).
     pub fn backup_clipboard() -> Result<ClipboardBackup, InjectError> {
         open_clipboard_retry()?;
-        let mut formats = Vec::new();
+        let mut entries = Vec::new();
         unsafe {
+            let mut present = Vec::new();
             let mut fmt = EnumClipboardFormats(0);
             while fmt != 0 {
-                if let Ok(handle) = GetClipboardData(fmt) {
-                    let hglobal = HGLOBAL(handle.0);
-                    let size = GlobalSize(hglobal);
-                    if size > 0 {
-                        let ptr = GlobalLock(hglobal);
-                        if !ptr.is_null() {
-                            let slice = std::slice::from_raw_parts(ptr as *const u8, size);
-                            formats.push((fmt, slice.to_vec()));
-                            let _ = GlobalUnlock(hglobal);
-                        }
-                    }
-                }
+                present.push(fmt);
                 fmt = EnumClipboardFormats(fmt);
+            }
+            let mut total = 0usize;
+            for &fmt in &present {
+                let entry = match classify(fmt, &present) {
+                    FormatKind::Skip => None,
+                    FormatKind::Memory => read_memory_format(fmt).map(|b| Entry::Memory(fmt, b)),
+                    FormatKind::EnhMetafile => read_enh_metafile().map(Entry::EnhMetafile),
+                };
+                let Some(entry) = entry else { continue };
+                let len = match &entry {
+                    Entry::Memory(_, b) | Entry::EnhMetafile(b) => b.len(),
+                };
+                if total + len > MAX_BACKUP_BYTES && !is_essential_text(fmt) {
+                    continue;
+                }
+                total += len;
+                entries.push(entry);
             }
             let _ = CloseClipboard();
         }
-        Ok(ClipboardBackup { formats })
+        Ok(ClipboardBackup { entries })
     }
 
+    /// Yedeği geri yükler. Geri yüklenen içerik Win+V geçmişine, bulut panosuna ve pano
+    /// izleyicilerine (Meetin'in kendi geçmişi dahil) ikinci kez düşmesin diye işaretlenir.
     pub fn restore_clipboard(backup: &ClipboardBackup) -> Result<(), InjectError> {
         open_clipboard_retry()?;
         unsafe {
             let _ = EmptyClipboard();
-            for (fmt, bytes) in &backup.formats {
-                if let Ok(handle) = alloc_and_copy(bytes) {
-                    let _ = SetClipboardData(*fmt, handle);
+            let has_marker = |fmt: u32| {
+                backup
+                    .entries
+                    .iter()
+                    .any(|e| matches!(e, Entry::Memory(f, _) if *f == fmt))
+            };
+            for entry in &backup.entries {
+                match entry {
+                    Entry::Memory(fmt, bytes) => {
+                        if let Ok(h) = alloc_and_copy(bytes) {
+                            let _ = SetClipboardData(*fmt, h);
+                        }
+                    }
+                    Entry::EnhMetafile(bytes) => {
+                        let hemf = SetEnhMetaFileBits(bytes);
+                        if !hemf.is_invalid() {
+                            let _ = SetClipboardData(CF_ENHMETAFILE, HANDLE(hemf.0));
+                        }
+                    }
+                }
+            }
+            if !backup.entries.is_empty() {
+                for name in [
+                    "CanIncludeInClipboardHistory",
+                    "CanUploadToCloudClipboard",
+                    "ExcludeClipboardContentFromMonitorProcessing",
+                ] {
+                    let fmt = register_format(name);
+                    if fmt != 0 && !has_marker(fmt) {
+                        if let Ok(h) = alloc_and_copy(&0u32.to_le_bytes()) {
+                            let _ = SetClipboardData(fmt, h);
+                        }
+                    }
                 }
             }
             let _ = CloseClipboard();
         }
         Ok(())
+    }
+
+    // ---- Gecikmeli yazma (delayed rendering) ----------------------------------------
+    // Meetin metni panoya "istenince verilecek" diye koyar. Hedef program yapıştırırken
+    // veriyi istediğinde Windows gizli sahip penceresine WM_RENDERFORMAT gönderir; böylece
+    // okumanın ne zaman bittiği tahmin edilmez, bilinir.
+
+    struct Pending {
+        formats: Vec<(u32, Vec<u8>)>,
+        renders: u32,
+    }
+
+    static PENDING: Mutex<Option<Pending>> = Mutex::new(None);
+    static RENDERED: Condvar = Condvar::new();
+
+    fn pending_lock() -> std::sync::MutexGuard<'static, Option<Pending>> {
+        PENDING.lock().unwrap_or_else(|e| e.into_inner())
+    }
+
+    unsafe fn render_format(fmt: u32) {
+        let mut guard = pending_lock();
+        if let Some(p) = guard.as_mut() {
+            if let Some((_, bytes)) = p.formats.iter().find(|(f, _)| *f == fmt) {
+                if let Ok(h) = alloc_and_copy(bytes) {
+                    let _ = SetClipboardData(fmt, h);
+                }
+            }
+            p.renders += 1;
+            RENDERED.notify_all();
+        }
+    }
+
+    unsafe extern "system" fn owner_proc(
+        hwnd: HWND,
+        msg: u32,
+        wparam: WPARAM,
+        lparam: LPARAM,
+    ) -> LRESULT {
+        match msg {
+            WM_RENDERFORMAT => {
+                render_format(wparam.0 as u32);
+                LRESULT(0)
+            }
+            WM_RENDERALLFORMATS => {
+                if OpenClipboard(hwnd).is_ok() {
+                    if GetClipboardOwner().ok() == Some(hwnd) {
+                        let fmts: Vec<u32> = pending_lock()
+                            .as_ref()
+                            .map(|p| p.formats.iter().map(|(f, _)| *f).collect())
+                            .unwrap_or_default();
+                        for f in fmts {
+                            render_format(f);
+                        }
+                    }
+                    let _ = CloseClipboard();
+                }
+                LRESULT(0)
+            }
+            WM_DESTROYCLIPBOARD => {
+                pending_lock().take();
+                RENDERED.notify_all();
+                LRESULT(0)
+            }
+            _ => DefWindowProcW(hwnd, msg, wparam, lparam),
+        }
+    }
+
+    /// Gizli pano sahibi penceresi (`HWND_MESSAGE`); kendi iş parçacığında mesaj döngüsüyle.
+    fn owner_hwnd() -> Option<HWND> {
+        static OWNER: OnceLock<Option<isize>> = OnceLock::new();
+        let raw = *OWNER.get_or_init(|| {
+            let (tx, rx) = mpsc::channel::<Option<isize>>();
+            let spawned = thread::Builder::new()
+                .name("meetin-clip-owner".to_string())
+                .spawn(move || unsafe {
+                    let hinst = GetModuleHandleW(None)
+                        .map(|m| HINSTANCE(m.0))
+                        .unwrap_or_default();
+                    let class = w!("MeetinClipboardOwner");
+                    let wc = WNDCLASSW {
+                        lpfnWndProc: Some(owner_proc),
+                        hInstance: hinst,
+                        lpszClassName: class,
+                        ..Default::default()
+                    };
+                    let _ = RegisterClassW(&wc);
+                    let created = CreateWindowExW(
+                        WINDOW_EX_STYLE(0),
+                        class,
+                        w!(""),
+                        WINDOW_STYLE(0),
+                        0,
+                        0,
+                        0,
+                        0,
+                        HWND_MESSAGE,
+                        None,
+                        hinst,
+                        None,
+                    );
+                    match created {
+                        Ok(h) => {
+                            let _ = tx.send(Some(h.0 as isize));
+                            let mut msg = MSG::default();
+                            while GetMessageW(&mut msg, None, 0, 0).as_bool() {
+                                DispatchMessageW(&msg);
+                            }
+                        }
+                        Err(_) => {
+                            let _ = tx.send(None);
+                        }
+                    }
+                });
+            if spawned.is_err() {
+                return None;
+            }
+            rx.recv_timeout(Duration::from_secs(2)).ok().flatten()
+        });
+        raw.map(|r| HWND(r as *mut c_void))
+    }
+
+    fn build_payload(plain: &str, html: Option<&str>) -> Vec<(u32, Vec<u8>)> {
+        let wide: Vec<u16> = plain.encode_utf16().chain(std::iter::once(0)).collect();
+        let text_bytes: Vec<u8> = wide.iter().flat_map(|u| u.to_le_bytes()).collect();
+        let mut out = vec![(CF_UNICODETEXT, text_bytes)];
+        if let Some(frag) = html {
+            let fmt_html = register_format("HTML Format");
+            if fmt_html != 0 {
+                out.push((fmt_html, rich::build_cf_html(frag)));
+            }
+            let fmt_rtf = register_format("Rich Text Format");
+            if fmt_rtf != 0 {
+                out.push((fmt_rtf, rich::html_to_rtf(frag)));
+            }
+        }
+        out
+    }
+
+    /// Metni gecikmeli yazma ile panoya koyar; gizlilik işaretleri gerçek veri olarak konur.
+    fn offer_delayed(owner: HWND, payload: Vec<(u32, Vec<u8>)>) -> Result<(), InjectError> {
+        open_clipboard_as(Some(owner))?;
+        unsafe {
+            // Önceki sahibimize WM_DESTROYCLIPBOARD burada (eşzamanlı) gider; bekleyen
+            // içerik ondan SONRA kurulur.
+            let _ = EmptyClipboard();
+            let fmts: Vec<u32> = payload.iter().map(|(f, _)| *f).collect();
+            *pending_lock() = Some(Pending {
+                formats: payload,
+                renders: 0,
+            });
+            for f in fmts {
+                let _ = SetClipboardData(f, HANDLE::default());
+            }
+            for name in [
+                "CanIncludeInClipboardHistory",
+                "CanUploadToCloudClipboard",
+                "ExcludeClipboardContentFromMonitorProcessing",
+            ] {
+                let fmt = register_format(name);
+                if fmt != 0 {
+                    if let Ok(h) = alloc_and_copy(&0u32.to_le_bytes()) {
+                        let _ = SetClipboardData(fmt, h);
+                    }
+                }
+            }
+            let _ = CloseClipboard();
+        }
+        Ok(())
+    }
+
+    /// Hedef program panoyu okuyana (ve kısa bir sessizlik olana) kadar bekler.
+    fn wait_for_render() {
+        let mut wait = RenderWait::new(Instant::now());
+        let mut seen = 0u32;
+        let mut guard = pending_lock();
+        loop {
+            let renders = guard.as_ref().map(|p| p.renders).unwrap_or(seen);
+            if renders > seen {
+                seen = renders;
+                wait.on_render(Instant::now());
+            }
+            if guard.is_none() || wait.done(Instant::now()) {
+                break;
+            }
+            guard = RENDERED
+                .wait_timeout(guard, Duration::from_millis(20))
+                .map(|(g, _)| g)
+                .unwrap_or_else(|e| e.into_inner().0);
+        }
+        guard.take();
     }
 
     fn register_format(name: &str) -> u32 {
@@ -237,10 +522,23 @@ mod win_clip {
         shortcut: PasteShortcut,
     ) -> Result<(), InjectError> {
         let backup = backup_clipboard()?;
-        set_transient_rich(plain, html)?;
-        let paste_res = send_paste_keys(shortcut);
-        // Hedef uygulamanın panoyu okuması için kısa bekleme
-        thread::sleep(Duration::from_millis(95));
+        let paste_res = match owner_hwnd() {
+            Some(owner) => {
+                offer_delayed(owner, build_payload(plain, html))?;
+                let r = send_paste_keys(shortcut);
+                if r.is_ok() {
+                    wait_for_render();
+                }
+                r
+            }
+            None => {
+                // Sahip penceresi kurulamadıysa eski yöntem: doğrudan yaz, kısa bekle.
+                set_transient_rich(plain, html)?;
+                let r = send_paste_keys(shortcut);
+                thread::sleep(Duration::from_millis(150));
+                r
+            }
+        };
         let restore_res = restore_clipboard(&backup);
         paste_res?;
         restore_res
@@ -342,9 +640,17 @@ mod win_clip {
                 let _ = CloseClipboard();
             }
         }
+        let before = unsafe { GetClipboardSequenceNumber() };
         let sent_ok = send_ctrl_c().is_ok();
         if sent_ok {
-            thread::sleep(Duration::from_millis(70));
+            // Hedef program kopyalayana kadar (en çok 600 ms) bekle.
+            let start = Instant::now();
+            while unsafe { GetClipboardSequenceNumber() } == before
+                && start.elapsed() < Duration::from_millis(600)
+            {
+                thread::sleep(Duration::from_millis(10));
+            }
+            thread::sleep(Duration::from_millis(15));
         }
         let selected = if sent_ok { read_unicode_text() } else { None };
         let _ = restore_clipboard(&backup);

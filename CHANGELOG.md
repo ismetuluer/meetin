@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü (CHANGELOG)
 
+## [1.3.4] - 2026-11-27
+
+### Düzeltildi
+- **Pano korunuyor (§1.3):** Uzun ya da biçimli ifade genişletilirken panodaki ekran görüntüsü, Office grafiği veya Excel/Word içeriği artık eksiksiz geri gelir. Önceden resim ve grafik tutamaçları yanlış kopyalanıp kaybolabiliyordu.
+- **Sabit bekleme kalktı:** Meetin metni panoya "istenince ver" diye koyar ve eski panoyu ancak hedef program metni gerçekten okuduktan sonra geri yükler. Yavaş açılan Word gibi programlarda eski panonun yapıştırılması önlendi.
+- Geri yüklenen pano içeriği Win+V geçmişine ve Meetin pano geçmişine ikinci kez düşmez.
+- Seçili metni Ctrl+C ile okurken sabit 70 ms yerine panonun gerçekten değişmesi beklenir.
+
 ## [1.3.3] - 2026-11-27
 
 ### Düzeltildi

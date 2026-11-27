@@ -34,7 +34,7 @@
 - **Test:** Oto: kuyruk/sıralama saf fonksiyonu · Elle: Notepad ve Word'de hızlı yazma.
 - **Ajan:** Opus.
 
-### [ ] R1.3 · Pano yedek ve geri yükleme — v1.3.4
+### [~] R1.3 · Pano yedek ve geri yükleme — v1.3.4
 
 - **Hedef:** GDI tutamaçlı biçimler (bitmap, metafile, palet) doğru yedeklenir ya da sentez biçimleri (DIB) üzerinden korunur; Windows'un türettiği biçimler çift yazılmaz. Geri yükleme sabit 95 ms yerine hedefin okumasını bekleyen uyarlanır gecikmeyle yapılır. Meetin'in kendi geri yüklemesi pano geçmişine düşmez.
 - **Modüller:** `inject/clipboard.rs`

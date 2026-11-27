@@ -6,6 +6,7 @@
 //! - Windows Terminal (`wt.exe`, `windowsterminal.exe`) için `Ctrl+Shift+V` kullanılır.
 
 pub mod clipboard;
+pub mod clipformats;
 pub mod rich;
 
 use thiserror::Error;
