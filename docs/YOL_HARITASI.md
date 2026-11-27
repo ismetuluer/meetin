@@ -26,7 +26,7 @@
 - **Test:** Oto: kanca karar fonksiyonu (parola bayrağı → geçiş) · Elle: Chrome'da parola alanına bir kısaltma + boşluk yaz (genişlememeli, sıra bozulmamalı), KeePass/Bitwarden alanı.
 - **Ajan:** Opus.
 
-### [~] R1.2 · Genişletme sırasında tuş sırası — v1.3.3
+### [x] R1.2 · Genişletme sırasında tuş sırası — v1.3.3
 
 - **Hedef:** Enjeksiyon sürerken kullanıcının fiziksel tuşları yutulup kuyruğa alınır, enjeksiyon bitince aynı sırayla yeniden gönderilir (üst sınır + zaman aşımı ile kilitlenme önlenir).
 - **Modüller:** `hook/`, `inject/`
@@ -42,7 +42,23 @@
 - **Test:** Oto: biçim sınıflandırma · Elle: üç pano türüyle Word/Chrome'da uzun ifade, sonra `Ctrl+V`.
 - **Ajan:** Opus.
 
-### [ ] R1.4 · Kanca hızı — v1.3.5
+### [ ] R1.4 · Kayıt günlüğü ve çökme kaydı — v1.3.5
+
+- **Hedef (Saul isteği):** Çökmelerin sebebi bulunabilsin. Veri klasöründe `logs\meetin.log`, boyutla dönen (ör. 5 × 1 MB). Kaydedilenler: açılış bilgisi (sürüm, Windows yapı no., kurulumlu/portable, WebView2 sürümü), hatalar ve uyarılar, Rust panikleri (mesaj + konum + backtrace), arayüzdeki yakalanmamış JS hataları, WebView2 süreç çökmesi, güncelleme/yedek/DB hataları. Ayarlar'da "Günlük klasörünü aç" düğmesi.
+- **Asla kaydedilmez (§7.4 [K]):** tuş, tuş arabelleği, ifade metni, kısaltma, pano içeriği, pencere başlığı. Bunu korumak için günlük çağrıları yalnız sabit mesaj + sayı/kod alan küçük bir arayüzden yapılır; test bu kuralı denetler.
+- **Modüller:** yeni `src-tauri/src/logging.rs`, `lib.rs` (panik kancası, açılış), ön yüz hata köprüsü, Ayarlar
+- **Test:** Oto: dönme, panik kaydı, yasak içerik denetimi · Elle: bilerek tetiklenen test çöküşü sonrası günlük dosyası.
+- **Ajan:** Opus (Rust tarafı) · Haiku (`tr.json`/`en.json` metinleri).
+
+### [ ] R1.5 · Portable "onedir" paketi — v1.3.6
+
+- **Hedef (Saul isteği):** Portable sürüm tek EXE değil, kendi klasörüyle gelir: `Meetin\Meetin.exe`, `Meetin\local-data.flag`, `Meetin\data\` (veriler, yedekler, günlükler), `CHANGELOG.md`. **Hata düzeltmesi:** bugünkü ZIP'te `local-data.flag` yok; portable sürüm verisini yanlışlıkla `%APPDATA%`'ya yazıyor. Eski kullanıcının `%APPDATA%\Meetin` verisi ilk açılışta (onayla) taşınabilir.
+- **[A] Seçenek:** WebView2 "sabit sürüm" çalışma zamanı klasöre eklenebilir (WebView2'si olmayan/eski bilgisayarlarda da çalışır, paket ~180 MB büyür). Saul karar verir.
+- **Modüller:** `scripts/package-portable.ps1`, `.github/workflows/release.yml`, `db/` (veri yolu)
+- **Test:** Oto: veri yolu seçimi · Elle: ZIP'i USB'ye aç, çalıştır, verinin `data\`'da oluştuğunu gör; salt okunur klasörde anlaşılır hata.
+- **Ajan:** Opus.
+
+### [ ] R1.6 · Kanca hızı — v1.3.7
 
 - **Hedef:** Etkin pencere bilgisi (işlem adı, başlık) her tuşta değil, pencere değişince (`EVENT_SYSTEM_FOREGROUND`) güncellenir.
 - **Modüller:** `hook/`
@@ -50,14 +66,14 @@
 - **Test:** Oto: geri çağrı süresi ölçümü (< 1 ms) · Elle: genel akıcılık.
 - **Ajan:** Opus.
 
-### [ ] R1.5 · Olay tabanlı pano izleyici ve CSP — v1.3.6
+### [ ] R1.7 · Olay tabanlı pano izleyici ve CSP — v1.3.8
 
 - **Hedef:** 900 ms yoklama yerine `AddClipboardFormatListener`; `csp: null` yerine kısıtlı CSP (zengin düzenleyici ve görseller çalışmaya devam eder).
 - **Modüller:** `inject/clipboard.rs`, `tauri.conf.json`
 - **Test:** Oto: mevcut testler · Elle: boşta işlemci ~%0 (Görev Yöneticisi), pano geçmişi, düzenleyicide görsel.
 - **Ajan:** Opus.
 
-### [ ] R1.6 · R1 kabul — v1.4.0
+### [ ] R1.8 · R1 kabul — v1.4.0
 
 - **Test:** Elle: Notepad, Word, Outlook, Chrome (WhatsApp Web, Gmail), Windows Terminal, kurum yazılımı; parola alanı; hızlı yazma; pano türleri. **Ajan:** Saul · Opus.
 
