@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü (CHANGELOG)
 
+## [1.5.11] - 2026-11-28
+
+### Değişti
+- **Değişkenler metnin içinde hap:** Düzenleyicide `{tarih:uzun}` gibi ham yazılar görünmez; değişken metnin içinde "Tarih (uzun)" hapı olarak durur. Hap tek parça silinir, `{saat}` elle yazılınca kendiliğinden hapa dönüşür; kaydedilen metin değişmez. Ayrı önizleme şeridi kaldırıldı.
+- **Listede okunur önizleme:** İfade listesinde ve sürüm geçmişinde `[Tarih (uzun)]` yerine küçük değişken hapları görünür. Alan (`{alan:…}`), iç ifade (`{ifade:…}`) ve kaydırılmış tarih (`{tarih:+3g}`) değişkenleri de adlarıyla gösterilir.
+
 ## [1.5.10] - 2026-11-28
 
 ### Değişti

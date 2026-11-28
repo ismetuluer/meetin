@@ -15,6 +15,7 @@ import {
   syncEditorHtml,
   toEditorInitialHtml,
 } from "./richHtml";
+import { pillHtml, pillifyHtml, trailingVarToken, unpillHtml, varLabel } from "./varTokens";
 
 export interface VariableSnippetItem {
   label: string;
@@ -48,6 +49,24 @@ const EMPTY_FORMATS: ActiveFormats = {
   orderedList: false,
   link: false,
 };
+
+/** HTML parçasından düğüm parçası üretir (yalnız temizlenmiş ya da kendi ürettiğimiz HTML). */
+function htmlToFragment(html: string): DocumentFragment {
+  const template = document.createElement("template");
+  template.innerHTML = html;
+  return template.content;
+}
+
+/** İmleci verilen düğümün hemen arkasına koyar. */
+function placeCaretAfter(node: Node): Range {
+  const after = document.createRange();
+  after.setStartAfter(node);
+  after.collapse(true);
+  const sel = window.getSelection();
+  sel?.removeAllRanges();
+  sel?.addRange(after);
+  return after;
+}
 
 function findAncestorAnchor(node: Node | null, root: HTMLElement | null): HTMLAnchorElement | null {
   let cur: Node | null = node;
@@ -157,7 +176,7 @@ export function RichEditor({
       return;
     }
 
-    const nextHtml = toEditorInitialHtml(content, contentHtml);
+    const nextHtml = pillifyHtml(toEditorInitialHtml(content, contentHtml));
     if (root.innerHTML !== nextHtml) {
       root.innerHTML = nextHtml;
     }
@@ -184,7 +203,7 @@ export function RichEditor({
   const emitFromDom = useCallback(() => {
     const root = editorRef.current;
     if (!root) return;
-    const synced = syncEditorHtml(root.innerHTML);
+    const synced = syncEditorHtml(unpillHtml(root.innerHTML));
     let nextContent = synced.content;
     if (!nextContent.trim() && synced.content_html && /<img\b/i.test(synced.content_html)) {
       nextContent = `[${t("studio.imageAltFallback")}]`;
@@ -226,8 +245,8 @@ export function RichEditor({
       return;
     }
     // Seçim yoksa tüm içeriğin zengin biçimini temizleyip düz metne döndür
-    const plain = richHtmlToPlainText(root.innerHTML);
-    root.innerHTML = plainTextToRichHtml(plain);
+    const plain = richHtmlToPlainText(unpillHtml(root.innerHTML));
+    root.innerHTML = pillifyHtml(plainTextToRichHtml(plain));
     lastEmittedRef.current = {
       draftKey,
       content: plain,
@@ -302,15 +321,13 @@ export function RichEditor({
       if (!range) return;
 
       range.deleteContents();
-      const textNode = document.createTextNode(snippet);
-      range.insertNode(textNode);
-      const after = document.createRange();
-      after.setStartAfter(textNode);
-      after.collapse(true);
-      const sel = window.getSelection();
-      sel?.removeAllRanges();
-      sel?.addRange(after);
-      savedRangeRef.current = after.cloneRange();
+      const label = varLabel(snippet);
+      const node: Node =
+        label !== null
+          ? (htmlToFragment(pillHtml(snippet, label)).firstChild as Node)
+          : document.createTextNode(snippet);
+      range.insertNode(node);
+      savedRangeRef.current = placeCaretAfter(node).cloneRange();
       emitFromDom();
     },
     [emitFromDom, restoreSelection],
@@ -333,9 +350,7 @@ export function RichEditor({
       if (sel && sel.rangeCount > 0 && root.contains(sel.anchorNode)) {
         const range = sel.getRangeAt(0);
         range.deleteContents();
-        const template = document.createElement("template");
-        template.innerHTML = sanitized;
-        const frag = template.content;
+        const frag = htmlToFragment(pillifyHtml(sanitized));
         const lastChild = frag.lastChild;
         range.insertNode(frag);
         if (lastChild) {
@@ -347,9 +362,54 @@ export function RichEditor({
           savedRangeRef.current = after.cloneRange();
         }
       } else {
-        root.innerHTML = sanitizeRichHtml(`${root.innerHTML}${sanitized}`);
+        root.innerHTML = pillifyHtml(sanitizeRichHtml(`${unpillHtml(root.innerHTML)}${sanitized}`));
       }
       emitFromDom();
+    },
+    [emitFromDom],
+  );
+
+  const handleInput = useCallback(() => {
+    const sel = window.getSelection();
+    const root = editorRef.current;
+    if (sel && root && sel.rangeCount > 0 && sel.isCollapsed) {
+      const node = sel.anchorNode;
+      if (node && node.nodeType === Node.TEXT_NODE && root.contains(node)) {
+        const offset = sel.anchorOffset;
+        const before = (node.textContent ?? "").slice(0, offset);
+        const token = trailingVarToken(before);
+        const label = token ? varLabel(token) : null;
+        if (token && label !== null) {
+          const range = document.createRange();
+          range.setStart(node, offset - token.length);
+          range.setEnd(node, offset);
+          range.deleteContents();
+          const pill = htmlToFragment(pillHtml(token, label)).firstChild as Node;
+          range.insertNode(pill);
+          savedRangeRef.current = placeCaretAfter(pill).cloneRange();
+        }
+      }
+    }
+    emitFromDom();
+  }, [emitFromDom]);
+
+  const handleCopy = useCallback(
+    (e: ClipboardEvent<HTMLDivElement>, cut: boolean) => {
+      const sel = window.getSelection();
+      const root = editorRef.current;
+      if (!sel || !root || sel.rangeCount === 0 || sel.isCollapsed) return;
+      const range = sel.getRangeAt(0);
+      if (!root.contains(range.commonAncestorContainer)) return;
+      const holder = document.createElement("div");
+      holder.appendChild(range.cloneContents());
+      const html = sanitizeRichHtml(unpillHtml(holder.innerHTML));
+      e.preventDefault();
+      e.clipboardData.setData("text/plain", richHtmlToPlainText(html));
+      e.clipboardData.setData("text/html", html);
+      if (cut) {
+        range.deleteContents();
+        emitFromDom();
+      }
     },
     [emitFromDom],
   );
@@ -627,7 +687,9 @@ export function RichEditor({
         aria-multiline="true"
         aria-label={t("studio.tabContent")}
         data-placeholder={placeholder}
-        onInput={emitFromDom}
+        onInput={handleInput}
+        onCopy={(e) => handleCopy(e, false)}
+        onCut={(e) => handleCopy(e, true)}
         onBlur={emitFromDom}
         onKeyUp={refreshFormats}
         onMouseUp={refreshFormats}

@@ -755,26 +755,29 @@ html.has-mica-backdrop .fluent-detail-col {
   line-height: 1.5;
 }
 
-.var-preview-strip {
-  padding: 8px 12px;
-  border-top: 1px dashed var(--cizgi);
-  background: var(--yuzey-2);
-  font-size: 12px;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px;
-}
-
-.inline-var-pill {
+/* Değişken hapı (R3.3): düzenleyicide metnin içinde, listede küçük */
+.var-pill {
   display: inline-flex;
   align-items: center;
-  padding: 2px 9px;
+  padding: 0 8px;
+  margin: 0 1px;
   border-radius: var(--r-pill);
-  background: var(--vurgu);
-  color: var(--vurgu-ustu);
-  font-size: 11px;
+  background: var(--vurgu-zayif);
+  border: 1px solid var(--vurgu);
+  color: var(--vurgu);
+  font-size: 0.85em;
   font-weight: 600;
+  line-height: 1.5;
+  vertical-align: baseline;
+  white-space: nowrap;
+  user-select: all;
+  cursor: default;
+}
+
+.var-pill.is-mini {
+  padding: 0 5px;
+  font-size: 10px;
+  line-height: 1.45;
 }
 
 .rich-image-preview-strip {

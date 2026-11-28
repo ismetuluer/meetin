@@ -186,10 +186,11 @@ Her adımdan önce mevcut ekranın görüntüsü ve önerilen düzen Saul'a gös
 - **Ajan:** Sonnet · Opus denetim. **Test:** Elle.
 - **Yapılan:** "Seçimde üstte çıkan bilgi yazıları": işlem bildirimleri üst şeritten düzeni kaydırmayan, 2,6 sn'de kaybolan alttaki bildirime taşındı (`role="status"`); hata şeridi kalır, kapatma düğmesi eklendi; "Otomatik kaydedildi" yazısı simge + ipucu oldu. A2: klasör seçimi kendi alanına ayrıldı (seçim + klasör hapları). A3: kural haplarında "Yalnız / Hariç" türü renkle ayrılmış yazı; "Sadece/Hariç kuralları:" etiketi kaldırıldı. `list_running_apps` hatası artık gösteriliyor. Liste satırı kenarındaki kırmızı çizgi (kaydırma silme düğmesi kesirli genişlikte görünüyordu) giderildi. **Ajan:** Opus. **Test:** Oto: düzen kaynak denetimi (4) · tarayıcıda sahte veriyle alan düzeni, kural hapları, bildirimin çıkıp kaybolması ve düzenin kaymaması. Elle (Saul): gerçek uygulamada deneme.
 
-### [ ] R3.3 · Değişken hapları satır içi — v1.5.4
+### [x] R3.3 · Değişken hapları satır içi — v1.5.11
 
 - **Hedef:** Düzenleyicide `{…}` ham yazısı görünmez, haplar metnin içindedir; listede `[Tarih (uzun)]` yerine okunur önizleme (A1).
 - **Ajan:** Sonnet · Opus denetim. **Test:** Oto: HTML ↔ hap gidiş-dönüş · Elle.
+- **Yapılan:** `src/studio/varTokens.ts`: Rust `vars` sözdizimiyle aynı değişken tanıma (tanınmayan `{…}` düz kalır), `pillifyHtml` / `unpillHtml` (hap yalnız gösterimde; `data-var` ham değeri taşır, kayıttan önce geri çevrilir). `RichEditor`: yükleme, değişken menüsü, yapıştırma ve biçim temizlemede hap; yazarken imleçten önce tamamlanan değişken hapa döner; kopyala/kes ham yazıyı (düz + HTML) panoya koyar. Düzenleyici altındaki ayrı önizleme şeridi kaldırıldı. `VarPreview`: liste, klasör görünümü ve sürüm geçmişi önizlemesinde küçük hap; `StackPanel.preview` artık düğüm alabilir. **Ajan:** Opus. **Test:** Oto: tanıma, parçalama, HTML gidiş-dönüş (düz + zengin), imleç önü değişken, kaynak denetimi (7) · tarayıcıda sahte veriyle yükleme (kayıt tetiklenmedi), elle `{imleç}` yazma, menüden ekleme, Backspace ile hap silme, liste önizlemesi. Kopyala/kes tarayıcıda denenmedi. Elle (Saul): gerçek uygulamada deneme.
 
 ### [ ] R3.4 · Dışa aktarma ve bağlam menüleri — v1.5.5
 

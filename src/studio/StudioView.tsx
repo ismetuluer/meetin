@@ -10,7 +10,7 @@ import {
 } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { t, useLanguage, type TranslationKey } from "../i18n";
+import { t, useLanguage } from "../i18n";
 import { suggestAbbreviation } from "../island/abbrSuggest";
 import { KbdGroup, ShortcutField } from "../design/Kbd";
 import { StackPanel } from "../design/StackPanel";
@@ -40,6 +40,8 @@ import {
   type ListSelection,
 } from "./listSelection";
 import { uniqueCopyAbbr } from "./phraseCopy";
+import { previewText } from "./varTokens";
+import { VarPreview } from "./VarPreview";
 import { captureShortcutCombo } from "./shortcutCapture";
 import type {
   AbbrSuggestMode,
@@ -169,30 +171,10 @@ const VARIABLE_SNIPPETS = [
   { label: "{ifade:…}", snippet: "{ifade:KISALTMA}" },
 ];
 
-const VAR_LABEL_KEYS: Record<string, TranslationKey> = {
-  "{tarih}": "var.date",
-  "{tarih:uzun}": "var.dateLong",
-  "{saat}": "var.time",
-  "{pano}": "var.clipboard",
-  "{imleç}": "var.cursor",
-};
-
-function getVarLabel(token: string): string {
-  const key = VAR_LABEL_KEYS[token];
-  return key ? t(key) : token.slice(1, -1);
-}
-
 /** Klavye kısayolu yazı alanındaysa (girdi, düzenleyici) liste kısayolları çalışmaz. */
 function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   return target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName);
-}
-
-function formatPreviewLine(content: string): string {
-  return content
-    .replace(/\{([^}]+)\}/g, (full) => `[${getVarLabel(full)}]`)
-    .replace(/\s+/g, " ")
-    .trim();
 }
 
 function formatRelativeDate(iso: string | null): string {
@@ -211,24 +193,6 @@ function formatVersionTime(iso: string): string {
   if (Number.isNaN(ts)) return iso;
   const time = new Date(ts).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
   return `${formatRelativeDate(iso)} · ${time}`;
-}
-
-function renderContentSegments(text: string): { isVar: boolean; value: string }[] {
-  const parts: { isVar: boolean; value: string }[] = [];
-  const regex = /(\{[^}]+\})/g;
-  let last = 0;
-  let m: RegExpExecArray | null;
-  while ((m = regex.exec(text)) !== null) {
-    if (m.index > last) {
-      parts.push({ isVar: false, value: text.slice(last, m.index) });
-    }
-    parts.push({ isVar: true, value: getVarLabel(m[0]) });
-    last = m.index + m[0].length;
-  }
-  if (last < text.length) {
-    parts.push({ isVar: false, value: text.slice(last) });
-  }
-  return parts;
 }
 
 export function StudioView() {
@@ -1289,11 +1253,6 @@ export function StudioView() {
     return folders.find((f) => f.id === view.folderId)?.name ?? t("studio.foldersTitle");
   }, [lang, view, folders]);
 
-  const contentSegments = useMemo(
-    () => (draft ? renderContentSegments(draft.content) : []),
-    [lang, draft?.content],
-  );
-
   const embeddedImages = useMemo(
     () => extractEmbeddedImages(draft?.content_html ?? null),
     [draft?.content_html],
@@ -2077,11 +2036,11 @@ export function StudioView() {
                       <div className="row-top-line">
                         <span className="abbr-chip">{p.abbr}</span>
                         <strong className="row-title">
-                          {p.description || formatPreviewLine(p.content)}
+                          {p.description || <VarPreview text={p.content} />}
                         </strong>
                       </div>
                       <div className="row-preview-line">
-                        {formatPreviewLine(p.content)}
+                        <VarPreview text={p.content} />
                       </div>
                       <div className="row-actions" style={{ marginTop: 6 }}>
                         <button
@@ -2121,7 +2080,7 @@ export function StudioView() {
                     selection.ids.length > 0 ? selection.ids.includes(p.id) : isOpen;
                   const isSwiped = swipedId === p.id;
                   const title =
-                    p.description.trim() || formatPreviewLine(p.content);
+                    p.description.trim() || previewText(p.content);
                   return (
                     <div
                       key={p.id}
@@ -2183,7 +2142,7 @@ export function StudioView() {
                           </span>
                         </div>
                         <div className="row-preview-line">
-                          {formatPreviewLine(p.content)}
+                          <VarPreview text={p.content} />
                         </div>
                       </div>
                     </div>
@@ -2275,7 +2234,7 @@ export function StudioView() {
                   items={versions.map((ver) => ({
                     id: ver.id,
                     meta: formatVersionTime(ver.created_at),
-                    preview: formatPreviewLine(ver.content),
+                    preview: <VarPreview text={ver.content} />,
                   }))}
                   title={t("studio.tabHistory")}
                   closeLabel={t("studio.closeHistory")}
@@ -2317,20 +2276,6 @@ export function StudioView() {
                       style={{ display: "none" }}
                       onChange={handleInsertImageFile}
                     />
-
-                    {contentSegments.some((s) => s.isVar) && (
-                      <div className="var-preview-strip">
-                        {contentSegments.map((seg, i) =>
-                          seg.isVar ? (
-                            <span key={i} className="inline-var-pill">
-                              {seg.value}
-                            </span>
-                          ) : (
-                            <span key={i}>{seg.value}</span>
-                          ),
-                        )}
-                      </div>
-                    )}
 
                     {embeddedImages.length > 0 && (
                       <div className="rich-image-preview-strip">

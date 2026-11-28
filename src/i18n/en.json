@@ -487,6 +487,8 @@
   "var.time": "Time",
   "var.clipboard": "Clipboard",
   "var.cursor": "Cursor",
+  "var.field": "Field",
+  "var.phrase": "Phrase",
   "studio.fmtBulletList": "Bulleted list",
   "studio.fmtOrderedList": "Numbered list",
   "studio.fmtClearFormat": "Clear formatting",

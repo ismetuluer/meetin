@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { springDurationMs, YAY } from "./motion";
 import "./stackPanel.css";
 
@@ -7,7 +7,7 @@ export interface StackItem {
   /** Üst satır: ör. "bugün · 14:32" */
   meta: string;
   /** Tek satıra kırpılan önizleme */
-  preview: string;
+  preview: ReactNode;
 }
 
 interface StackPanelProps {

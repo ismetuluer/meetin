@@ -487,6 +487,8 @@
   "var.time": "Saat",
   "var.clipboard": "Pano",
   "var.cursor": "İmleç",
+  "var.field": "Alan",
+  "var.phrase": "İfade",
   "studio.fmtBulletList": "Madde işaretli liste",
   "studio.fmtOrderedList": "Numaralı liste",
   "studio.fmtClearFormat": "Biçimi temizle",
