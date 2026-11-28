@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { SelectionBubbleApp } from "./bubble/SelectionBubbleApp";
+import { reportCaughtError } from "./errorReporting";
 import {
   applyThemeToDocument,
   DEFAULT_THEME_CONFIG,
@@ -110,7 +111,7 @@ export function App() {
           setLanguage(s.language);
         }
       })
-      .catch(() => {});
+      .catch((err) => reportCaughtError("load-language", err));
 
     const unlistenLang = listen<string>("language-changed", (ev) => {
       setLanguage(ev.payload);

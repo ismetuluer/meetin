@@ -1,6 +1,7 @@
 import { useEffect, type Dispatch, type RefObject, type SetStateAction } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { reportCaughtError } from "../errorReporting";
 import { t } from "../i18n";
 import type { MascotAnim } from "../mascot/mascotMachine";
 import type {
@@ -83,7 +84,7 @@ export function useIslandEvents({
         setMascotSize(s.mascot_size);
         setAbbrSuggestMode(s.abbr_suggest_mode ?? "initials");
       })
-      .catch(() => {});
+      .catch((err) => reportCaughtError("load-settings", err));
     void loadPhrases();
 
     const unlisteners = [

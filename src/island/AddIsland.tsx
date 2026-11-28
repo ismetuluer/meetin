@@ -163,7 +163,7 @@ export function useAddIsland({
       try {
         window.localStorage.setItem("meetin:last_folder_id", String(created.id));
       } catch {
-        // yok say
+        // Tarayıcı depolaması kapalıysa yalnız "son klasör" hatırlanmaz; kayıt etkilenmez
       }
       setInlineFolderName("");
       setShowInlineNewFolder(false);
@@ -205,7 +205,7 @@ export function useAddIsland({
           window.localStorage.removeItem("meetin:last_folder_id");
         }
       } catch {
-        // yok say
+        // Tarayıcı depolaması kapalıysa yalnız "son klasör" hatırlanmaz; kayıt etkilenmez
       }
       await loadPhrases();
       await closeToMascot();

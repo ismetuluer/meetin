@@ -8,6 +8,7 @@ import {
 } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { reportCaughtError } from "../errorReporting";
 import type { MascotAnim } from "../mascot/mascotMachine";
 import { createShakeDetector } from "../mascot/shakeDetector";
 import {
@@ -118,7 +119,7 @@ export function useMascotPointer({
         ps.hasWinPos = true;
         velocityTrackerRef.current.sample(pos.x, pos.y, performance.now());
       })
-      .catch(() => {});
+      .catch((err) => reportCaughtError("mascot-position", err));
 
     clearAnimTimer();
     setAnim("squeeze");

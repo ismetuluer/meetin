@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { reportCaughtError } from "../errorReporting";
 import { t, useLanguage } from "../i18n";
 import { MeetinSheep } from "../mascot/MeetinSheep";
 import {
@@ -122,8 +123,8 @@ export function MascotIslandApp() {
       ]);
       setPhrases(list);
       setFolders(folderList);
-    } catch {
-      // Sessizce yok say
+    } catch (err) {
+      reportCaughtError("load-phrases", err);
     }
   }, []);
 

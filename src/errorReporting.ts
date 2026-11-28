@@ -26,3 +26,20 @@ export function installErrorReporting(): void {
     send("unhandledrejection", r instanceof Error ? r.message : String(r));
   });
 }
+
+/**
+ * Yakalanan ama kullanıcıya gösterilecek yeri olmayan hatayı günlüğe yazar (maskot, ada).
+ * Yalnız bağlam adı ve hata iletisi gider; ifade içeriği ya da tuş vuruşu gönderilmez.
+ */
+export function reportCaughtError(context: string, err: unknown): void {
+  let label = "?";
+  try {
+    label = getCurrentWindow().label;
+  } catch {
+    // Tauri dışında (test/tarayıcı) çalışıyor.
+  }
+  const message = err instanceof Error ? err.message : String(err);
+  invoke("log_frontend_error", { window: label, kind: context, message }).catch(() => {
+    // Günlük yazılamıyorsa yapılacak başka bir şey yok (sonsuz döngüye girilmez).
+  });
+}

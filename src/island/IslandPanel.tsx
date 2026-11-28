@@ -7,6 +7,7 @@ import {
 } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { reportCaughtError } from "../errorReporting";
 import { t } from "../i18n";
 import { MeetinSheep } from "../mascot/MeetinSheep";
 import type { SheepView } from "./islandTypes";
@@ -76,7 +77,7 @@ export function usePanelDrag(isDraggingRef: RefObject<boolean>): PanelDrag {
         pd.lastSentY = pos.y;
         pd.hasWinPos = true;
       })
-      .catch(() => {});
+      .catch((err) => reportCaughtError("panel-position", err));
   }
 
   function handlePanelPointerMove(e: ReactPointerEvent<HTMLDivElement>) {
