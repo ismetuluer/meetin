@@ -6,6 +6,7 @@ import {
   useState,
   type ChangeEvent,
   type FormEvent,
+  type MouseEvent as ReactMouseEvent,
 } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -31,6 +32,13 @@ import {
   MAX_EMBEDDED_IMAGE_BYTES,
   removeEmbeddedImageAt,
 } from "./richImages";
+import {
+  actionIds,
+  clickRow,
+  EMPTY_SELECTION,
+  pruneSelection,
+  type ListSelection,
+} from "./listSelection";
 import { captureShortcutCombo } from "./shortcutCapture";
 import type {
   AbbrSuggestMode,
@@ -91,7 +99,7 @@ const EMPTY_DRAFT: EditorDraft = {
 const FOLDER_COLORS = ["c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8"] as const;
 
 type ContextMenuState =
-  | { kind: "phrase"; x: number; y: number; phrase: PhraseRecord }
+  | { kind: "phrase"; x: number; y: number; phrase: PhraseRecord; ids: number[] }
   | { kind: "folder"; x: number; y: number; folder: FolderRecord }
   | null;
 
@@ -170,6 +178,12 @@ function getVarLabel(token: string): string {
   return key ? t(key) : token.slice(1, -1);
 }
 
+/** Klavye kısayolu yazı alanındaysa (girdi, düzenleyici) liste kısayolları çalışmaz. */
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  return target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName);
+}
+
 function formatPreviewLine(content: string): string {
   return content
     .replace(/\{([^}]+)\}/g, (full) => `[${getVarLabel(full)}]`)
@@ -240,11 +254,9 @@ export function StudioView() {
   const [showFolderInput, setShowFolderInput] = useState(false);
   const [dropFolderId, setDropFolderId] = useState<number | null>(null);
   const [dropTrash, setDropTrash] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [lastClickedId, setLastClickedId] = useState<number | null>(null);
+  const [selection, setSelection] = useState<ListSelection>(EMPTY_SELECTION);
   const [swipedId, setSwipedId] = useState<number | null>(null);
   const [showListExportMenu, setShowListExportMenu] = useState(false);
-  const [showBulkFolderMenu, setShowBulkFolderMenu] = useState<"move" | "copy" | null>(null);
   const [contextMenu, setContextMenu] = useState<ContextMenuState>(null);
   const [renamingFolderId, setRenamingFolderId] = useState<number | null>(null);
   const [renameFolderDraft, setRenameFolderDraft] = useState("");
@@ -465,28 +477,6 @@ export function StudioView() {
     };
   }, [loadAll]);
 
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        setShowPalette((prev) => !prev);
-      } else if (e.key === "F1") {
-        e.preventDefault();
-        setPageMode((m) => (m === "help" ? "studio" : "help"));
-      } else if (
-        e.key === "Escape" &&
-        pageMode === "help" &&
-        !showPalette &&
-        !showOnboarding
-      ) {
-        e.preventDefault();
-        setPageMode("studio");
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [pageMode, showPalette, showOnboarding]);
-
   const activePhrases = useMemo(
     () => phrases.filter((p) => p.deleted_at === null),
     [phrases],
@@ -540,6 +530,47 @@ export function StudioView() {
     });
     return sorted;
   }, [activePhrases, trashPhrases, view, query, sortMode]);
+
+  const displayedOrder = useMemo(() => displayedPhrases.map((p) => p.id), [displayedPhrases]);
+
+  // Filtre, görünüm ya da silme sonrası görünmeyen satırlar seçimden düşer
+  useEffect(() => {
+    setSelection((prev) => pruneSelection(prev, displayedOrder));
+  }, [displayedOrder]);
+
+  const listSelectable =
+    view.kind !== "clipboard" && view.kind !== "stats" && view.kind !== "trash";
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setShowPalette((prev) => !prev);
+      } else if (e.key === "F1") {
+        e.preventDefault();
+        setPageMode((m) => (m === "help" ? "studio" : "help"));
+      } else if (
+        e.key === "Escape" &&
+        pageMode === "help" &&
+        !showPalette &&
+        !showOnboarding
+      ) {
+        e.preventDefault();
+        setPageMode("studio");
+      } else if (pageMode === "studio" && !showPalette && !isEditableTarget(e.target)) {
+        // Liste seçimi (R3.1): Ctrl+A hepsini seçer, Esc seçimi bırakır
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "a" && listSelectable) {
+          e.preventDefault();
+          setSelection((prev) => ({ ...prev, ids: displayedOrder }));
+        } else if (e.key === "Escape" && selection.ids.length > 0) {
+          e.preventDefault();
+          setSelection((prev) => ({ ...prev, ids: [] }));
+        }
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [pageMode, showPalette, showOnboarding, listSelectable, displayedOrder, selection.ids.length]);
 
   const filteredClipboard = useMemo(() => {
     const q = query.trim().toLocaleLowerCase("tr-TR");
@@ -782,7 +813,7 @@ export function StudioView() {
           setDraft(null);
         }
       }
-      setSelectedIds((prev) => prev.filter((id) => !ids.includes(id)));
+      setSelection((prev) => ({ ...prev, ids: prev.ids.filter((id) => !ids.includes(id)) }));
       await loadAll();
     } catch (err) {
       setError(t("error.generic", { message: String(err) }));
@@ -864,23 +895,49 @@ export function StudioView() {
     return Number.isFinite(single) && single > 0 ? [single] : [];
   }
 
-  function toggleRowSelected(id: number, shiftKey: boolean) {
-    if (shiftKey && lastClickedId !== null) {
-      const ordered = displayedPhrases.map((p) => p.id);
-      const a = ordered.indexOf(lastClickedId);
-      const b = ordered.indexOf(id);
-      if (a >= 0 && b >= 0) {
-        const [start, end] = a < b ? [a, b] : [b, a];
-        const range = ordered.slice(start, end + 1);
-        setSelectedIds((prev) => Array.from(new Set([...prev, ...range])));
-        setLastClickedId(id);
-        return;
-      }
-    }
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+  /** Tık / Ctrl+tık / Shift+tık (R3.1, `listSelection.ts`) */
+  function handleRowClick(p: PhraseRecord, e: ReactMouseEvent) {
+    const r = clickRow(
+      selection,
+      displayedOrder,
+      p.id,
+      { ctrl: e.ctrlKey || e.metaKey, shift: e.shiftKey },
+      draft?.id ?? null,
     );
-    setLastClickedId(id);
+    setSelection(r.sel);
+    if (r.open) {
+      setSwipedId(null);
+      startEdit(p);
+    }
+  }
+
+  async function handleRemoveFromFolder(ids: number[], folderId: number) {
+    setError(null);
+    try {
+      for (const id of ids) {
+        const p = phrases.find((x) => x.id === id);
+        if (!p) continue;
+        const rem = (p.folder_ids ?? []).filter((fid) => fid !== folderId);
+        await invoke("update_phrase", {
+          input: {
+            id: p.id,
+            abbr: p.abbr,
+            content: p.content,
+            content_html: p.content_html,
+            description: p.description,
+            folder_id: rem[0] ?? null,
+            folder_ids: rem,
+            case_mode: p.case_mode,
+            shortcut: p.shortcut,
+            enabled: p.enabled,
+            tags: p.tags,
+          },
+        });
+      }
+      await loadAll();
+    } catch (err) {
+      setError(t("error.generic", { message: String(err) }));
+    }
   }
 
   async function handleClipboardTransformCopy(
@@ -1185,7 +1242,6 @@ export function StudioView() {
         setShowMoreMenu(false);
         setShowCaseMenu(false);
         setShowListExportMenu(false);
-        setShowBulkFolderMenu(null);
         setContextMenu(null);
         setSwipedId(null);
       }}
@@ -1763,98 +1819,25 @@ export function StudioView() {
               )}
             </div>
 
-            {selectedIds.length > 0 &&
+            {selection.ids.length > 1 &&
               view.kind !== "clipboard" &&
               view.kind !== "stats" &&
               view.kind !== "trash" && (
-                <div className="bulk-selection-bar" onClick={(e) => e.stopPropagation()}>
+                <div
+                  className="bulk-selection-bar"
+                  role="status"
+                  title={t("studio.bulkHint")}
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <span className="bulk-count">
-                    {t("studio.bulkSelected", { count: selectedIds.length })}
+                    {t("studio.bulkSelected", { count: selection.ids.length })}
                   </span>
-                  <button
-                    type="button"
-                    className="btn btn-xs"
-                    onClick={() =>
-                      setSelectedIds(displayedPhrases.map((p) => p.id))
-                    }
-                  >
-                    {t("studio.bulkSelectAll")}
-                  </button>
-                  <div className="dropdown-wrap">
-                    <button
-                      type="button"
-                      className="btn btn-xs"
-                      onClick={() =>
-                        setShowBulkFolderMenu((m) => (m === "move" ? null : "move"))
-                      }
-                    >
-                      {t("studio.bulkMoveTo")}
-                    </button>
-                    {showBulkFolderMenu === "move" && (
-                      <div className="dropdown-menu">
-                        {folders.map((f) => (
-                          <button
-                            key={f.id}
-                            type="button"
-                            onClick={() => {
-                              setShowBulkFolderMenu(null);
-                              void handleFolderDrop(f.id, selectedIds, false);
-                            }}
-                          >
-                            {f.name}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <div className="dropdown-wrap">
-                    <button
-                      type="button"
-                      className="btn btn-xs"
-                      onClick={() =>
-                        setShowBulkFolderMenu((m) => (m === "copy" ? null : "copy"))
-                      }
-                    >
-                      {t("studio.bulkCopyTo")}
-                    </button>
-                    {showBulkFolderMenu === "copy" && (
-                      <div className="dropdown-menu">
-                        {folders.map((f) => (
-                          <button
-                            key={f.id}
-                            type="button"
-                            onClick={() => {
-                              setShowBulkFolderMenu(null);
-                              void handleFolderDrop(f.id, selectedIds, true);
-                            }}
-                          >
-                            {f.name}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    className="btn btn-xs"
-                    onClick={() =>
-                      void handleExportSubset(selectedIds, "meetin", "meetin-secilenler")
-                    }
-                  >
-                    .mee
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-xs btn-danger"
-                    onClick={() => void handleBulkDelete(selectedIds)}
-                  >
-                    {t("list.delete")}
-                  </button>
                   <button
                     type="button"
                     className="mini-icon-btn"
                     title={t("studio.bulkClear")}
-                    onClick={() => setSelectedIds([])}
+                    aria-label={t("studio.bulkClear")}
+                    onClick={() => setSelection((prev) => ({ ...prev, ids: [] }))}
                   >
                     ×
                   </button>
@@ -2048,8 +2031,10 @@ export function StudioView() {
                 </div>
               ) : (
                 displayedPhrases.map((p) => {
-                  const isSelected = draft?.id === p.id;
-                  const isChecked = selectedIds.includes(p.id);
+                  const isOpen = draft?.id === p.id;
+                  // Çoklu seçimde yalnız seçilenler vurgulanır; açık satır sol çizgisini korur
+                  const isSelected =
+                    selection.ids.length > 0 ? selection.ids.includes(p.id) : isOpen;
                   const isSwiped = swipedId === p.id;
                   const title =
                     p.description.trim() || formatPreviewLine(p.content);
@@ -2078,10 +2063,7 @@ export function StudioView() {
                       <div
                         draggable
                         onDragStart={(e) => {
-                          const dragIds =
-                            isChecked && selectedIds.length > 1
-                              ? selectedIds
-                              : [p.id];
+                          const dragIds = actionIds(selection, displayedOrder, p.id);
                           e.dataTransfer.setData("text/plain", String(p.id));
                           e.dataTransfer.setData(
                             "application/x-meetin-phrase-ids",
@@ -2097,47 +2079,24 @@ export function StudioView() {
                             x: Math.min(e.clientX, window.innerWidth - 230),
                             y: Math.min(e.clientY, window.innerHeight - 280),
                             phrase: p,
+                            ids: actionIds(selection, displayedOrder, p.id),
                           });
                         }}
-                        onClick={(e) => {
-                          if (e.ctrlKey || e.metaKey || e.shiftKey) {
-                            e.stopPropagation();
-                            toggleRowSelected(p.id, e.shiftKey);
-                            return;
-                          }
-                          setSwipedId(null);
-                          startEdit(p);
+                        onMouseDown={(e) => {
+                          // Shift+tık metin seçmesin
+                          if (e.shiftKey) e.preventDefault();
                         }}
-                        title="Klasöre veya Çöp Kutusuna sürükleyin (Ctrl+bırak: kopyala, sağ tık: menü)"
-                        className={`phrase-list-row is-clickable swipe-row-front ${isSelected ? "is-selected" : ""} ${isChecked ? "is-checked" : ""}`}
+                        onClick={(e) => handleRowClick(p, e)}
+                        title={t("studio.rowHint")}
+                        className={`phrase-list-row is-clickable swipe-row-front ${isSelected ? "is-selected" : ""} ${isOpen ? "is-open" : ""}`}
+                        aria-current={isOpen ? "true" : undefined}
                       >
                         <div className="row-top-line">
-                          <input
-                            type="checkbox"
-                            className={`row-select-box ${selectedIds.length > 0 ? "is-visible" : ""}`}
-                            checked={isChecked}
-                            onClick={(e) => e.stopPropagation()}
-                            onChange={(e) => {
-                              e.stopPropagation();
-                              toggleRowSelected(p.id, false);
-                            }}
-                          />
                           <span className="abbr-chip">{p.abbr}</span>
                           <strong className="row-title">{title}</strong>
                           <span className="row-date">
                             {formatRelativeDate(p.last_used_at ?? p.updated_at)}
                           </span>
-                          <button
-                            type="button"
-                            className="row-swipe-trigger"
-                            title={t("studio.swipeDelete")}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSwipedId(isSwiped ? null : p.id);
-                            }}
-                          >
-                            ‹
-                          </button>
                         </div>
                         <div className="row-preview-line">
                           {formatPreviewLine(p.content)}
@@ -2705,39 +2664,28 @@ export function StudioView() {
         >
           {contextMenu.kind === "phrase" ? (
             <>
-              <button
-                type="button"
-                onClick={() => {
-                  startEdit(contextMenu.phrase);
-                  setContextMenu(null);
-                }}
-              >
-                {t("studio.ctxEdit")}
-              </button>
+              {contextMenu.ids.length > 1 ? (
+                <div className="case-popover-head">
+                  {t("studio.bulkSelected", { count: contextMenu.ids.length })}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    startEdit(contextMenu.phrase);
+                    setContextMenu(null);
+                  }}
+                >
+                  {t("studio.ctxEdit")}
+                </button>
+              )}
               {view.kind === "folder" && (
                 <button
                   type="button"
                   onClick={() => {
-                    const p = contextMenu.phrase;
-                    const rem = (p.folder_ids ?? []).filter(
-                      (fid) => fid !== view.folderId,
-                    );
+                    const ids = contextMenu.ids;
                     setContextMenu(null);
-                    void invoke("update_phrase", {
-                      input: {
-                        id: p.id,
-                        abbr: p.abbr,
-                        content: p.content,
-                        content_html: p.content_html,
-                        description: p.description,
-                        folder_id: rem[0] ?? null,
-                        folder_ids: rem,
-                        case_mode: p.case_mode,
-                        shortcut: p.shortcut,
-                        enabled: p.enabled,
-                        tags: p.tags,
-                      },
-                    }).then(() => loadAll());
+                    void handleRemoveFromFolder(ids, view.folderId);
                   }}
                 >
                   {t("studio.ctxRemoveFromFolder")}
@@ -2752,9 +2700,9 @@ export function StudioView() {
                       key={`mv-${f.id}`}
                       type="button"
                       onClick={() => {
-                        const pid = contextMenu.phrase.id;
+                        const ids = contextMenu.ids;
                         setContextMenu(null);
-                        void handleFolderDrop(f.id, [pid], false);
+                        void handleFolderDrop(f.id, ids, false);
                       }}
                     >
                       → {f.name}
@@ -2766,9 +2714,9 @@ export function StudioView() {
                       key={`cp-${f.id}`}
                       type="button"
                       onClick={() => {
-                        const pid = contextMenu.phrase.id;
+                        const ids = contextMenu.ids;
                         setContextMenu(null);
-                        void handleFolderDrop(f.id, [pid], true);
+                        void handleFolderDrop(f.id, ids, true);
                       }}
                     >
                       + {f.name}
@@ -2781,9 +2729,9 @@ export function StudioView() {
                 type="button"
                 onClick={() =>
                   void handleExportSubset(
-                    [contextMenu.phrase.id],
+                    contextMenu.ids,
                     "meetin",
-                    contextMenu.phrase.abbr,
+                    contextMenu.ids.length > 1 ? "meetin-secilenler" : contextMenu.phrase.abbr,
                   )
                 }
               >
@@ -2793,9 +2741,9 @@ export function StudioView() {
                 type="button"
                 onClick={() =>
                   void handleExportSubset(
-                    [contextMenu.phrase.id],
+                    contextMenu.ids,
                     "csv",
-                    contextMenu.phrase.abbr,
+                    contextMenu.ids.length > 1 ? "meetin-secilenler" : contextMenu.phrase.abbr,
                   )
                 }
               >
@@ -2806,9 +2754,9 @@ export function StudioView() {
                 type="button"
                 className="btn-danger"
                 onClick={() => {
-                  const pid = contextMenu.phrase.id;
+                  const ids = contextMenu.ids;
                   setContextMenu(null);
-                  void handleSoftDelete(pid);
+                  void handleBulkDelete(ids);
                 }}
               >
                 {t("studio.ctxDelete")}

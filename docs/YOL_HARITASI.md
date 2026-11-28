@@ -168,10 +168,11 @@ Her adımdan önce mevcut ekranın görüntüsü ve önerilen düzen Saul'a gös
 - **Hedef:** `gif/` klasöründeki 72 örneğin tarzında (sade, tek renk, yaylı) küçük etkileşim animasyonları. Kod kopyalanmaz, ortak yay altyapısı (R3.0) ve §11.4 renk rolleriyle yeniden yazılır. Hangisinin nerede kullanılacağı Saul ile birlikte seçilir; seçilenler bu maddeye alt adım olarak eklenir.
 - **Ajan:** Sonnet (bileşen başına ayrı görev, sırayla) · Opus denetim.
 
-### [ ] R3.1 · İfade listesi — v1.5.2
+### [x] R3.1 · İfade listesi — v1.5.8
 
 - **Hedef:** Onay kutuları kaldırılır; `Ctrl`/`Shift` + tık çoklu seçim; ifadeler klasörlere sürükle-bırak; anlamsız simgeler çıkar; toplu işlemler sağ tık menüsünde.
 - **Ajan:** Sonnet · Opus denetim. **Test:** Oto: seçim mantığı · Elle.
+- **Yapılan:** `src/studio/listSelection.ts`: Windows Gezgini seçimi (tık açar ve çapa olur; Ctrl+tık açık satırdan başlayıp ekler/çıkarır; Shift+tık çapadan aralık, Ctrl+Shift ekler), sağ tık ve sürüklemenin seçime uygulanması, görünmeyen satırların seçimden düşmesi. Satır onay kutuları ve "‹" düğmesi kaldırıldı; toplu düğme şeridi yerine "N seçili" + temizle. Sağ tık menüsü seçime uygulanır (taşı, kopyala, klasörden çıkar, .mee/CSV, sil); klasörden çıkarmada artık hata gösterilir. Ctrl+A / Esc (yazı alanı dışında). Açık satır sol çizgiyle, seçilenler zeminle ayrılır. Satır ipucu `tr.json`'a taşındı. Klasöre sürükle-bırak zaten vardı, seçimle çalışır. CSV içe aktarma penceresindeki onay kutuları içe aktarılacak satırları seçtiği için kaldı. **Ajan:** Opus. **Test:** Oto: seçim mantığı (6), arayüz kaynak denetimi · tarayıcıda sahte veriyle Ctrl/Shift+tık, sağ tıkla toplu taşıma, Esc, Ctrl+A (yazı alanında etkisiz). Sürükle-bırak tarayıcıda denenmedi. Elle (Saul): gerçek uygulamada deneme.
 
 ### [ ] R3.1a · Kaydet sonrası boş form ve ifade kopyalama — Saul isteği
 

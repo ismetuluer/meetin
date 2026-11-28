@@ -443,7 +443,7 @@ html.has-mica-backdrop .fluent-detail-col {
   background: var(--vurgu-zayif);
 }
 
-.phrase-list-row.is-selected::before {
+.phrase-list-row.is-open::before {
   content: "";
   position: absolute;
   left: 0;
@@ -1269,9 +1269,8 @@ html.has-mica-backdrop .fluent-detail-col {
 .bulk-selection-bar {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
   gap: 6px;
-  padding: 8px 12px;
+  padding: 4px 8px 4px 12px;
   border-bottom: 1px solid var(--cizgi);
   background: var(--vurgu-zayif);
 }
@@ -1314,37 +1313,6 @@ html.has-mica-backdrop .fluent-detail-col {
   font-size: 12px;
   cursor: pointer;
   z-index: 0;
-}
-
-.row-select-box {
-  width: 14px;
-  height: 14px;
-  cursor: pointer;
-  opacity: 0.25;
-  transition: opacity 120ms ease;
-  flex-shrink: 0;
-}
-
-.phrase-list-row:hover .row-select-box,
-.row-select-box.is-visible,
-.row-select-box:checked {
-  opacity: 1;
-}
-
-.row-swipe-trigger {
-  border: none;
-  background: transparent;
-  color: var(--metin-pasif);
-  cursor: pointer;
-  padding: 0 4px;
-  font-size: 14px;
-  opacity: 0;
-  transition: opacity 120ms ease;
-}
-
-.phrase-list-row:hover .row-swipe-trigger,
-.swipe-row-wrap.is-swiped .row-swipe-trigger {
-  opacity: 1;
 }
 
 .floating-context-menu {

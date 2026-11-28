@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü (CHANGELOG)
 
+## [1.5.8] - 2026-11-28
+
+### Değişti
+- **İfade listesinde Windows usulü seçim:** Onay kutuları kalktı. Tık ifadeyi açar; `Ctrl`+tık seçime ekler ya da çıkarır, `Shift`+tık aralık seçer, `Ctrl+A` hepsini seçer, `Esc` seçimi bırakır.
+- **Toplu işlemler sağ tıkta:** Seçili bir ifadeye sağ tıklayınca taşıma, kopyalama, klasörden çıkarma, dışa aktarma ve silme bütün seçime uygulanır. Üstteki düğme şeridi yerine yalnız "N seçili" göstergesi kalır.
+- Satırdaki anlamı belirsiz "‹" düğmesi kaldırıldı; silme sağ tık menüsünde, Çöp Kutusu'na sürüklemede ve yatay kaydırmada.
+
 ## [1.5.7] - 2026-11-28
 
 ### Eklendi
