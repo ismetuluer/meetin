@@ -11,57 +11,62 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use tauri::{
     AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, PhysicalPosition, WebviewWindow,
 };
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct MonitorBoundsDto {
-    pub min_x: i32,
-    pub min_y: i32,
-    pub max_x: i32,
-    pub max_y: i32,
+/// Bir monitörün sanal masaüstündeki fiziksel dikdörtgeni ve DPI ölçeği.
+#[derive(Debug, Clone, Serialize)]
+pub struct MonitorRectDto {
+    pub x: i32,
+    pub y: i32,
+    pub width: u32,
+    pub height: u32,
+    pub scale: f64,
 }
 
-/// Maskot penceresinin bulunduğu monitörde gidebileceği fiziksel sınırları döndürür.
-pub fn get_mascot_monitor_bounds(app: &AppHandle) -> MonitorBoundsDto {
-    let Some(win) = app.get_webview_window(MASCOT_LABEL) else {
-        return MonitorBoundsDto {
-            min_x: 0,
-            min_y: 0,
-            max_x: 1800,
-            max_y: 960,
-        };
-    };
+/// Fırlatma fiziği için bütün monitörler ve maskot penceresinin mantıksal boyutu (R3.0f).
+#[derive(Debug, Clone, Serialize)]
+pub struct MonitorLayoutDto {
+    pub monitors: Vec<MonitorRectDto>,
+    pub window_width: f64,
+    pub window_height: f64,
+}
 
-    let monitor = win
-        .current_monitor()
-        .ok()
-        .flatten()
-        .or_else(|| win.primary_monitor().ok().flatten());
+/// Bağlı bütün monitörleri döndürür; fizik birleşik alanda çalışır (R3.0f).
+pub fn get_mascot_monitor_layout(app: &AppHandle) -> Result<MonitorLayoutDto, String> {
+    let win = app
+        .get_webview_window(MASCOT_LABEL)
+        .ok_or_else(|| "maskot penceresi yok".to_string())?;
 
-    let Some(m) = monitor else {
-        return MonitorBoundsDto {
-            min_x: 0,
-            min_y: 0,
-            max_x: 1800,
-            max_y: 960,
-        };
-    };
-
-    let mpos = m.position();
-    let msize = m.size();
-    let wsize = win
-        .outer_size()
-        .unwrap_or(tauri::PhysicalSize::new(100, 100));
-
-    MonitorBoundsDto {
-        min_x: mpos.x,
-        min_y: mpos.y,
-        max_x: (mpos.x + msize.width as i32 - wsize.width as i32).max(mpos.x),
-        max_y: (mpos.y + msize.height as i32 - wsize.height as i32).max(mpos.y),
+    let mut monitors = win.available_monitors().map_err(|e| e.to_string())?;
+    if monitors.is_empty() {
+        if let Some(m) = win.primary_monitor().map_err(|e| e.to_string())? {
+            monitors.push(m);
+        }
     }
+    if monitors.is_empty() {
+        return Err("monitör bulunamadı".to_string());
+    }
+
+    let scale = win.scale_factor().map_err(|e| e.to_string())?;
+    let size = win.outer_size().map_err(|e| e.to_string())?;
+
+    Ok(MonitorLayoutDto {
+        monitors: monitors
+            .iter()
+            .map(|m| MonitorRectDto {
+                x: m.position().x,
+                y: m.position().y,
+                width: m.size().width,
+                height: m.size().height,
+                scale: m.scale_factor(),
+            })
+            .collect(),
+        window_width: size.width as f64 / scale,
+        window_height: size.height as f64 / scale,
+    })
 }
 
 use crate::db::Storage;

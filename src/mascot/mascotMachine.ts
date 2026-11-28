@@ -19,7 +19,8 @@ export type MascotAnim =
   | "sad"
   | "squeeze"
   | "thumbsup"
-  | "super";
+  | "super"
+  | "rocket";
 
 export const ANIM_DURATIONS: Record<MascotAnim, number | null> = {
   idle: null,
@@ -33,6 +34,7 @@ export const ANIM_DURATIONS: Record<MascotAnim, number | null> = {
   squeeze: null, // Basılı tutulduğu sürece sürer
   thumbsup: 2200,
   super: null, // Uçuş bitene kadar sürer
+  rocket: null, // Monitörler arası uçuş bitene kadar sürer (R3.0f)
 };
 
 export interface MascotFlags {
@@ -49,6 +51,10 @@ export interface MascotFlags {
   isBaa: boolean;
   isThumbsUp: boolean;
   isSuper: boolean;
+  /** Roketle monitörler arası uçuş (R3.0f) */
+  isRocket: boolean;
+  /** Uçuş duruşu (uzanmış toynaklar, eğik baş): `super` ve `rocket` */
+  isFlight: boolean;
   cheekOpacity: number;
 }
 
@@ -59,7 +65,7 @@ export function getMascotFlags(anim: MascotAnim): MascotFlags {
     eyeHappy: anim === "hop",
     eyeSad: anim === "sad",
     mSmile: ["idle", "stare", "sleep", "squeeze", "super"].includes(anim),
-    mOpen: anim === "baa" || anim === "hop",
+    mOpen: anim === "baa" || anim === "hop" || anim === "rocket",
     mChew: anim === "graze" || anim === "eat",
     mSad: anim === "sad",
     mGrin: anim === "thumbsup",
@@ -67,7 +73,9 @@ export function getMascotFlags(anim: MascotAnim): MascotFlags {
     isBaa: anim === "baa",
     isThumbsUp: anim === "thumbsup",
     isSuper: anim === "super",
-    cheekOpacity: ["eat", "hop", "baa", "thumbsup", "super"].includes(anim)
+    isRocket: anim === "rocket",
+    isFlight: anim === "super" || anim === "rocket",
+    cheekOpacity: ["eat", "hop", "baa", "thumbsup", "super", "rocket"].includes(anim)
       ? 0.95
       : 0.5,
   };
@@ -144,4 +152,40 @@ export function playWallImpactSound(impactSpeed = 800): void {
   const url = WALL_IMPACT_SOUNDS[poolIndex] ?? thudImpactMp3Url;
   const vol = Math.min(0.84, Math.max(0.36, impactSpeed / 1600));
   playMp3(url, vol);
+}
+
+let rocketAudio: AudioContext | null = null;
+
+/**
+ * Roket "fışş" sesi (R3.0f): süzgeçten geçmiş kısa beyaz gürültü, Web Audio ile üretilir.
+ * Fırlatma sesi ayarına bağlıdır; çağıran ayarı denetler.
+ */
+export function playRocketSound(): void {
+  try {
+    if (typeof AudioContext === "undefined") return;
+    rocketAudio ??= new AudioContext();
+    const ctx = rocketAudio;
+    void ctx.resume();
+    const dur = 0.7;
+    const buffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * dur), ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    const src = ctx.createBufferSource();
+    src.buffer = buffer;
+    const filter = ctx.createBiquadFilter();
+    filter.type = "bandpass";
+    filter.Q.value = 0.9;
+    const t0 = ctx.currentTime;
+    filter.frequency.setValueAtTime(3200, t0);
+    filter.frequency.exponentialRampToValueAtTime(700, t0 + dur);
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(0.5, t0 + 0.04);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    src.connect(filter).connect(gain).connect(ctx.destination);
+    src.start(t0);
+    src.stop(t0 + dur);
+  } catch {
+    // Ses aygıtı yoksa sessizce yok say (diğer maskot sesleriyle aynı)
+  }
 }

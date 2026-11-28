@@ -18,6 +18,7 @@ import {
   computePupilOffset,
   pickAutoAnim,
   playBaaSound,
+  playRocketSound,
   playThrowSound,
   playWallImpactSound,
   type MascotAnim,
@@ -27,9 +28,13 @@ import {
   checkBasketScore,
   classifyThrowSpeed,
   createVelocityTracker,
-  stepThrowPhysics,
+  hostMonitorIndex,
+  predictCrossesMonitor,
+  stepThrowPhysicsMulti,
+  windowSizeOn,
   type HoopRimRect,
-  type MonitorBounds,
+  type MonitorLayout,
+  type MonitorRect,
   type ThrowState,
 } from "../mascot/throwPhysics";
 import type {
@@ -700,32 +705,35 @@ export function MascotIslandApp() {
 
     clearAnimTimer();
     setAnim("super");
-    if (soundEnabledRef.current && soundThrowRef.current) {
-      playThrowSound();
-    }
     setFlightAngleDeg((Math.atan2(initial.vy, initial.vx) * 180) / Math.PI);
 
     void Promise.all([
       invoke<{
-        min_x: number;
-        min_y: number;
-        max_x: number;
-        max_y: number;
-      }>("get_mascot_monitor_bounds"),
+        monitors: MonitorRect[];
+        window_width: number;
+        window_height: number;
+      }>("get_mascot_monitor_layout"),
       isBasket
         ? invoke<HoopRimRect | null>("get_hoop_rim_rect")
         : Promise.resolve(null),
     ])
       .then(([dto, initialRim]) => {
-        const bounds: MonitorBounds = {
-          minX: dto.min_x,
-          minY: dto.min_y,
-          maxX: dto.max_x,
-          maxY: dto.max_y,
+        const layout: MonitorLayout = {
+          monitors: dto.monitors,
+          windowWidth: dto.window_width,
+          windowHeight: dto.window_height,
         };
+        // Atış başka monitöre ulaşacaksa sırtta roket (R3.0f); azaltılmış harekette yok
+        const rocket =
+          !window.matchMedia("(prefers-reduced-motion: reduce)").matches &&
+          predictCrossesMonitor(initial, layout, { gravity });
+        if (rocket) setAnim("rocket");
+        if (soundEnabledRef.current && soundThrowRef.current) {
+          if (rocket) playRocketSound();
+          else playThrowSound();
+        }
         const rim = initialRim;
-        const dpr = window.devicePixelRatio || 1;
-        const halfW = 50 * dpr;
+        let host = hostMonitorIndex(initial.x, initial.y, layout);
         let sim = initial;
         let lastTime = performance.now();
         let lastSavedX = Math.round(sim.x);
@@ -736,10 +744,12 @@ export function MascotIslandApp() {
           const dtSec = (now - lastTime) / 1000;
           lastTime = now;
 
-          const prevCx = sim.x + halfW;
-          const prevCy = sim.y + halfW;
-          const step = stepThrowPhysics(sim, bounds, dtSec, { gravity });
+          const half = windowSizeOn(layout.monitors[host], layout).w / 2;
+          const prevCx = sim.x + half;
+          const prevCy = sim.y + half;
+          const step = stepThrowPhysicsMulti(sim, layout, dtSec, { gravity });
           sim = step.state;
+          host = step.monitor;
           if (step.bounced && soundEnabledRef.current && soundImpactRef.current) {
             const sinceLast = now - lastImpactSoundRef.current;
             if (sinceLast >= 90) {
@@ -747,8 +757,8 @@ export function MascotIslandApp() {
               playWallImpactSound(step.impactSpeed);
             }
           }
-          const nextCx = sim.x + halfW;
-          const nextCy = sim.y + halfW;
+          const nextCx = sim.x + half;
+          const nextCy = sim.y + half;
 
           const rx = Math.round(sim.x);
           const ry = Math.round(sim.y);
@@ -799,7 +809,13 @@ export function MascotIslandApp() {
 
         throwRafRef.current = window.requestAnimationFrame(tick);
       })
-      .catch(() => {
+      .catch((err: unknown) => {
+        // Monitör düzeni alınamadı: atış yapılmaz, konum korunur, neden günlüğe yazılır
+        void invoke("log_frontend_error", {
+          window: "mascot",
+          kind: "throw",
+          message: String(err),
+        }).catch(() => {});
         setAnim(pausedRef.current ? "sleep" : "idle");
         void invoke("save_mascot_position", {
           x: Math.round(initial.x),

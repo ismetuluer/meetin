@@ -190,3 +190,242 @@ export function checkBasketScore(
   const crossX = prevCenterX + (nextCenterX - prevCenterX) * frac;
   return crossX >= rim.left && crossX <= rim.right;
 }
+
+/** Bir monitörün sanal masaüstündeki fiziksel dikdörtgeni (Rust `MonitorRectDto`). */
+export interface MonitorRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  scale: number;
+}
+
+/** Bütün monitörler + maskot penceresinin mantıksal boyutu (R3.0f). */
+export interface MonitorLayout {
+  monitors: MonitorRect[];
+  windowWidth: number;
+  windowHeight: number;
+}
+
+export interface MultiThrowStepResult extends ThrowStepResult {
+  /** Pencere merkezinin bulunduğu monitörün `layout.monitors` içindeki sırası. */
+  monitor: number;
+}
+
+/** Monitörler arasındaki yuvarlama farkı için kenar toleransı (fiziksel px). */
+const EDGE_TOLERANCE = 2;
+
+/** Pencerenin o monitördeki fiziksel boyutu: Windows DPI değişince pencereyi yeniden boyutlar. */
+export function windowSizeOn(
+  m: MonitorRect,
+  layout: MonitorLayout,
+): { w: number; h: number } {
+  return {
+    w: Math.round(layout.windowWidth * m.scale),
+    h: Math.round(layout.windowHeight * m.scale),
+  };
+}
+
+/** Pencerenin sol üst köşesinin o monitörde gidebileceği sınırlar. */
+export function boundsOn(m: MonitorRect, layout: MonitorLayout): MonitorBounds {
+  const { w, h } = windowSizeOn(m, layout);
+  return {
+    minX: m.x,
+    minY: m.y,
+    maxX: Math.max(m.x, m.x + m.width - w),
+    maxY: Math.max(m.y, m.y + m.height - h),
+  };
+}
+
+/**
+ * Pencere merkezinin bulunduğu monitör. Hiçbirinde değilse (monitörler arası boşluk,
+ * ekran dışı) merkeze en yakın monitör döner.
+ */
+export function hostMonitorIndex(
+  x: number,
+  y: number,
+  layout: MonitorLayout,
+): number {
+  let best = 0;
+  let bestDist = Infinity;
+  layout.monitors.forEach((m, i) => {
+    const { w, h } = windowSizeOn(m, layout);
+    const cx = x + w / 2;
+    const cy = y + h / 2;
+    const dx = Math.max(m.x - cx, 0, cx - (m.x + m.width));
+    const dy = Math.max(m.y - cy, 0, cy - (m.y + m.height));
+    const dist = Math.hypot(dx, dy);
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = i;
+    }
+  });
+  return best;
+}
+
+type Edge = "left" | "right" | "top" | "bottom";
+
+/**
+ * Kenarın ötesinde pencereyi tamamen alacak bitişik bir monitör varsa o kenar duvar değildir.
+ * Pencerenin kenar boyunca uzanan kısmı komşuya sığmıyorsa (farklı yükseklik/kaydırma) duvardır.
+ */
+export function canCrossEdge(
+  hostIndex: number,
+  edge: Edge,
+  x: number,
+  y: number,
+  layout: MonitorLayout,
+): boolean {
+  const host = layout.monitors[hostIndex];
+  const hostSize = windowSizeOn(host, layout);
+  return layout.monitors.some((n, i) => {
+    if (i === hostIndex) return false;
+    const nSize = windowSizeOn(n, layout);
+    const w = Math.max(hostSize.w, nSize.w);
+    const h = Math.max(hostSize.h, nSize.h);
+    const near = (a: number, b: number) => Math.abs(a - b) <= EDGE_TOLERANCE;
+    const fitsY =
+      n.y - EDGE_TOLERANCE <= y && y + h <= n.y + n.height + EDGE_TOLERANCE;
+    const fitsX =
+      n.x - EDGE_TOLERANCE <= x && x + w <= n.x + n.width + EDGE_TOLERANCE;
+    switch (edge) {
+      case "left":
+        return near(n.x + n.width, host.x) && fitsY;
+      case "right":
+        return near(n.x, host.x + host.width) && fitsY;
+      case "top":
+        return near(n.y + n.height, host.y) && fitsX;
+      case "bottom":
+        return near(n.y, host.y + host.height) && fitsX;
+    }
+  });
+}
+
+/**
+ * Pencere kenarı aşıp komşu monitöre taşmışsa (geçiş sürüyor) o komşu ve pencerenin
+ * kenar boyunca kalabileceği ortak aralık. Geçiş sürerken kenar kapanmaz; pencere iki
+ * monitörün ortak kısmında tutulur, böylece geri sıçramaz.
+ */
+function straddleSpan(
+  hostIndex: number,
+  edge: Edge,
+  x: number,
+  y: number,
+  layout: MonitorLayout,
+): [number, number] | null {
+  const host = layout.monitors[hostIndex];
+  const hostSize = windowSizeOn(host, layout);
+  const near = (a: number, c: number) => Math.abs(a - c) <= EDGE_TOLERANCE;
+  const horizontal = edge === "left" || edge === "right";
+  let best: [number, number] | null = null;
+  let bestOverlap = 0;
+  layout.monitors.forEach((n, i) => {
+    if (i === hostIndex) return;
+    const nSize = windowSizeOn(n, layout);
+    const w = Math.max(hostSize.w, nSize.w);
+    const h = Math.max(hostSize.h, nSize.h);
+    let adjacent: boolean;
+    let straddling: boolean;
+    switch (edge) {
+      case "left":
+        adjacent = near(n.x + n.width, host.x);
+        straddling = x < host.x;
+        break;
+      case "right":
+        adjacent = near(n.x, host.x + host.width);
+        straddling = x + w > host.x + host.width;
+        break;
+      case "top":
+        adjacent = near(n.y + n.height, host.y);
+        straddling = y < host.y;
+        break;
+      case "bottom":
+        adjacent = near(n.y, host.y + host.height);
+        straddling = y + h > host.y + host.height;
+        break;
+    }
+    if (!adjacent || !straddling) return;
+    const [lo, hi, pos, size] = horizontal
+      ? [
+          Math.max(host.y, n.y),
+          Math.min(host.y + host.height, n.y + n.height),
+          y,
+          h,
+        ]
+      : [
+          Math.max(host.x, n.x),
+          Math.min(host.x + host.width, n.x + n.width),
+          x,
+          w,
+        ];
+    const overlap = Math.min(pos + size, hi) - Math.max(pos, lo);
+    if (hi - lo >= size && overlap > bestOverlap) {
+      bestOverlap = overlap;
+      best = [lo, hi - size];
+    }
+  });
+  return best;
+}
+
+/**
+ * Çoklu monitörde fırlatma adımı (R3.0f): duvarlar yalnız birleşik alanın dış kenarlarıdır,
+ * zemin maskotun altındaki monitörün tabanıdır. Tek monitörde `stepThrowPhysics` ile aynıdır.
+ */
+export function stepThrowPhysicsMulti(
+  state: ThrowState,
+  layout: MonitorLayout,
+  dtSec: number,
+  options: ThrowStepOptions = {},
+): MultiThrowStepResult {
+  const host = hostMonitorIndex(state.x, state.y, layout);
+  const b = boundsOn(layout.monitors[host], layout);
+  const bounds: MonitorBounds = { ...b };
+  const spans: Array<[Edge, [number, number]]> = [];
+  for (const edge of ["left", "right", "top", "bottom"] as Edge[]) {
+    const span = straddleSpan(host, edge, state.x, state.y, layout);
+    if (span) spans.push([edge, span]);
+    if (!span && !canCrossEdge(host, edge, state.x, state.y, layout)) continue;
+    if (edge === "left") bounds.minX = -Infinity;
+    if (edge === "right") bounds.maxX = Infinity;
+    if (edge === "top") bounds.minY = -Infinity;
+    if (edge === "bottom") bounds.maxY = Infinity;
+  }
+  // Geçiş sürerken pencere iki monitörün ortak aralığında kalır
+  for (const [edge, [lo, hi]] of spans) {
+    if (edge === "left" || edge === "right") {
+      bounds.minY = Math.max(bounds.minY, lo);
+      bounds.maxY = Math.min(bounds.maxY, hi);
+    } else {
+      bounds.minX = Math.max(bounds.minX, lo);
+      bounds.maxX = Math.min(bounds.maxX, hi);
+    }
+  }
+  const step = stepThrowPhysics(state, bounds, dtSec, options);
+  return {
+    ...step,
+    monitor: hostMonitorIndex(step.state.x, step.state.y, layout),
+  };
+}
+
+/**
+ * Atış başka bir monitöre ulaşacak mı? Aynı fizik sabit adımla önceden çalıştırılır;
+ * sonuç roket animasyonunu seçer (R3.0f).
+ */
+export function predictCrossesMonitor(
+  initial: ThrowState,
+  layout: MonitorLayout,
+  options: ThrowStepOptions = {},
+  maxSec = 6,
+): boolean {
+  if (layout.monitors.length < 2) return false;
+  const start = hostMonitorIndex(initial.x, initial.y, layout);
+  const dt = 1 / 60;
+  let sim = initial;
+  for (let t = 0; t < maxSec; t += dt) {
+    const step = stepThrowPhysicsMulti(sim, layout, dt, options);
+    if (step.monitor !== start) return true;
+    if (step.stopped) return false;
+    sim = step.state;
+  }
+  return false;
+}

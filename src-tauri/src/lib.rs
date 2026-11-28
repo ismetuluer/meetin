@@ -83,8 +83,8 @@ use crate::windows::hoop::{
 };
 use crate::windows::mascot::{
     self, capture_foreground_target, ensure_mascot_shown, focus_previous_target,
-    get_mascot_monitor_bounds as get_monitor_bounds_inner, move_mascot_window_pos,
-    resize_mascot_window, toggle_user_visibility, MascotWindowState, MonitorBoundsDto,
+    get_mascot_monitor_layout as get_monitor_layout_inner, move_mascot_window_pos,
+    resize_mascot_window, toggle_user_visibility, MascotWindowState, MonitorLayoutDto,
     MASCOT_LABEL,
 };
 use crate::windows::startup::{self, StartupStatus};
@@ -1413,8 +1413,8 @@ fn move_mascot_window(app: AppHandle, state: State<'_, AppState>, x: i32, y: i32
 }
 
 #[tauri::command]
-fn get_mascot_monitor_bounds(app: AppHandle) -> MonitorBoundsDto {
-    get_monitor_bounds_inner(&app)
+fn get_mascot_monitor_layout(app: AppHandle) -> Result<MonitorLayoutDto, String> {
+    get_monitor_layout_inner(&app)
 }
 
 #[tauri::command]
@@ -2210,7 +2210,7 @@ pub fn run() {
             import_csv_phrases,
             set_mascot_mode,
             move_mascot_window,
-            get_mascot_monitor_bounds,
+            get_mascot_monitor_layout,
             save_mascot_position,
             toggle_mascot_visible,
             open_studio_window,

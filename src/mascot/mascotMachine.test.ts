@@ -41,6 +41,14 @@ describe("mascotMachine", () => {
     expect(sup.isSuper).toBe(true);
     expect(sup.eyeOpen).toBe(true);
     expect(sup.cheekOpacity).toBe(0.95);
+    expect(sup.isFlight).toBe(true);
+    expect(sup.isRocket).toBe(false);
+
+    const rocket = getMascotFlags("rocket");
+    expect(rocket.isRocket).toBe(true);
+    expect(rocket.isFlight).toBe(true);
+    expect(rocket.isSuper).toBe(false);
+    expect(rocket.mOpen).toBe(true);
   });
 
   it("defines durations matching spec section 5.1.1", () => {
@@ -54,6 +62,7 @@ describe("mascotMachine", () => {
     expect(ANIM_DURATIONS.sleep).toBeNull();
     expect(ANIM_DURATIONS.squeeze).toBeNull();
     expect(ANIM_DURATIONS.super).toBeNull();
+    expect(ANIM_DURATIONS.rocket).toBeNull();
   });
 
   it("clamps pupil tracking vector to 4.2px max radius", () => {

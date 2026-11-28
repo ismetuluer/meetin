@@ -16,7 +16,8 @@ export interface MeetinSheepProps {
 
 /**
  * Meetin koyunu — Harman B (`docs/meetin-maskot.svg` ve `docs/meetin-maskot-animasyon.html` birebir SVG yapısı).
- * `thumbsup` (iki başparmak onay) ve `super` (pelerinli uçuş) durumlarını içerir.
+ * `thumbsup` (iki başparmak onay), `super` (pelerinli uçuş) ve `rocket` (monitörler arası
+ * roketli uçuş, R3.0f) durumlarını içerir.
  */
 export const MeetinSheep = forwardRef<SVGSVGElement, MeetinSheepProps>(
   function MeetinSheep(
@@ -38,7 +39,7 @@ export const MeetinSheep = forwardRef<SVGSVGElement, MeetinSheepProps>(
 
     // Uçuş yönüne göre başı hafifçe eğ (ama baş aşağı dönmesin)
     const rad = (flightAngleDeg * Math.PI) / 180;
-    const headTiltDeg = f.isSuper
+    const headTiltDeg = f.isFlight
       ? Math.max(-16, Math.min(16, Math.sin(rad) * 12 + Math.cos(rad) * 8))
       : 0;
 
@@ -107,7 +108,7 @@ export const MeetinSheep = forwardRef<SVGSVGElement, MeetinSheepProps>(
           </g>
 
           {/* Süper Koyun Pelerini, Uçuş Rüzgarı ve Yöne Uzanan Toynaklar (Görsel 2) */}
-          {f.isSuper && (
+          {f.isFlight && (
             <g
               className="super-flight-dir"
               style={{
@@ -116,6 +117,7 @@ export const MeetinSheep = forwardRef<SVGSVGElement, MeetinSheepProps>(
               }}
             >
               {/* Arkada dalgalanan kırmızı pelerin */}
+              {f.isSuper && (
               <g className="super-cape-fabric">
                 <path
                   d="M92 84 C62 66 28 74 10 92 C24 108 18 124 8 136 C36 144 68 140 94 126 Z"
@@ -133,17 +135,33 @@ export const MeetinSheep = forwardRef<SVGSVGElement, MeetinSheepProps>(
                   opacity="0.7"
                 />
               </g>
+              )}
+
+              {/* Roket alevi: memeden geriye, gövdenin arkasında titrer (R3.0f) */}
+              {f.isRocket && (
+                <g className="rocket-flame">
+                  <path
+                    d="M29 134 C20 130 14 134 12 138 C6 138 2 142 2 146 C2 150 6 154 12 154 C14 158 20 162 29 158 Z"
+                    fill="#F59A4E"
+                    stroke="#2E2A28"
+                    strokeWidth="2.5"
+                    strokeLinejoin="round"
+                  />
+                  <path d="M29 139 C22 137 16 140 14 143 C11 144 10 146 11 147 C12 150 16 152 20 152 C23 154 26 154 29 153 Z" fill="#FCE08A" />
+                </g>
+              )}
 
               {/* Hız çizgileri */}
               <path
-                d="M14 68 H44 M4 108 H30 M18 148 H48"
+                d={f.isRocket ? "M14 68 H44 M4 108 H30" : "M14 68 H44 M4 108 H30 M18 148 H48"}
                 stroke="#94A3B8"
                 strokeWidth="2.5"
                 strokeLinecap="round"
                 opacity="0.7"
               />
 
-              {/* Arkaya uzanan arka toynak */}
+              {/* Arkaya uzanan arka toynak (roketteyse yerini roket alır) */}
+              {f.isSuper && (
               <g>
                 <path
                   d="M64 128 L34 146"
@@ -156,6 +174,7 @@ export const MeetinSheep = forwardRef<SVGSVGElement, MeetinSheepProps>(
                   fill="#1F1B19"
                 />
               </g>
+              )}
 
               {/* Uçuş yönüne (+X eksenine) ileri uzatılmış ön toynak */}
               <g>
@@ -178,7 +197,7 @@ export const MeetinSheep = forwardRef<SVGSVGElement, MeetinSheepProps>(
           )}
 
           <g className="sh-all">
-            {!f.isSuper && (
+            {!f.isFlight && (
               <g className="legs" fill="#2E2A28">
                 <rect x="66" y="158" width="18" height="26" rx="9" />
                 <rect x="116" y="158" width="18" height="26" rx="9" />
@@ -209,10 +228,35 @@ export const MeetinSheep = forwardRef<SVGSVGElement, MeetinSheepProps>(
                 strokeLinejoin="round"
               />
             </g>
+            {/* Gövdeye bağlı roket: yün ile başın arasında, uçuş yönüne döner (R3.0f) */}
+            {f.isRocket && (
+              <g
+                className="rocket-body"
+                style={{
+                  transform: `rotate(${flightAngleDeg}deg)`,
+                  transformOrigin: "100px 108px",
+                }}
+              >
+                <g fill="#F29A86" stroke="#2E2A28" strokeWidth="3" strokeLinejoin="round">
+                  <path d="M44 136 L36 124 L52 124 L58 136 Z" />
+                  <path d="M44 156 L36 168 L52 168 L58 156 Z" />
+                </g>
+                <rect x="27" y="139" width="9" height="14" rx="2.5" fill="#6B5D4A" stroke="#2E2A28" strokeWidth="3" />
+                <path
+                  d="M40 134 H74 Q90 134 98 146 Q90 158 74 158 H40 Q34 158 34 146 Q34 134 40 134 Z"
+                  fill="#EFE8DC"
+                  stroke="#2E2A28"
+                  strokeWidth="3"
+                  strokeLinejoin="round"
+                />
+                <path d="M82 136 Q92 139 98 146 Q92 153 82 156 Z" fill="#F29A86" stroke="#2E2A28" strokeWidth="3" strokeLinejoin="round" />
+                <circle cx="66" cy="146" r="5.5" fill="#A9CBE6" stroke="#2E2A28" strokeWidth="2.5" />
+              </g>
+            )}
             <g
               className="head"
               style={
-                f.isSuper
+                f.isFlight
                   ? {
                       transform: `rotate(${headTiltDeg}deg)`,
                       transformOrigin: "100px 112px",
@@ -293,7 +337,7 @@ export const MeetinSheep = forwardRef<SVGSVGElement, MeetinSheepProps>(
               )}
 
               {/* Süper koyun kararlı kaşları */}
-              {f.isSuper && (
+              {f.isFlight && (
                 <path
                   d="M72 91 L93 97 M128 91 L107 97"
                   stroke="#EDE6DF"

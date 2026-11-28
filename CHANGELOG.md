@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü (CHANGELOG)
 
+## [1.5.7] - 2026-11-28
+
+### Eklendi
+- **Roketle monitörler arası uçuş:** Maskot başka bir monitöre ulaşacak kadar hızlı fırlatılınca sırtında küçük bir roket ve alev iziyle uçar; fırlatma sesi açıksa kısa bir "fışş" duyulur. Azaltılmış hareket açıkken roket görünmez.
+
+### Değişti
+- **Fırlatma bütün monitörlerde:** Maskot fırlatılınca yanındaki monitöre geçebilir; duvarlar yalnız ekranların dış kenarlarıdır. Basket modunda zemin, maskotun altındaki monitörün tabanıdır. Farklı ölçekli (%100 / %150) monitörlerde boyut doğru hesaplanır; monitörler arası boşluğa düşmez.
+
 ## [1.5.6] - 2026-11-28
 
 ### Değişti

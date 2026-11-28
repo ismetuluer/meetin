@@ -197,6 +197,7 @@ Her animasyon `sheep a-<ad>` sınıfıyla tetiklenir. Yeni bir animasyon eklemek
 | `squeeze` (sık)    | Basılı tutarken                                  | Gövde ezilir; bırakınca `eat` (basılı tutulduysa) ya da `baa` gelir                                             | basılı tutulduğu sürece |
 | `thumbsup` **[K]** | Genişletme, ifade kaydı, basket sayısı | Başparmak gösterir | kısa |
 | `super` **[K]** | Maskot fırlatılınca | Pelerinle uçar | uçuş süresince |
+| `rocket` **[K]** | Fırlatış maskotu başka bir monitöre taşıyacaksa | Sırtında küçük bir roket ve alev iziyle uçar, kısa "fışş" sesi (fırlatma sesi ayarına bağlı). Azaltılmış harekette yok | uçuş süresince |
 
 **Ek etkileşimler [K]** (v1.1–v1.3'te kullanıcı isteğiyle eklendi): maskotu fırlatma ve sallama algılama, basketbol potası penceresi ve skor, ayrı fırlatma/çarpma sesleri, `Shift+F3` ile seçili metnin büyük/küçük harf döngüsü, arayüz yazı boyutu, listede sola kaydırıp silme, `.mee` paket uzantısı (§8'deki `.meetin` yerine).
 

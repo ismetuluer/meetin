@@ -93,6 +93,16 @@
   100% { opacity: 1; transform: none; }
 }
 
+@keyframes rocketFlame {
+  0% { transform: scaleX(0.8) scaleY(0.9); }
+  100% { transform: scaleX(1.15) scaleY(1.05); }
+}
+
+@keyframes rocketShake {
+  0% { transform: translateY(-0.6px); }
+  100% { transform: translateY(0.6px); }
+}
+
 @keyframes capeWave {
   0% { transform: skewY(-3deg) scaleX(0.96); }
   100% { transform: skewY(4deg) scaleX(1.05); }
@@ -309,13 +319,26 @@
   animation: capeWave 0.24s ease-in-out infinite alternate;
 }
 
-.k-b2.a-super .wool {
+.k-b2.a-super .wool,
+.k-b2.a-rocket .wool {
   transform: scale(0.96, 1.03);
 }
 
-.k-b2.a-super .gshadow {
+.k-b2.a-super .gshadow,
+.k-b2.a-rocket .gshadow {
   opacity: 0.25;
   transform: scale(0.7);
+}
+
+/* Roketli uçuş (R3.0f): alev memeden titrer, gövde hafif sarsılır */
+.k-b2.a-rocket .rocket-flame {
+  transform-box: view-box;
+  transform-origin: 29px 146px;
+  animation: rocketFlame 0.09s ease-in-out infinite alternate;
+}
+
+.k-b2.a-rocket .sh-all {
+  animation: rocketShake 0.07s linear infinite alternate;
 }
 
 /* Gizliyken 0% CPU için tüm animasyonları durdur (§5.1.1 & §10.1) */
