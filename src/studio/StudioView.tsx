@@ -99,6 +99,9 @@ const EMPTY_DRAFT: EditorDraft = {
 
 const FOLDER_COLORS = ["c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8"] as const;
 
+/** İşlem bildiriminin ekranda kalma süresi (R3.2) */
+const NOTICE_MS = 2600;
+
 type ContextMenuState =
   | { kind: "phrase"; x: number; y: number; phrase: PhraseRecord; ids: number[] }
   | { kind: "folder"; x: number; y: number; folder: FolderRecord }
@@ -542,6 +545,12 @@ export function StudioView() {
     setSelection((prev) => pruneSelection(prev, displayedOrder));
   }, [displayedOrder]);
 
+  useEffect(() => {
+    if (!notice) return;
+    const timer = window.setTimeout(() => setNotice(null), NOTICE_MS);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
+
   const listSelectable =
     view.kind !== "clipboard" && view.kind !== "stats" && view.kind !== "trash";
 
@@ -788,6 +797,14 @@ export function StudioView() {
       autoSaveTimerRef.current = null;
     }
     await persistDraft(draft, false);
+  }
+
+  async function refreshRunningApps() {
+    try {
+      setRunningApps(await invoke<RunningAppInfo[]>("list_running_apps"));
+    } catch (err) {
+      setError(t("error.generic", { message: String(err) }));
+    }
   }
 
   /** Açık ifadenin kopyası: içerik, etiketler, klasörler ve kurallar; kısaltma çakışmasız (R3.1a) */
@@ -1413,8 +1430,28 @@ export function StudioView() {
         </div>
       </header>
 
-      {error && <div className="banner-inline is-error">{error}</div>}
-      {notice && <div className="banner-inline is-ok">{notice}</div>}
+      {error && (
+        <div className="banner-inline is-error" role="alert">
+          <span>{error}</span>
+          <button
+            type="button"
+            className="mini-icon-btn"
+            title={t("studio.dismiss")}
+            aria-label={t("studio.dismiss")}
+            onClick={() => setError(null)}
+          >
+            ×
+          </button>
+        </div>
+      )}
+      {/* İşlem bildirimi düzeni kaydırmaz, kısa süre sonra kaybolur (R3.2) */}
+      <div className="studio-toast-region" role="status" aria-live="polite">
+        {notice && (
+          <div key={notice} className="studio-toast">
+            {notice}
+          </div>
+        )}
+      </div>
       {availableUpdateVersion && pageMode !== "settings" && (
         <div
           className="banner-inline is-ok"
@@ -2185,10 +2222,17 @@ export function StudioView() {
                   </div>
                   <div className="row-actions" style={{ alignItems: "center" }}>
                     {autoSaveState !== "idle" && (
-                      <span className="autosave-status">
-                        {autoSaveState === "saving"
-                          ? t("studio.autoSaving")
-                          : t("studio.autoSaved")}
+                      <span
+                        className={`autosave-status is-${autoSaveState}`}
+                        role="status"
+                        title={autoSaveState === "saving" ? t("studio.autoSaving") : t("studio.autoSaved")}
+                        aria-label={autoSaveState === "saving" ? t("studio.autoSaving") : t("studio.autoSaved")}
+                      >
+                        {autoSaveState === "saved" && (
+                          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                            <path d="M3.5 8.5L6.5 11.5L12.5 4.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        )}
                       </span>
                     )}
                     {draft.id !== null && (
@@ -2409,90 +2453,97 @@ export function StudioView() {
                         }}
                         placeholder="Ctrl+Alt+R"
                       />
-                      <select
-                        className="inline-case-select"
-                        value=""
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          if (!v) {
-                            setDraft({ ...draft, folder_id: null, folder_ids: [] });
-                            return;
-                          }
-                          const fid = Number(v);
-                          if (!draft.folder_ids.includes(fid)) {
-                            const nextIds = [...draft.folder_ids, fid];
-                            const fname = folders.find((f) => f.id === fid)?.name;
-                            const nextTags =
-                              fname && !draft.tags.includes(fname)
-                                ? [...draft.tags, fname]
-                                : draft.tags;
-                            setDraft({
-                              ...draft,
-                              folder_id: nextIds[0] ?? null,
-                              folder_ids: nextIds,
-                              tags: nextTags,
-                            });
-                          }
-                        }}
-                        title={t("studio.folderLabel")}
-                      >
-                        <option value="">
-                          {draft.folder_ids.length === 0
-                            ? t("studio.unfiled")
-                            : `+ ${t("studio.folderLabel")}`}
-                        </option>
-                        {folders.map((f) => (
-                          <option key={f.id} value={f.id}>
-                            {f.name}
-                          </option>
-                        ))}
-                      </select>
                     </div>
-                    {draft.folder_ids.length > 0 && (
-                      <div className="folder-chips-row">
-                        {draft.folder_ids.map((fid) => {
-                          const fObj = folders.find((f) => f.id === fid);
-                          const fname = fObj?.name ?? `#${fid}`;
-                          return (
-                            <span key={fid} className="tag-pill">
-                              {fObj?.color && (
-                                <span className={`folder-color-dot folder-dot-${fObj.color}`} />
-                              )}
-                              {fname}
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const nextIds = draft.folder_ids.filter(
-                                    (id) => id !== fid,
-                                  );
-                                  setDraft({
-                                    ...draft,
-                                    folder_id: nextIds[0] ?? null,
-                                    folder_ids: nextIds,
-                                  });
-                                }}
-                              >
-                                ×
-                              </button>
-                            </span>
-                          );
-                        })}
-                      </div>
-                    )}
+                  </div>
+                </div>
+
+                <div className="meta-field-group folder-field-group">
+                  <span className="tiny-label">{t("studio.folderLabel")}</span>
+                  <div className="folder-field-row">
+                    <select
+                      className="select folder-select"
+                      value=""
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (!v) {
+                          setDraft({ ...draft, folder_id: null, folder_ids: [] });
+                          return;
+                        }
+                        const fid = Number(v);
+                        if (!draft.folder_ids.includes(fid)) {
+                          const nextIds = [...draft.folder_ids, fid];
+                          const fname = folders.find((f) => f.id === fid)?.name;
+                          const nextTags =
+                            fname && !draft.tags.includes(fname)
+                              ? [...draft.tags, fname]
+                              : draft.tags;
+                          setDraft({
+                            ...draft,
+                            folder_id: nextIds[0] ?? null,
+                            folder_ids: nextIds,
+                            tags: nextTags,
+                          });
+                        }
+                      }}
+                      title={t("studio.folderLabel")}
+                      aria-label={t("studio.folderLabel")}
+                    >
+                      <option value="">
+                        {draft.folder_ids.length === 0
+                          ? t("studio.unfiled")
+                          : `+ ${t("studio.folderLabel")}`}
+                      </option>
+                      {folders.map((f) => (
+                        <option key={f.id} value={f.id}>
+                          {f.name}
+                        </option>
+                      ))}
+                    </select>
+                  {draft.folder_ids.length > 0 && (
+                    <div className="folder-chips-row">
+                      {draft.folder_ids.map((fid) => {
+                        const fObj = folders.find((f) => f.id === fid);
+                        const fname = fObj?.name ?? `#${fid}`;
+                        return (
+                          <span key={fid} className="tag-pill">
+                            {fObj?.color && (
+                              <span className={`folder-color-dot folder-dot-${fObj.color}`} />
+                            )}
+                            {fname}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const nextIds = draft.folder_ids.filter(
+                                  (id) => id !== fid,
+                                );
+                                setDraft({
+                                  ...draft,
+                                  folder_id: nextIds[0] ?? null,
+                                  folder_ids: nextIds,
+                                });
+                              }}
+                            >
+                              ×
+                            </button>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
                   </div>
                 </div>
 
                 <div className="rules-inline-section">
                   <span className="tiny-label">{t("studio.tabRules")}</span>
                   <div className="rules-chip-row">
-                    <span className="muted small">
-                      {appRules.length === 0
-                        ? t("studio.rulesAllApps")
-                        : t("studio.rulesScopedLabel")}
-                    </span>
+                    {appRules.length === 0 && (
+                      <span className="muted small">{t("studio.rulesAllApps")}</span>
+                    )}
                     {appRules.map((r, idx) => (
-                      <span key={idx} className="tag-pill">
-                        {r.kind === "exclude" ? "≠ " : ""}
+                      <span key={idx} className={`tag-pill rule-pill is-${r.kind}`}>
+                        <span className="rule-kind">
+                          {r.kind === "exclude" ? t("studio.ruleKindExclude") : t("studio.ruleKindOnly")}
+                        </span>
                         {r.process_name}
                         <button
                           type="button"
@@ -2514,9 +2565,7 @@ export function StudioView() {
                         const next = !showRuleAdd;
                         setShowRuleAdd(next);
                         if (next) {
-                          void invoke<RunningAppInfo[]>("list_running_apps")
-                            .then(setRunningApps)
-                            .catch(() => {});
+                          void refreshRunningApps();
                         }
                       }}
                     >
@@ -2571,11 +2620,7 @@ export function StudioView() {
                           <button
                             type="button"
                             className="link-btn"
-                            onClick={() =>
-                              void invoke<RunningAppInfo[]>("list_running_apps")
-                                .then(setRunningApps)
-                                .catch(() => {})
-                            }
+                            onClick={() => void refreshRunningApps()}
                           >
                             {t("studio.refreshApps")}
                           </button>

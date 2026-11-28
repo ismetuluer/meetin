@@ -1,6 +1,6 @@
 [package]
 name = "meetin"
-version = "1.5.9"
+version = "1.5.10"
 description = "Meetin — Windows için akıllı metin genişletici"
 authors = ["Meetin Contributors"]
 edition = "2021"

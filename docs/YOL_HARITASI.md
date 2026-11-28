@@ -180,10 +180,11 @@ Her adımdan önce mevcut ekranın görüntüsü ve önerilen düzen Saul'a gös
 - **Ajan:** Sonnet · Opus denetim (kısaltma çakışması, DB). **Test:** Oto: kopya oluşturma · Elle.
 - **Yapılan:** "Yeni ifade" ile açılan form oturumu izlenir; otomatik kayıt kimlik verse de Kaydet'e basılınca form boşalır, kaydedilen satır listede seçili kalır. Var olan ifadede Kaydet eskisi gibi formu açık tutar. `src/studio/phraseCopy.ts`: Rust `normalize_abbr` ile aynı karşılaştırma (tr-TR küçük harf, ayar açıksa aksan katlama), sondaki sayıyı artıran çakışmasız kısaltma. Kopya simge düğmesi (ipuçlu, `aria-label`): önce asıl ifadedeki kaydedilmemiş değişiklik kaydedilir; kopya içerik, etiket, klasör ve kuralları alır, açıklamaya "(kopya)" eklenir, kısayol tuşu boş kalır; otomatik kayıtla oluşur. **Ajan:** Opus. **Test:** Oto: kısaltma önerisi (4) · tarayıcıda sahte veriyle yeni ifade kaydı (form boşaldı, tek kayıt, liste seçimi) ve kopya (kısaltma, açıklama, klasör, etiket, kurallar). Elle (Saul): gerçek uygulamada deneme.
 
-### [ ] R3.2 · Düzenleyici başlığı ve alan düzeni — v1.5.3
+### [x] R3.2 · Düzenleyici başlığı ve alan düzeni — v1.5.10
 
 - **Hedef:** Seçimde üstte çıkan bilgi yazıları kaldırılır; kısayol ile klasör alanı ayrılır (A2); kural haplarında "sadece/hariç" görünür (A3).
 - **Ajan:** Sonnet · Opus denetim. **Test:** Elle.
+- **Yapılan:** "Seçimde üstte çıkan bilgi yazıları": işlem bildirimleri üst şeritten düzeni kaydırmayan, 2,6 sn'de kaybolan alttaki bildirime taşındı (`role="status"`); hata şeridi kalır, kapatma düğmesi eklendi; "Otomatik kaydedildi" yazısı simge + ipucu oldu. A2: klasör seçimi kendi alanına ayrıldı (seçim + klasör hapları). A3: kural haplarında "Yalnız / Hariç" türü renkle ayrılmış yazı; "Sadece/Hariç kuralları:" etiketi kaldırıldı. `list_running_apps` hatası artık gösteriliyor. Liste satırı kenarındaki kırmızı çizgi (kaydırma silme düğmesi kesirli genişlikte görünüyordu) giderildi. **Ajan:** Opus. **Test:** Oto: düzen kaynak denetimi (4) · tarayıcıda sahte veriyle alan düzeni, kural hapları, bildirimin çıkıp kaybolması ve düzenin kaymaması. Elle (Saul): gerçek uygulamada deneme.
 
 ### [ ] R3.3 · Değişken hapları satır içi — v1.5.4
 

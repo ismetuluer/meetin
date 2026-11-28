@@ -1,5 +1,17 @@
 # Değişiklik Günlüğü (CHANGELOG)
 
+## [1.5.10] - 2026-11-28
+
+### Değişti
+- **Klasör alanı ayrı:** Düzenleyicide klasör seçimi artık kısayol tuşu kutusunun içinde değil, kendi "Klasör" alanında; seçili klasörler yanında hap olarak görünür.
+- **Kural haplarında tür görünür:** Uygulama kuralları "Yalnız EXCEL.EXE" ya da "Hariç WINWORD.EXE" biçiminde gösterilir.
+- **Bildirimler düzeni kaydırmaz:** "Kaydedildi", "Klasöre taşındı" gibi bildirimler üstte şerit açmak yerine altta kısa süreli çıkıp kaybolur. Hata şeridi kapatılabilir.
+- Otomatik kayıt durumu yazı yerine simgeyle (ipucuyla) gösterilir.
+
+### Düzeltildi
+- Çalışan uygulamalar alınamazsa hata gösterilir (önceden sessizce geçiliyordu).
+- Liste satırlarının sağ kenarında görünen ince kırmızı çizgi.
+
 ## [1.5.9] - 2026-11-28
 
 ### Eklendi

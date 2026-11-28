@@ -114,8 +114,39 @@ html.has-mica-backdrop .fluent-detail-col {
 }
 
 .banner-inline.is-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   color: var(--hata);
   background: var(--yuzey-2);
+}
+
+/* İşlem bildirimi: düzeni kaydırmayan, kısa süreli bildirim (R3.2) */
+.studio-toast-region {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  z-index: 200;
+  pointer-events: none;
+}
+
+.studio-toast {
+  padding: 7px 14px;
+  border: 1px solid var(--cizgi);
+  border-radius: var(--r-pill);
+  background: var(--yuzey);
+  color: var(--metin);
+  font-size: 12px;
+  animation: studioToastIn var(--yay-sure) var(--yay-egri);
+}
+
+@keyframes studioToastIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
 }
 
 .banner-inline.is-ok {
@@ -857,13 +888,29 @@ html.has-mica-backdrop .fluent-detail-col {
   background: transparent;
 }
 
-.inline-case-select {
-  border: none;
-  background: transparent;
+/* Klasör alanı kısayoldan ayrı (R3.2, A2) */
+.folder-field-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.folder-select {
+  width: auto;
+  min-width: 140px;
+  padding: 4px 8px;
   font-size: 12px;
-  color: var(--metin-ikincil);
-  outline: none;
-  cursor: pointer;
+}
+
+/* Kural hapı: "Yalnız" / "Hariç" türü görünür (R3.2, A3) */
+.rule-kind {
+  font-weight: 600;
+  color: var(--vurgu);
+}
+
+.rule-pill.is-exclude .rule-kind {
+  color: var(--hata);
 }
 
 .rules-chip-row {
@@ -1164,8 +1211,30 @@ html.has-mica-backdrop .fluent-detail-col {
 }
 
 .autosave-status {
-  font-size: 11px;
-  color: var(--metin-ikincil);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  color: var(--basari);
+}
+
+.autosave-status.is-saving::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--metin-pasif);
+  animation: autosavePulse 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes autosavePulse {
+  from {
+    opacity: 0.3;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .case-mode-symbol-btn {
@@ -1217,7 +1286,6 @@ html.has-mica-backdrop .fluent-detail-col {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 6px;
 }
 
 .inline-rule-panel {
@@ -1313,6 +1381,12 @@ html.has-mica-backdrop .fluent-detail-col {
   font-size: 12px;
   cursor: pointer;
   z-index: 0;
+  /* Kaydırılmamışken kesirli genişlikte kenarda kırmızı çizgi görünmesin */
+  visibility: hidden;
+}
+
+.swipe-row-wrap.is-swiped .swipe-delete-btn {
+  visibility: visible;
 }
 
 .floating-context-menu {
