@@ -1429,3 +1429,46 @@ html.has-mica-backdrop .fluent-detail-col {
   border-radius: 999px;
   display: inline-block;
 }
+
+/* Dışa aktarma penceresi (R3.4) */
+.export-dialog {
+  max-width: 440px;
+}
+
+.export-format-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.export-format {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--cizgi);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: border-color var(--yay-sure-kisa) var(--yay-egri),
+    background var(--yay-sure-kisa) var(--yay-egri);
+}
+
+.export-format:hover {
+  background: var(--yuzey-2);
+}
+
+.export-format.is-selected {
+  border-color: var(--vurgu);
+  background: var(--vurgu-zayif);
+}
+
+.export-format input {
+  margin-top: 3px;
+  accent-color: var(--vurgu);
+}
+
+.export-format-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}

@@ -39,6 +39,7 @@ import {
   pruneSelection,
   type ListSelection,
 } from "./listSelection";
+import { ExportDialog, type ExportFormat, type ExportRequest } from "./ExportDialog";
 import { uniqueCopyAbbr } from "./phraseCopy";
 import { previewText } from "./varTokens";
 import { VarPreview } from "./VarPreview";
@@ -172,6 +173,20 @@ const VARIABLE_SNIPPETS = [
 ];
 
 /** Klavye kısayolu yazı alanındaysa (girdi, düzenleyici) liste kısayolları çalışmaz. */
+function exportMime(format: ExportFormat): string {
+  return format === "csv" ? "text/csv;charset=utf-8" : "text/plain;charset=utf-8";
+}
+
+/** Dosya adı için güvenli parça: boşluklar tire, Windows'ta yasak karakterler atılır. */
+function exportFileBase(name: string): string {
+  const base = name
+    .toLocaleLowerCase("tr-TR")
+    .replace(/[\\/:*?"<>|]/g, "")
+    .trim()
+    .replace(/\s+/g, "-");
+  return base || "meetin-liste";
+}
+
 function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   return target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName);
@@ -226,7 +241,7 @@ export function StudioView() {
   /** "Yeni ifade" ile açılan form: Kaydet sonrası boşalır, sıradaki ifade yazılır (R3.1a) */
   const newPhraseSessionRef = useRef(false);
   const [swipedId, setSwipedId] = useState<number | null>(null);
-  const [showListExportMenu, setShowListExportMenu] = useState(false);
+  const [exportRequest, setExportRequest] = useState<ExportRequest | null>(null);
   const [contextMenu, setContextMenu] = useState<ContextMenuState>(null);
   const [renamingFolderId, setRenamingFolderId] = useState<number | null>(null);
   const [renameFolderDraft, setRenameFolderDraft] = useState("");
@@ -848,44 +863,52 @@ export function StudioView() {
     }
   }
 
-  async function handleExportSubset(
-    phraseIds: number[],
-    format: "meetin" | "csv" | "ahk",
-    filenameBase = "meetin-liste",
-  ) {
-    setShowListExportMenu(false);
-    setContextMenu(null);
+  /** Seçilen biçimde dosyayı oluşturup indirir (R3.4, tek dışa aktarma akışı). */
+  async function runExport(request: ExportRequest, format: ExportFormat) {
     setError(null);
     try {
       let blob: Blob;
       const ext = format === "meetin" ? "mee" : format;
-      if (format === "meetin") {
+      if (request.scope === "library") {
+        if (format === "meetin") {
+          const bytes = await invoke<number[]>("export_mee_archive");
+          blob = new Blob([new Uint8Array(bytes)], { type: "application/zip" });
+        } else {
+          const text = await invoke<string>("export_library", { format });
+          blob = new Blob([text], { type: exportMime(format) });
+        }
+      } else if (format === "meetin") {
         const bytes = await invoke<number[]>("export_phrases_subset_mee", {
-          phraseIds,
+          phraseIds: request.ids,
         });
         blob = new Blob([new Uint8Array(bytes)], { type: "application/zip" });
       } else {
         const text = await invoke<string>("export_phrases_subset", {
-          phraseIds,
+          phraseIds: request.ids,
           format,
         });
-        const mime =
-          format === "csv"
-            ? "text/csv;charset=utf-8"
-            : "text/plain;charset=utf-8";
-        blob = new Blob([text], { type: mime });
+        blob = new Blob([text], { type: exportMime(format) });
       }
+      const fileName = `${request.scope === "library" ? "meetin-yedek" : request.fileName}.${ext}`;
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${filenameBase}.${ext}`;
+      a.download = fileName;
       document.body.appendChild(a);
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
+      setExportRequest(null);
+      setNotice(t("export.done", { file: fileName }));
     } catch (err) {
       setError(t("error.generic", { message: String(err) }));
     }
+  }
+
+  function openExport(request: ExportRequest) {
+    setShowMoreMenu(false);
+    setContextMenu(null);
+    setExportRequest(request);
   }
 
   async function handleUpdateFolder(
@@ -1097,36 +1120,6 @@ export function StudioView() {
     }
   }
 
-  async function handleExport(format: "meetin" | "csv" | "ahk") {
-    setShowMoreMenu(false);
-    setError(null);
-    try {
-      let blob: Blob;
-      const ext = format === "meetin" ? "mee" : format;
-      if (format === "meetin") {
-        const bytes = await invoke<number[]>("export_mee_archive");
-        blob = new Blob([new Uint8Array(bytes)], { type: "application/zip" });
-      } else {
-        const text = await invoke<string>("export_library", { format });
-        const mime =
-          format === "csv"
-            ? "text/csv;charset=utf-8"
-            : "text/plain;charset=utf-8";
-        blob = new Blob([text], { type: mime });
-      }
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `meetin-yedek.${ext}`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      setError(t("error.generic", { message: String(err) }));
-    }
-  }
-
   function handleInsertImageFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
@@ -1264,7 +1257,6 @@ export function StudioView() {
       onClick={() => {
         setShowMoreMenu(false);
         setShowCaseMenu(false);
-        setShowListExportMenu(false);
         setContextMenu(null);
         setSwipedId(null);
       }}
@@ -1367,14 +1359,8 @@ export function StudioView() {
                   {t("studio.importMulti")}
                 </button>
                 <div className="menu-divider" />
-                <button type="button" onClick={() => void handleExport("meetin")}>
-                  {t("studio.exportMeetin")}
-                </button>
-                <button type="button" onClick={() => void handleExport("csv")}>
-                  {t("studio.exportCsv")}
-                </button>
-                <button type="button" onClick={() => void handleExport("ahk")}>
-                  {t("studio.exportAhk")}
+                <button type="button" onClick={() => openExport({ scope: "library" })}>
+                  {t("export.menuEntry")}
                 </button>
               </div>
             )}
@@ -1451,7 +1437,7 @@ export function StudioView() {
           status={status}
           initialSection={settingsInitialSection}
           onRefresh={() => void loadAll()}
-          onExport={handleExport}
+          onOpenExport={() => openExport({ scope: "library" })}
           onReplayOnboarding={() => setShowOnboarding(true)}
         />
       ) : pageMode === "help" ? (
@@ -1799,56 +1785,24 @@ export function StudioView() {
               ) : (
                 <div className="row-actions" onClick={(e) => e.stopPropagation()}>
                   {view.kind !== "stats" && displayedPhrases.length > 0 && (
-                    <div className="dropdown-wrap">
-                      <button
-                        type="button"
-                        className="btn btn-sm"
-                        title={t("studio.exportListBtn")}
-                        onClick={() => setShowListExportMenu((v) => !v)}
-                      >
-                        ↓
-                      </button>
-                      {showListExportMenu && (
-                        <div className="dropdown-menu">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              void handleExportSubset(
-                                displayedPhrases.map((p) => p.id),
-                                "meetin",
-                                centerTitle.toLocaleLowerCase("tr-TR").replace(/\s+/g, "-"),
-                              )
-                            }
-                          >
-                            {t("studio.exportMeetin")}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              void handleExportSubset(
-                                displayedPhrases.map((p) => p.id),
-                                "csv",
-                                centerTitle.toLocaleLowerCase("tr-TR").replace(/\s+/g, "-"),
-                              )
-                            }
-                          >
-                            {t("studio.exportCsv")}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              void handleExportSubset(
-                                displayedPhrases.map((p) => p.id),
-                                "ahk",
-                                centerTitle.toLocaleLowerCase("tr-TR").replace(/\s+/g, "-"),
-                              )
-                            }
-                          >
-                            {t("studio.exportAhk")}
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    <button
+                      type="button"
+                      className="icon-btn"
+                      title={t("studio.exportListBtn")}
+                      aria-label={t("studio.exportListBtn")}
+                      onClick={() =>
+                        openExport({
+                          scope: "subset",
+                          ids: displayedOrder,
+                          fileName: exportFileBase(centerTitle),
+                          title: centerTitle,
+                        })
+                      }
+                    >
+                      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <path d="M8 2.5V10M4.5 6.5L8 10L11.5 6.5M3 13H13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
                   )}
                   <button
                     type="button"
@@ -2707,6 +2661,15 @@ export function StudioView() {
         />
       )}
 
+      {exportRequest && (
+        <ExportDialog
+          request={exportRequest}
+          libraryCount={activePhrases.length}
+          onExport={(format) => runExport(exportRequest, format)}
+          onClose={() => setExportRequest(null)}
+        />
+      )}
+
       {contextMenu && (
         <div
           className="dropdown-menu floating-context-menu"
@@ -2779,26 +2742,21 @@ export function StudioView() {
               <button
                 type="button"
                 onClick={() =>
-                  void handleExportSubset(
-                    contextMenu.ids,
-                    "meetin",
-                    contextMenu.ids.length > 1 ? "meetin-secilenler" : contextMenu.phrase.abbr,
-                  )
+                  openExport({
+                    scope: "subset",
+                    ids: contextMenu.ids,
+                    fileName:
+                      contextMenu.ids.length > 1
+                        ? "meetin-secilenler"
+                        : exportFileBase(contextMenu.phrase.abbr),
+                    title:
+                      contextMenu.ids.length > 1
+                        ? t("export.selectionTitle")
+                        : contextMenu.phrase.abbr,
+                  })
                 }
               >
-                {t("studio.ctxExportMee")}
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  void handleExportSubset(
-                    contextMenu.ids,
-                    "csv",
-                    contextMenu.ids.length > 1 ? "meetin-secilenler" : contextMenu.phrase.abbr,
-                  )
-                }
-              >
-                {t("studio.ctxExportCsv")}
+                {t("export.menuEntry")}
               </button>
               <div className="menu-divider" />
               <button
@@ -2861,24 +2819,15 @@ export function StudioView() {
                       (p) => p.folder_ids?.includes(f.id) || p.folder_id === f.id,
                     )
                     .map((p) => p.id);
-                  void handleExportSubset(fIds, "meetin", f.name);
+                  openExport({
+                    scope: "subset",
+                    ids: fIds,
+                    fileName: exportFileBase(f.name),
+                    title: f.name,
+                  });
                 }}
               >
-                {t("studio.ctxExportFolder")}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  const f = contextMenu.folder;
-                  const fIds = activePhrases
-                    .filter(
-                      (p) => p.folder_ids?.includes(f.id) || p.folder_id === f.id,
-                    )
-                    .map((p) => p.id);
-                  void handleExportSubset(fIds, "csv", f.name);
-                }}
-              >
-                {t("studio.ctxExportFolderCsv")}
+                {t("export.folderMenuEntry")}
               </button>
               <div className="menu-divider" />
               <button

@@ -45,7 +45,7 @@ interface SettingsViewProps {
   status: EngineStatus | null;
   initialSection?: SettingsSection;
   onRefresh: () => void;
-  onExport: (format: "meetin" | "csv" | "ahk") => Promise<void>;
+  onOpenExport: () => void;
   onReplayOnboarding: () => void;
 }
 
@@ -76,7 +76,7 @@ export function SettingsView({
   status,
   initialSection,
   onRefresh,
-  onExport,
+  onOpenExport,
   onReplayOnboarding,
 }: SettingsViewProps) {
   const activeLanguage = useLanguage();
@@ -948,23 +948,8 @@ export function SettingsView({
                   >
                     {t("settings.backupNowBtn")}
                   </button>
-                  <button
-                    type="button"
-                    className="btn btn-sm"
-                    onClick={() => {
-                      void onExport("meetin").then(() =>
-                        setBusyMsg(t("settings.backupDone")),
-                      );
-                    }}
-                  >
-                    {t("studio.exportMeetin")}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-sm"
-                    onClick={() => void onExport("csv")}
-                  >
-                    {t("studio.exportCsv")}
+                  <button type="button" className="btn btn-sm" onClick={onOpenExport}>
+                    {t("export.menuEntry")}
                   </button>
                 </div>
               </div>

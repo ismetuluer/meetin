@@ -192,10 +192,11 @@ Her adımdan önce mevcut ekranın görüntüsü ve önerilen düzen Saul'a gös
 - **Ajan:** Sonnet · Opus denetim. **Test:** Oto: HTML ↔ hap gidiş-dönüş · Elle.
 - **Yapılan:** `src/studio/varTokens.ts`: Rust `vars` sözdizimiyle aynı değişken tanıma (tanınmayan `{…}` düz kalır), `pillifyHtml` / `unpillHtml` (hap yalnız gösterimde; `data-var` ham değeri taşır, kayıttan önce geri çevrilir). `RichEditor`: yükleme, değişken menüsü, yapıştırma ve biçim temizlemede hap; yazarken imleçten önce tamamlanan değişken hapa döner; kopyala/kes ham yazıyı (düz + HTML) panoya koyar. Düzenleyici altındaki ayrı önizleme şeridi kaldırıldı. `VarPreview`: liste, klasör görünümü ve sürüm geçmişi önizlemesinde küçük hap; `StackPanel.preview` artık düğüm alabilir. **Ajan:** Opus. **Test:** Oto: tanıma, parçalama, HTML gidiş-dönüş (düz + zengin), imleç önü değişken, kaynak denetimi (7) · tarayıcıda sahte veriyle yükleme (kayıt tetiklenmedi), elle `{imleç}` yazma, menüden ekleme, Backspace ile hap silme, liste önizlemesi. Kopyala/kes tarayıcıda denenmedi. Elle (Saul): gerçek uygulamada deneme.
 
-### [ ] R3.4 · Dışa aktarma ve bağlam menüleri — v1.5.5
+### [x] R3.4 · Dışa aktarma ve bağlam menüleri — v1.5.12
 
 - **Hedef:** Tek "Dışa aktar…" girişi + biçim seçme penceresi (renkli/renksiz seçenek kalkar).
 - **Ajan:** Sonnet. **Test:** Elle.
+- **Yapılan:** `src/studio/ExportDialog.tsx`: kapsam (kitaplık / alt küme) + biçim seçimi (tek seçimli, açıklamalı, ilk seçeneğe odak, Esc ve dışarı tıklayınca kapanır, `role="dialog"`). `StudioView`: iki ayrı indirme işlevi tek `runExport` akışında birleşti; Daha fazla menüsü (3 giriş), liste açılır menüsü (3 giriş → simge düğme), ifade sağ tıkı (2 giriş, seçime uygulanır) ve klasör sağ tıkı (2 giriş) tek girişe indi; dosya adında Windows'ta yasak karakterler atılır; başarıda dosya adıyla bildirim. Ayarlar'daki .mee/CSV düğmeleri tek "Dışa aktar…" oldu (SQLite "Şimdi yedekle" ayrı kalır). "Renkli/renksiz" seçeneği kodda artık yoktu; kaldırılacak bir şey bulunmadı. **Ajan:** Opus. **Test:** Oto: pencere çıktısı ve menü kaynak denetimi (2) · tarayıcıda sahte veriyle liste → CSV dışa aktarma (doğru komut, dosya adı, bildirim; indirme tetiklenmeden), üst menüden kitaplık kapsamı, Esc ile kapanma. Elle (Saul): gerçek uygulamada dosyanın kaydedilmesi.
 
 ### [ ] R3.5 · Görünüm sayfası ve renk kuralı — v1.5.6
 

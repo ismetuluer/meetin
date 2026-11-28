@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü (CHANGELOG)
 
+## [1.5.12] - 2026-11-28
+
+### Değişti
+- **Tek "Dışa aktar…" girişi:** Üst menü, liste, ifade ve klasör sağ tık menüleri ile Ayarlar'daki biçim başına ayrı dışa aktarma seçenekleri kalktı. Hepsi aynı pencereyi açar: ne dışa aktarılacağı (tüm kitaplık, klasör, liste ya da seçilenler) yazılır, biçim (.mee, CSV, AutoHotkey) açıklamasıyla burada seçilir. Dışa aktarılan dosyanın adı bildirimde görünür.
+
 ## [1.5.11] - 2026-11-28
 
 ### Değişti
