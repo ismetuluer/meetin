@@ -280,11 +280,11 @@ export const HELP_SECTIONS: HelpSection[] = [
         items: [
           {
             label: "Toplu seçme",
-            text: "Satırlardaki onay kutularıyla, Ctrl+tıkla tek tek veya Shift+tıkla aralık seçerek üstteki toplu işlem çubuğundan taşıma, kopyalama, .mee dışa aktarma ve silme uygulayabilirsiniz.",
+            text: "Ctrl+tıkla tek tek, Shift+tıkla aralık, Ctrl+A ile tümünü seçin; sağ tıklayınca açılan menüden seçilenlerin hepsini taşıyabilir, kopyalayabilir, dışa aktarabilir veya silebilirsiniz. Esc seçimi temizler.",
           },
           {
             label: "Sola kaydırarak veya Çöp Kutusuna atarak silme",
-            text: "Bir ifadeyi sol menüdeki Çöp Kutusu üzerine sürükleyebilir ya da satırı sola kaydırıp (dokunmatik yüzey veya sağdaki ‹ simgesi) beliren kırmızı Sil düğmesine tıklayabilirsiniz.",
+            text: "Bir ifadeyi sol menüdeki Çöp Kutusu üzerine sürükleyebilir, satırı dokunmatik yüzeyle sola kaydırıp beliren kırmızı Sil düğmesine tıklayabilir ya da sağ tık menüsünden Sil'i seçebilirsiniz.",
           },
           {
             label: "Uygulama kuralları ve Sürüm Geçmişi",
@@ -764,7 +764,7 @@ export const HELP_SECTIONS_EN: HelpSection[] = [
         items: [
           {
             label: "Multi-select",
-            text: "Use checkboxes, Ctrl+click, or Shift+click to move, copy, export (.mee), or delete multiple phrases at once.",
+            text: "Ctrl+click, Shift+click, or Ctrl+A to select; right-click to move, copy, export, or delete all selected phrases. Esc clears the selection.",
           },
           {
             label: "App rules & version history",
