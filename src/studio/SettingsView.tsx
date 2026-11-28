@@ -259,7 +259,7 @@ export function SettingsView({
               if (item.id === "excluded") {
                 void invoke<RunningAppInfo[]>("list_running_apps")
                   .then(setRunningApps)
-                  .catch(() => {});
+                  .catch((err) => setErrMsg(t("error.generic", { message: String(err) })));
               }
             }}
           >
@@ -896,7 +896,7 @@ export function SettingsView({
                       onClick={() =>
                         void invoke<RunningAppInfo[]>("list_running_apps")
                           .then(setRunningApps)
-                          .catch(() => {})
+                          .catch((err) => setErrMsg(t("error.generic", { message: String(err) })))
                       }
                     >
                       {t("studio.refreshApps")}

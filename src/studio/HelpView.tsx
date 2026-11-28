@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { reportCaughtError } from "../errorReporting";
 import { KbdGroup, ShortcutText } from "../design/Kbd";
 import { t, useLanguage } from "../i18n";
 import {
@@ -45,7 +46,7 @@ export function HelpView({
           setShortcuts(s.shortcuts);
         }
       })
-      .catch(() => {});
+      .catch((err) => reportCaughtError("help-shortcuts", err));
   }, []);
 
   const sections = useMemo(() => getHelpSections(lang), [lang]);

@@ -174,7 +174,7 @@ export function StudioSidebar({
             return (
               <div
                 key={folder.id}
-                title={`${folder.name} (Sürükleyerek taşı, Ctrl+bırak ile kopyala; sağ tıkla: renk ve seçenekler)`}
+                title={`${folder.name} · ${t("studio.folderHint")}`}
                 className={`nav-item folder-item ${isActive ? "is-active" : ""} ${isDropTarget ? "is-drop-target" : ""}`}
                 onContextMenu={(e) => {
                   e.preventDefault();

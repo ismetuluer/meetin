@@ -119,7 +119,9 @@ function playMp3(url: string, volume = 0.72): void {
     if (typeof Audio === "undefined") return;
     const audio = new Audio(url);
     audio.volume = Math.max(0.05, Math.min(1, volume));
-    void audio.play().catch(() => {});
+    void audio.play().catch(() => {
+      // Ses aygıtı yok ya da oynatma engelli: efekt çalmaz, işleyiş etkilenmez
+    });
   } catch {
     // Ses aygıtı yoksa sessizce yok say
   }

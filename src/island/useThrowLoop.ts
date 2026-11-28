@@ -1,5 +1,6 @@
 import { useCallback, useRef, type Dispatch, type RefObject, type SetStateAction } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { reportCaughtError } from "../errorReporting";
 import {
   playRocketSound,
   playThrowSound,
@@ -167,11 +168,7 @@ export function useThrowLoop({
       })
       .catch((err: unknown) => {
         // Monitör düzeni alınamadı: atış yapılmaz, konum korunur, neden günlüğe yazılır
-        void invoke("log_frontend_error", {
-          window: "mascot",
-          kind: "throw",
-          message: String(err),
-        }).catch(() => {});
+        reportCaughtError("throw", err);
         setAnim(pausedRef.current ? "sleep" : "idle");
         void invoke("save_mascot_position", {
           x: Math.round(initial.x),

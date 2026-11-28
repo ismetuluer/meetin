@@ -104,6 +104,7 @@
   "studio.swipeDelete": "Delete",
   "studio.bulkSelected": "{count} selected",
   "studio.bulkClear": "Clear selection",
+  "studio.folderHint": "Drop phrases: move (Ctrl: copy) · Right-click: color and options",
   "studio.rowHint": "Ctrl+click: add to selection · Shift+click: select range · Drag: move to folder (Ctrl: copy) · Right-click: menu",
   "studio.bulkHint": "Right-click: act on selection · Esc: clear selection",
   "studio.ctxEdit": "Edit",

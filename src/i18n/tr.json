@@ -104,6 +104,7 @@
   "studio.swipeDelete": "Sil",
   "studio.bulkSelected": "{count} seçili",
   "studio.bulkClear": "Seçimi temizle",
+  "studio.folderHint": "Sürükle-bırak: taşı (Ctrl: kopyala) · Sağ tık: renk ve seçenekler",
   "studio.rowHint": "Ctrl+tık: seçime ekle · Shift+tık: aralık seç · Sürükle: klasöre taşı (Ctrl: kopyala) · Sağ tık: menü",
   "studio.bulkHint": "Sağ tık: seçilenlere toplu işlem · Esc: seçimi bırak",
   "studio.ctxEdit": "Düzenle",

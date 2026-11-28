@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { reportCaughtError } from "../errorReporting";
 import { listen } from "@tauri-apps/api/event";
 import { t, useLanguage } from "../i18n";
 import { BulkAddModal } from "./BulkAddModal";
@@ -134,14 +135,15 @@ export function StudioView() {
           setShowOnboarding(true);
         }
       })
-      .catch(() => {});
+      .catch((err) => setError(t("error.generic", { message: String(err) })));
     void invoke<import("./types").UpdateCheckResult>("get_update_env_info")
       .then((u) => {
         if (u.update_available && u.latest_version) {
           setAvailableUpdateVersion(u.latest_version);
         }
       })
-      .catch(() => {});
+      // Güncelleme bilgisi yalnız bilgilendirme şeridi içindir; hata günlüğe yazılır
+      .catch((err) => reportCaughtError("update-env-info", err));
     const unlistenUpdate = listen<string>("update-available", (ev) => {
       if (ev.payload) {
         setAvailableUpdateVersion(ev.payload);
