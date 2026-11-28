@@ -210,7 +210,9 @@ Her adımdan önce mevcut ekranın görüntüsü ve önerilen düzen Saul'a gös
 
 ## R4 · Bakım → v1.7.0
 
-### [ ] R4.1 · `lib.rs` komutlarını modüllere böl — Opus
+### [x] R4.1 · `lib.rs` komutlarını modüllere böl — Opus
+
+- **Yapılan:** 82 `#[tauri::command]` işlevi `src-tauri/src/commands/` altında 15 modüle taşındı (engine, settings, appearance, shortcuts, diagnostics, clipboard, update, backup, phrases, folders, import_export, mascot, island, hoop). `lib.rs` 2277 → 589 satır: modül bildirimleri, ortak durum türleri, `run()` ve tek `generate_handler!` listesi. Komut adları, argüman ve dönüş türleri aynı; gövdeler satır satır taşındı (yalnız görünürlük ve rustfmt satır kırılımı). **Ajan:** Ayrı çalışma kopyasında alt ajan (Opus) · ana oturum denetimi. **Test:** komut adı listesi önce/sonra birebir aynı (82) · `cargo clippy --all-targets -D warnings` temiz · `cargo test` 116 + 2 + 7 geçti (öncekiyle aynı).
 
 ### [ ] R4.2 · `StudioView.tsx` ve `MascotIslandApp.tsx`'i bileşenlere böl — Sonnet (dosya başına ayrı görev) · Opus denetim
 
