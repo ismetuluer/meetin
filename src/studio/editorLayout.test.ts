@@ -1,19 +1,30 @@
 import { describe, expect, it } from "vitest";
 import tr from "../i18n/tr.json";
 import studioCss from "./studio.css?raw";
-import studioSource from "./StudioView.tsx?raw";
+
+// R4.2: StudioView.tsx bileşenlere bölündü; denetim bütün stüdyo kabuğu kaynağında yapılır.
+const studioFiles = import.meta.glob<string>(
+  ["./Studio*.tsx", "./studio*.ts", "./useStudio*.ts", "!./*.test.*"],
+  { query: "?raw", import: "default", eager: true },
+);
+const studioSource = Object.values(studioFiles).join("\n");
 
 describe("düzenleyici düzeni (R3.2)", () => {
   it("klasör seçimi kısayol kutusundan ayrı bir alandır (A2)", () => {
+    expect(Object.keys(studioFiles).length).toBeGreaterThanOrEqual(14);
     expect(studioSource.length).toBeGreaterThan(1000);
-    const shortcutBox = studioSource.indexOf("<ShortcutField");
-    const folderGroup = studioSource.indexOf(
+    // Sıra denetimi, kısayol ve klasör alanını birlikte taşıyan dosyada yapılır
+    const fieldsSource = studioFiles["./StudioEditorFields.tsx"] ?? "";
+    expect(fieldsSource.length).toBeGreaterThan(1000);
+    expect(studioSource.split("<ShortcutField").length - 1).toBe(1);
+    const shortcutBox = fieldsSource.indexOf("<ShortcutField");
+    const folderGroup = fieldsSource.indexOf(
       'className="meta-field-group folder-field-group"',
     );
     expect(shortcutBox).toBeGreaterThan(0);
     expect(folderGroup).toBeGreaterThan(shortcutBox);
     // Kısayol kutusu ile klasör alanı arasında başka bir kutu kapanışı olmalı
-    expect(studioSource.slice(shortcutBox, folderGroup)).not.toContain(
+    expect(fieldsSource.slice(shortcutBox, folderGroup)).not.toContain(
       "<select",
     );
     expect(studioSource).not.toContain("inline-case-select");

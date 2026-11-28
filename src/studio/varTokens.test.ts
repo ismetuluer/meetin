@@ -9,7 +9,13 @@ import {
   unpillHtml,
   varLabel,
 } from "./varTokens";
-import studioSource from "./StudioView.tsx?raw";
+
+// R4.2: StudioView.tsx bileşenlere bölündü; denetim bütün stüdyo kabuğu kaynağında yapılır.
+const studioFiles = import.meta.glob<string>(
+  ["./Studio*.tsx", "./studio*.ts", "./useStudio*.ts", "!./*.test.*"],
+  { query: "?raw", import: "default", eager: true },
+);
+const studioSource = Object.values(studioFiles).join("\n");
 
 describe("değişken hapları (R3.3)", () => {
   it("Rust sözdizimindeki değişkenleri tanır, diğer {…} yazıları düz kalır", () => {
@@ -80,6 +86,7 @@ describe("düzenleyici ve liste hap kullanımı (R3.3)", () => {
   });
 
   it("ayrı önizleme şeridi ve köşeli parantezli önizleme kalmaz", () => {
+    expect(Object.keys(studioFiles).length).toBeGreaterThanOrEqual(14);
     expect(studioSource).not.toContain("var-preview-strip");
     expect(studioSource).not.toContain("formatPreviewLine");
     expect(studioSource).toContain("<VarPreview text={p.content} />");

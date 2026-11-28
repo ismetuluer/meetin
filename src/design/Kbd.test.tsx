@@ -2,9 +2,15 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import helpSource from "../studio/HelpView.tsx?raw";
 import settingsSource from "../studio/SettingsView.tsx?raw";
-import studioSource from "../studio/StudioView.tsx?raw";
 import css from "./kbd.css?raw";
 import { KbdGroup, ShortcutField, ShortcutText } from "./Kbd";
+
+// R4.2: StudioView.tsx bileşenlere bölündü; denetim bütün stüdyo kabuğu kaynağında yapılır.
+const studioFiles = import.meta.glob<string>(
+  ["../studio/Studio*.tsx", "../studio/studio*.ts", "../studio/useStudio*.ts", "!../studio/*.test.*"],
+  { query: "?raw", import: "default", eager: true },
+);
+const studioSource = Object.values(studioFiles).join("\n");
 
 describe("Kbd (R3.0e)", () => {
   it("kısayolu ayrı tuş kutucuklarına böler", () => {
@@ -40,6 +46,7 @@ describe("Kbd (R3.0e)", () => {
   });
 
   it("arayüzde düz yazı kısayol rozeti ve salt okunur kısayol kutusu kalmaz", () => {
+    expect(Object.keys(studioFiles).length).toBeGreaterThanOrEqual(14);
     for (const src of [helpSource, settingsSource, studioSource]) {
       expect(src.length).toBeGreaterThan(1000);
       expect(src).not.toContain("kbd-badge");

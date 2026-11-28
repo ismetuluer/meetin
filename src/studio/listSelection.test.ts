@@ -5,8 +5,14 @@ import {
   EMPTY_SELECTION,
   pruneSelection,
 } from "./listSelection";
-import studioSource from "./StudioView.tsx?raw";
 import studioCss from "./studio.css?raw";
+
+// R4.2: StudioView.tsx bileşenlere bölündü; denetim bütün stüdyo kabuğu kaynağında yapılır.
+const studioFiles = import.meta.glob<string>(
+  ["./Studio*.tsx", "./studio*.ts", "./useStudio*.ts", "!./*.test.*"],
+  { query: "?raw", import: "default", eager: true },
+);
+const studioSource = Object.values(studioFiles).join("\n");
 
 const order = [10, 20, 30, 40, 50];
 const none = { ctrl: false, shift: false };
@@ -60,6 +66,7 @@ describe("liste seçimi (R3.1)", () => {
 
 describe("ifade listesi arayüzü (R3.1)", () => {
   it("satırlarda onay kutusu ve anlamsız kaydırma oku kalmaz, toplu işlemler sağ tıkta", () => {
+    expect(Object.keys(studioFiles).length).toBeGreaterThanOrEqual(14);
     expect(studioSource.length).toBeGreaterThan(1000);
     expect(studioSource).not.toContain("row-select-box");
     expect(studioSource).not.toContain("row-swipe-trigger");

@@ -1,8 +1,14 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import settingsSource from "./SettingsView.tsx?raw";
-import studioSource from "./StudioView.tsx?raw";
 import { ExportDialog } from "./ExportDialog";
+
+// R4.2: StudioView.tsx bileşenlere bölündü; denetim bütün stüdyo kabuğu kaynağında yapılır.
+const studioFiles = import.meta.glob<string>(
+  ["./Studio*.tsx", "./studio*.ts", "./useStudio*.ts", "!./*.test.*"],
+  { query: "?raw", import: "default", eager: true },
+);
+const studioSource = Object.values(studioFiles).join("\n");
 
 const noop = async () => {};
 
@@ -37,6 +43,7 @@ describe("tek dışa aktarma penceresi (R3.4)", () => {
   });
 
   it("menülerde biçim başına ayrı dışa aktarma girişi kalmaz", () => {
+    expect(Object.keys(studioFiles).length).toBeGreaterThanOrEqual(14);
     for (const src of [studioSource, settingsSource]) {
       expect(src.length).toBeGreaterThan(1000);
       expect(src).not.toContain("studio.ctxExportMee");
