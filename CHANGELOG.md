@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü (CHANGELOG)
 
+## [1.5.14] - 2026-11-28
+
+### Düzeltildi
+- Açılışta ayarlar okunamazsa, Ayarlar'da çalışan uygulamalar listelenemezse hata mesajı gösterilir (önceden sessizce geçiliyordu). Maskot, ada ve güncelleme bilgisindeki yükleme hataları günlüğe yazılır.
+- Kenar çubuğundaki klasör ipucu dil ayarına uyar.
+
+### Değişti
+- Bakım: uygulamanın iç yapısı küçük parçalara bölündü (Rust komutları, uzman arayüzü ve maskot adası). Görünüm ve davranış değişmedi.
+
 ## [1.5.13] - 2026-11-28
 
 ### Değişti
