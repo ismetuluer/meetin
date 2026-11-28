@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü (CHANGELOG)
 
+## [1.5.13] - 2026-11-28
+
+### Değişti
+- **Görünüm: hangi rengin geçerli olduğu açık:** "Sistemle uyumlu" seçiliyken hazır renkler, renk kutusu, onaltılık kod ve ton kaydırıcısı soluk ve pasiftir; Windows'un vurgu rengini gösterir. "Özel" seçilince etkinleşir.
+- Gölgeler, pencere perdesi ve basket potası renkleri ortak renk rollerinden gelir; arayüz bileşenlerinde sabit renk kalmadı.
+
 ## [1.5.12] - 2026-11-28
 
 ### Değişti

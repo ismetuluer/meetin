@@ -320,7 +320,8 @@ function ensureContrast(
   return best;
 }
 
-function pickOnAccentText(accentHex: string): string {
+/** Renk üzerinde okunacak metin rengi (açık ya da koyu), karşıtlığa göre. */
+export function pickOnAccentText(accentHex: string): string {
   const lightText = "#FFFFFF";
   const darkText = "#14111C";
   return contrastRatio(lightText, accentHex) >= contrastRatio(darkText, accentHex)

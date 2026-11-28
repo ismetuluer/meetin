@@ -198,10 +198,11 @@ Her adımdan önce mevcut ekranın görüntüsü ve önerilen düzen Saul'a gös
 - **Ajan:** Sonnet. **Test:** Elle.
 - **Yapılan:** `src/studio/ExportDialog.tsx`: kapsam (kitaplık / alt küme) + biçim seçimi (tek seçimli, açıklamalı, ilk seçeneğe odak, Esc ve dışarı tıklayınca kapanır, `role="dialog"`). `StudioView`: iki ayrı indirme işlevi tek `runExport` akışında birleşti; Daha fazla menüsü (3 giriş), liste açılır menüsü (3 giriş → simge düğme), ifade sağ tıkı (2 giriş, seçime uygulanır) ve klasör sağ tıkı (2 giriş) tek girişe indi; dosya adında Windows'ta yasak karakterler atılır; başarıda dosya adıyla bildirim. Ayarlar'daki .mee/CSV düğmeleri tek "Dışa aktar…" oldu (SQLite "Şimdi yedekle" ayrı kalır). "Renkli/renksiz" seçeneği kodda artık yoktu; kaldırılacak bir şey bulunmadı. **Ajan:** Opus. **Test:** Oto: pencere çıktısı ve menü kaynak denetimi (2) · tarayıcıda sahte veriyle liste → CSV dışa aktarma (doğru komut, dosya adı, bildirim; indirme tetiklenmeden), üst menüden kitaplık kapsamı, Esc ile kapanma. Elle (Saul): gerçek uygulamada dosyanın kaydedilmesi.
 
-### [ ] R3.5 · Görünüm sayfası ve renk kuralı — v1.5.6
+### [x] R3.5 · Görünüm sayfası ve renk kuralı — v1.5.13
 
 - **Hedef:** "Sistemle uyumlu" seçiliyken renk denetimleri pasif (A4); bileşenlerdeki sabit renkler role taşınır (A5).
 - **Ajan:** Sonnet. **Test:** Oto: sabit renk taraması · Elle.
+- **Yapılan:** A4: vurgu denetimleri bir `fieldset` içinde; "Sistemle uyumlu" seçiliyken `disabled` (soluk, `not-allowed`), değerler Windows vurgu rengini gösterir. A5: 27 sabit renk taşındı. Gölgeler (`--golge-1…5`), modal perdesi (`--perde`) ve ton şeridi (`--ton-seridi`) `tokens.css`'te; basket potası çizimi maskot gibi sabit oyun renkleri olarak `--pota-*` ve `--koyun-komur` kullanır. Varsayılan vurgu `DEFAULT_ACCENT_HEX`'ten, ölçek hücresi yazı rengi `pickOnAccentText`'ten gelir. Gölge değerleri beşe indirildi (en yakın değere yuvarlandı). Yeni test, maskot, palet üretici ve `tokens.css` dışındaki bütün `ts/tsx/css` dosyalarında sabit renk arar. **Ajan:** Opus. **Test:** Oto: sabit renk taraması (1) · tarayıcıda sahte veriyle Görünüm: sistem kaynağında denetimler pasif ve sistem rengi, özel kaynakta etkin. Elle (Saul): açık/koyu temada genel görünüm.
 
 ### [ ] R3.6 · R3 kabul — v1.6.0 · **Ajan:** Saul · Opus.
 

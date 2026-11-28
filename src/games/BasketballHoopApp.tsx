@@ -77,8 +77,8 @@ export function BasketballHoopApp() {
           width="130"
           height="90"
           rx="10"
-          fill="rgba(255,255,255,0.88)"
-          stroke="#2E2A28"
+          fill="var(--pota-pano)"
+          stroke="var(--koyun-komur)"
           strokeWidth="3"
         />
         <rect
@@ -88,7 +88,7 @@ export function BasketballHoopApp() {
           height="42"
           rx="4"
           fill="none"
-          stroke="#E03E2D"
+          stroke="var(--pota-cizgi)"
           strokeWidth="3"
         />
 
@@ -96,28 +96,28 @@ export function BasketballHoopApp() {
         <g className="hoop-net">
           <path
             d="M40 92 L52 152 L118 152 L130 92"
-            fill="rgba(255,255,255,0.22)"
-            stroke="#FFFFFF"
+            fill="var(--pota-pano-ic)"
+            stroke="var(--pota-ag)"
             strokeWidth="2.4"
             strokeLinejoin="round"
           />
           <path
             d="M46 92 L72 152 M66 92 L95 152 M94 92 L65 152 M118 92 L92 152 M44 114 H126 M48 134 H122"
-            stroke="#E5E7EB"
+            stroke="var(--pota-ag-golge)"
             strokeWidth="2"
             strokeLinecap="round"
           />
         </g>
 
         {/* Turuncu pota çemberi (pencere içi y ≈ 120'ye denk gelir) */}
-        <rect x="77" y="84" width="16" height="9" rx="2" fill="#2E2A28" />
+        <rect x="77" y="84" width="16" height="9" rx="2" fill="var(--koyun-komur)" />
         <ellipse
           cx="85"
           cy="92"
           rx="51"
           ry="9"
           fill="none"
-          stroke="#EA580C"
+          stroke="var(--pota-cember)"
           strokeWidth="6.5"
         />
         <ellipse
@@ -126,7 +126,7 @@ export function BasketballHoopApp() {
           rx="51"
           ry="9"
           fill="none"
-          stroke="#9A3412"
+          stroke="var(--pota-cember-koyu)"
           strokeWidth="1.5"
         />
       </svg>

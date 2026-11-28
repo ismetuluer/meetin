@@ -8,6 +8,7 @@ import {
   DEFAULT_THEME_CONFIG,
   resolveThemeTokens,
   type ThemeConfig,
+  DEFAULT_ACCENT_HEX,
 } from "./design/palette";
 import { BasketballHoopApp } from "./games/BasketballHoopApp";
 import { setLanguage, useLanguage } from "./i18n";
@@ -124,7 +125,7 @@ export function App() {
     let config: ThemeConfig = DEFAULT_THEME_CONFIG;
     let sysTheme: SystemThemeInfo = {
       dark: window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false,
-      accent_hex: "#0078D4",
+      accent_hex: DEFAULT_ACCENT_HEX,
     };
 
     const sync = () => {

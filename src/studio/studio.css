@@ -984,7 +984,7 @@ html.has-mica-backdrop .fluent-detail-col {
   background: var(--yuzey);
   border: 1px solid var(--cizgi);
   border-radius: var(--r-md);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+  box-shadow: var(--golge-3);
   display: flex;
   flex-direction: column;
   padding: 4px;
@@ -1015,7 +1015,7 @@ html.has-mica-backdrop .fluent-detail-col {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--perde);
   display: flex;
   align-items: center;
   justify-content: center;

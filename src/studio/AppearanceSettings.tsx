@@ -17,6 +17,8 @@ import {
   type ThemeConfig,
   type ThemeMode,
   type ThemeRoleKey,
+  DEFAULT_ACCENT_HEX,
+  pickOnAccentText,
 } from "../design/palette";
 import { t, type TranslationKey } from "../i18n";
 import { MeetinSheep } from "../mascot/MeetinSheep";
@@ -96,7 +98,7 @@ export function AppearanceSettings() {
   const [config, setConfig] = useState<ThemeConfig>(DEFAULT_THEME_CONFIG);
   const [sysTheme, setSysTheme] = useState<SystemThemeInfo>({
     dark: false,
-    accent_hex: "#0078D4",
+    accent_hex: DEFAULT_ACCENT_HEX,
   });
   const [hexDraft, setHexDraft] = useState(DEFAULT_THEME_CONFIG.accentHex);
   const [notice, setNotice] = useState<string | null>(null);
@@ -295,6 +297,12 @@ export function AppearanceSettings() {
             </button>
           </div>
 
+          {/* "Sistemle uyumlu" seçiliyken renk Windows'tan gelir; denetimler pasif (A4) */}
+          <fieldset
+            className="accent-controls"
+            disabled={config.source === "system"}
+            aria-label={t("settings.sourceCustom")}
+          >
           <div className="accent-picker-row">
             <div className="preset-circles">
               {PRESET_ACCENTS.map((preset) => {
@@ -318,12 +326,14 @@ export function AppearanceSettings() {
               <input
                 type="color"
                 className="color-input-swatch"
-                value={normalizeHex(config.accentHex)}
+                value={normalizeHex(
+                  config.source === "system" ? sysTheme.accent_hex : config.accentHex,
+                )}
                 onChange={(e) => setAccent(e.target.value)}
               />
               <input
                 className="hex-text-input"
-                value={hexDraft}
+                value={config.source === "system" ? sysTheme.accent_hex : hexDraft}
                 onChange={(e) => {
                   const val = e.target.value;
                   setHexDraft(val);
@@ -342,13 +352,14 @@ export function AppearanceSettings() {
               type="range"
               min={0}
               max={359}
-              value={currentHue}
+              value={config.source === "system" ? hueFromHex(sysTheme.accent_hex) : currentHue}
               className="hue-slider"
               onChange={(e) =>
                 setAccent(hexWithHue(config.accentHex, Number(e.target.value)))
               }
             />
           </label>
+          </fieldset>
         </section>
 
         <section className="settings-card">
@@ -356,10 +367,7 @@ export function AppearanceSettings() {
           <div className="scale-strip">
             {SCALE_STEPS.map((step) => {
               const hex = resolvedTheme.scale[step];
-              const textColor =
-                contrastRatio("#FFFFFF", hex) >= contrastRatio("#14111C", hex)
-                  ? "#FFFFFF"
-                  : "#14111C";
+              const textColor = pickOnAccentText(hex);
               return (
                 <div
                   key={step}

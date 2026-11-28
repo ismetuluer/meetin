@@ -132,7 +132,7 @@ html.has-mica-backdrop .settings-content {
   background: var(--yuzey);
   color: var(--metin);
   font-weight: 600;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--golge-1);
 }
 
 .source-cards {
@@ -245,18 +245,9 @@ html.has-mica-backdrop .settings-content {
 .hue-slider {
   flex: 1;
   height: 8px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   appearance: none;
-  background: linear-gradient(
-    to right,
-    hsl(0 90% 55%),
-    hsl(60 90% 55%),
-    hsl(120 90% 55%),
-    hsl(180 90% 55%),
-    hsl(240 90% 55%),
-    hsl(300 90% 55%),
-    hsl(360 90% 55%)
-  );
+  background: var(--ton-seridi);
   cursor: pointer;
 }
 
@@ -421,7 +412,7 @@ html.has-mica-backdrop .settings-content {
   padding: 5px 12px;
   font-size: 12px;
   font-weight: 600;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.14);
+  box-shadow: var(--golge-2);
 }
 
 .preview-island-card {
@@ -430,7 +421,7 @@ html.has-mica-backdrop .settings-content {
   border: 1px solid var(--cizgi);
   border-radius: var(--r-lg);
   padding: 10px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+  box-shadow: var(--golge-3);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -590,3 +581,23 @@ html.has-mica-backdrop .settings-content {
 
 
 
+
+/* Vurgu rengi denetimleri: "Sistemle uyumlu" seçiliyken pasif (R3.5, A4) */
+.accent-controls {
+  margin: 0;
+  padding: 0;
+  border: none;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: opacity var(--yay-sure-kisa) var(--yay-egri);
+}
+
+.accent-controls:disabled {
+  opacity: 0.45;
+}
+
+.accent-controls:disabled * {
+  cursor: not-allowed;
+}
