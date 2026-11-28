@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü (CHANGELOG)
 
+## [1.5.9] - 2026-11-28
+
+### Eklendi
+- **İfadenin kopyasını oluştur:** Düzenleyicinin üstündeki kopya simgesi açık ifadeyi içerik, etiketler, klasörler ve uygulama kurallarıyla kopyalar. Kısaltma çakışmasız önerilir (`mipy` → `mipy2`); kısayol tuşu kopyalanmaz.
+
+### Değişti
+- **Yeni ifade kaydedilince form boşalır:** "Yeni ifade" ile açılan form Kaydet'e basınca temizlenir, sıradaki ifade hemen yazılabilir; kaydedilen ifade listede seçili görünür.
+
 ## [1.5.8] - 2026-11-28
 
 ### Değişti

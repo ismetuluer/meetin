@@ -39,6 +39,7 @@ import {
   pruneSelection,
   type ListSelection,
 } from "./listSelection";
+import { uniqueCopyAbbr } from "./phraseCopy";
 import { captureShortcutCombo } from "./shortcutCapture";
 import type {
   AbbrSuggestMode,
@@ -255,6 +256,8 @@ export function StudioView() {
   const [dropFolderId, setDropFolderId] = useState<number | null>(null);
   const [dropTrash, setDropTrash] = useState(false);
   const [selection, setSelection] = useState<ListSelection>(EMPTY_SELECTION);
+  /** "Yeni ifade" ile açılan form: Kaydet sonrası boşalır, sıradaki ifade yazılır (R3.1a) */
+  const newPhraseSessionRef = useRef(false);
   const [swipedId, setSwipedId] = useState<number | null>(null);
   const [showListExportMenu, setShowListExportMenu] = useState(false);
   const [contextMenu, setContextMenu] = useState<ContextMenuState>(null);
@@ -360,6 +363,7 @@ export function StudioView() {
         p.description.trim().length > 0 && p.description.trim() !== autoDesc,
       );
       lastSavedSnapshotRef.current = draftSnapshot(nextDraft);
+      newPhraseSessionRef.current = false;
       setEditorSessionId((n) => n + 1);
       setDraft(nextDraft);
       void loadPhraseMeta(p.id);
@@ -613,6 +617,7 @@ export function StudioView() {
       };
       setDescriptionManual(false);
       lastSavedSnapshotRef.current = "";
+      newPhraseSessionRef.current = true;
       setEditorSessionId((n) => n + 1);
       setDraft(next);
     },
@@ -735,6 +740,11 @@ export function StudioView() {
         if (silent) {
           setError(null);
           setAutoSaveState("saved");
+        } else if (newPhraseSessionRef.current) {
+          // Yeni ifade kaydedildi: form boşalır, kaydedilen listede seçili kalır (R3.1a)
+          openNewDraft();
+          setSelection({ ids: [saved.id], anchor: saved.id });
+          setNotice(t("studio.savedNotice", { abbr: saved.abbr }));
         } else {
           startEdit(saved);
           setNotice(t("studio.savedNotice", { abbr: saved.abbr }));
@@ -746,7 +756,7 @@ export function StudioView() {
         savingInFlightRef.current = false;
       }
     },
-    [appRules, draftSnapshot, loadAll, startEdit],
+    [appRules, draftSnapshot, loadAll, openNewDraft, startEdit],
   );
 
   // Otomatik kaydetme: yeni ifade ve düzenlemeler 650 ms sonra otomatik kaydedilir
@@ -778,6 +788,43 @@ export function StudioView() {
       autoSaveTimerRef.current = null;
     }
     await persistDraft(draft, false);
+  }
+
+  /** Açık ifadenin kopyası: içerik, etiketler, klasörler ve kurallar; kısaltma çakışmasız (R3.1a) */
+  async function handleDuplicate() {
+    if (!draft) return;
+    if (autoSaveTimerRef.current !== null) {
+      window.clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
+    // Asıl ifadede kaydedilmemiş değişiklik varsa önce o kaydedilir
+    if (draftSnapshot(draft) !== lastSavedSnapshotRef.current) {
+      await persistDraft(draft, true);
+    }
+    const existing = phrases.filter((p) => p.deleted_at === null).map((p) => p.abbr);
+    const copy: EditorDraft = {
+      ...draft,
+      id: null,
+      abbr: uniqueCopyAbbr(draft.abbr, existing, status?.fold_dotted_i ?? false),
+      description: draft.description.trim()
+        ? t("studio.copyDescription", { description: draft.description.trim() })
+        : "",
+      folder_ids: [...draft.folder_ids],
+      tags: [...draft.tags],
+      // Kısayol tuşu tektir; kopya aynı tuşa bağlanmaz
+      shortcut: "",
+    };
+    setError(null);
+    setShowHistoryDrawer(false);
+    setVersions([]);
+    setAutoSaveState("idle");
+    setDescriptionManual(copy.description.length > 0);
+    lastSavedSnapshotRef.current = "";
+    newPhraseSessionRef.current = false;
+    setSelection(EMPTY_SELECTION);
+    setEditorSessionId((n) => n + 1);
+    setDraft(copy);
+    setNotice(t("studio.duplicatedNotice", { abbr: draft.abbr }));
   }
 
   async function handleFolderDrop(folderId: number, ids: number[], copy: boolean) {
@@ -2143,6 +2190,20 @@ export function StudioView() {
                           ? t("studio.autoSaving")
                           : t("studio.autoSaved")}
                       </span>
+                    )}
+                    {draft.id !== null && (
+                      <button
+                        type="button"
+                        className="icon-btn"
+                        title={t("studio.duplicate")}
+                        aria-label={t("studio.duplicate")}
+                        onClick={() => void handleDuplicate()}
+                      >
+                        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                          <rect x="5.5" y="5.5" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+                          <path d="M10.5 3.5V3A1.5 1.5 0 0 0 9 1.5H4A1.5 1.5 0 0 0 2.5 3V8A1.5 1.5 0 0 0 4 9.5H4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                        </svg>
+                      </button>
                     )}
                     {draft.id !== null && (
                       <button
